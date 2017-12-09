@@ -565,18 +565,14 @@ endif ()
 target_link_libraries (seastar PUBLIC "${SEASTAR_USER_LDFLAGS}")
 
 #
-# Applications.
+# Tests and applications
 #
-
-add_subdirectory (apps)
-
-#
-# Tests.
-#
-
-enable_testing ()
-
-add_subdirectory (tests)
+option(SEASTAR_WITH_TESTS "Enable building tests and apps" ON)
+if(SEASTAR_WITH_TESTS)
+  add_subdirectory(apps)
+  enable_testing()
+  add_subdirectory(tests)
+endif(SEASTAR_WITH_TESTS)
 
 #
 # Documentation.
