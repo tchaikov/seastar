@@ -234,7 +234,6 @@ target_compile_options (seastar PUBLIC
   -Werror
   -Wno-error=deprecated-declarations
   -fvisibility=hidden
-  -Wl,--no-as-needed
   -U_FORTIFY_SOURCE)
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
