@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 2.8.12)
 
 project (seastar)
 
@@ -79,13 +79,6 @@ set (SEASTAR_JENKINS
   "Configure the build and tests for execution within a Jenkins context, with the given identifier.")
 
 #
-# Primary target. Everything is configured later.
-#
-
-add_library (seastar stub.cc)
-add_library (Seastar::seastar ALIAS seastar)
-
-#
 # Link pools (only supported for the Ninja generator).
 #
 
@@ -117,6 +110,85 @@ set_option (CARES_STATIC_PIC YES)
 add_subdirectory (c-ares)
 
 add_subdirectory (fmt)
+
+
+#
+# Library.
+#
+
+set(CORE_FILES
+  core/app-template.cc
+  core/dpdk_rte.cc
+  core/exception_hacks.cc
+  core/fsqual.cc
+  core/fstream.cc
+  core/memory.cc
+  core/metrics.cc
+  core/posix.cc
+  core/prometheus.cc
+  core/reactor.cc
+  core/resource.cc
+  core/scollectd.cc
+  core/systemwide_memory_barrier.cc
+  core/thread.cc)
+
+set(HTTP_FILES
+  http/api_docs.cc
+  http/common.cc
+  http/file_handler.cc
+  http/httpd.cc
+  http/json_path.cc
+  http/matcher.cc
+  http/mime_types.cc
+  http/reply.cc
+  http/routes.cc
+  http/transformers.cc)
+
+set(JSON_FILES
+  json/formatter.cc
+  json/json_elements.cc)
+
+set(NET_FILES
+  net/arp.cc
+  net/dhcp.cc
+  net/dns.cc
+  net/dpdk.cc
+  net/ethernet.cc
+  net/inet_address.cc
+  net/ip.cc
+  net/ip_checksum.cc
+  net/native-stack.cc
+  net/net.cc
+  net/packet.cc
+  net/posix-stack.cc
+  net/proxy.cc
+  net/stack.cc
+  net/tcp.cc
+  net/tls.cc
+  net/udp.cc
+  net/virtio.cc)
+
+set(RPC_FILES
+  rpc/lz4_compressor.cc
+  rpc/rpc.cc)
+
+set(UTIL_FILES
+  util/alloc_failure_injector.cc
+  util/backtrace.cc
+  util/conversions.cc
+  util/log.cc
+  util/program-options.cc)
+
+add_library (seastar
+  ${CORE_FILES}
+  ${HTTP_FILES}
+  ${JSON_FILES}
+  ${NET_FILES}
+  ${RPC_FILES}
+  ${UTIL_FILES}
+  $<TARGET_OBJECTS:metrics_proto>)
+
+add_library (Seastar::seastar ALIAS seastar)
 
 ##
 ## DPDK.
@@ -446,29 +518,7 @@ function (seastar_swagger_generate file output_var)
   set ("${output_var}" ${output_path} PARENT_SCOPE)
 endfunction ()
 
-#
-# Library.
-#
-
-function (seastar_add_sources)
-  set (abs_files "")
-
-  foreach (file ${ARGN})
-    list (APPEND abs_files "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
-  endforeach ()
-
-  target_sources (seastar PRIVATE "${abs_files}")
-endfunction ()
-
-add_subdirectory (core)
 add_subdirectory (http)
-add_subdirectory (json)
-add_subdirectory (net)
-add_subdirectory (rpc)
-add_subdirectory (util)
-
-target_sources(seastar PRIVATE
-  $<TARGET_OBJECTS:metrics_proto>)
 
 target_include_directories (seastar SYSTEM
   PUBLIC
