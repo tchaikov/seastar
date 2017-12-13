@@ -418,9 +418,6 @@ target_compile_options (seastar PUBLIC "${SEASTAR_USER_CXXFLAGS}")
 
 add_subdirectory (proto)
 
-set_source_files_properties (${SEASTAR_PROTO_HEADERS} ${SEASTAR_PROTO_SOURCES}
-  PROPERTIES GENERATED TRUE)
-
 function (seastar_ragel_generate file output_var)
   set (abs_file "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
 
@@ -454,10 +451,6 @@ endfunction ()
 # Library.
 #
 
-target_sources (seastar PRIVATE
-  ${SEASTAR_PROTO_SOURCES}
-  ${SEASTAR_PROTO_HEADERS})
-
 function (seastar_add_sources)
   set (abs_files "")
 
@@ -475,10 +468,13 @@ add_subdirectory (net)
 add_subdirectory (rpc)
 add_subdirectory (util)
 
+target_sources(seastar PRIVATE
+  $<TARGET_OBJECTS:metrics_proto>)
+
 target_include_directories (seastar SYSTEM
   PUBLIC
     ${GNUTLS_INCLUDE_DIR}
-    ${Protobuf_INCLUDE_DIRS})
+    ${PROTOBUF_INCLUDE_DIRS})
 
 target_include_directories (seastar PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
@@ -507,8 +503,7 @@ target_link_libraries (seastar PUBLIC
   -lunwind
   ${CMAKE_THREAD_LIBS_INIT}
   ${GNUTLS_LIBRARIES}
-  ${Protobuf_LIBRARIES}
-  ${Protobuf_PROTOC_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
   ${RT_LIBRARY}
   ${AIO_LIBRARY}
   Boost::boost # Headers only.

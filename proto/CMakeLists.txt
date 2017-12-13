@@ -1,13 +1,3 @@
-protobuf_generate_cpp (proto_sources proto_headers
-  metrics2.proto)
-
-set (SEASTAR_PROTO_SOURCES "${proto_sources}" PARENT_SCOPE)
-set (SEASTAR_PROTO_HEADERS "${proto_headers}" PARENT_SCOPE)
-set (SEASTAR_PROTO_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-
-add_custom_target (seastar-protobuf
-  DEPENDS
-    ${proto_sources}
-    ${proto_headers})
-
-add_dependencies (seastar seastar-protobuf)
+protobuf_generate_cpp(srcs hdrs metrics2.proto)
+add_library(metrics_proto OBJECT ${srcs} ${hdrs})
+target_include_directories(metrics_proto PUBLIC ${PROTOBUF_INCLUDE_DIRS})
