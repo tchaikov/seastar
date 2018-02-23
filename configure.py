@@ -385,6 +385,8 @@ libnet = [
 
 core = [
     'core/reactor.cc',
+    'core/alien_message_queue.cc',
+    'core/alien_poller.cc',
     'core/systemwide_memory_barrier.cc',
     'core/fstream.cc',
     'core/posix.cc',
