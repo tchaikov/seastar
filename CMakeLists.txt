@@ -117,6 +117,8 @@ add_subdirectory (fmt)
 #
 
 set(CORE_FILES
+  core/alien_message_queue.cc
+  core/alien_poller.cc
   core/app-template.cc
   core/dpdk_rte.cc
   core/exception_hacks.cc

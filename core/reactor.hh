@@ -79,6 +79,7 @@
 #include "manual_clock.hh"
 #include "core/metrics_registration.hh"
 #include "scheduling.hh"
+#include "alien_message_queue.hh"
 
 #ifdef HAVE_OSV
 #include <osv/sched.hh>
@@ -93,7 +94,9 @@ namespace seastar {
 
 using shard_id = unsigned;
 
-
+namespace alien {
+class pollfn;
+}
 class reactor;
 class pollable_fd;
 class pollable_fd_state;
@@ -636,6 +639,7 @@ private:
     friend class manual_clock;
     friend class epoll_pollfn;
     friend class syscall_pollfn;
+    friend class alien::pollfn;
     friend class execution_stage_pollfn;
     friend class file_data_source_impl; // for fstream statistics
     friend class internal::reactor_stall_sampler;
@@ -1025,6 +1029,7 @@ private:
 
     future<> run_exit_tasks();
     void stop();
+    friend class alien_message_queue;
     friend class pollable_fd;
     friend class pollable_fd_state;
     friend class posix_file_impl;

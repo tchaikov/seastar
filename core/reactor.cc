@@ -27,6 +27,7 @@
 #include <sys/statfs.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include "alien_poller.hh"
 #include "task.hh"
 #include "reactor.hh"
 #include "memory.hh"
@@ -2976,6 +2977,7 @@ int reactor::run() {
     if (smp::count > 1) {
         smp_poller = poller(std::make_unique<smp_pollfn>(*this));
     }
+    poller alien_poller(std::make_unique<alien::pollfn>(*this));
 
     poller syscall_poller(std::make_unique<syscall_pollfn>(*this));
 #ifndef HAVE_OSV
@@ -3674,6 +3676,7 @@ void smp::start_all_queues()
             _qs[c][engine().cpu_id()].start(c);
         }
     }
+    alien::smp::_qs[engine().cpu_id()].start();
 }
 
 #ifdef HAVE_DPDK
@@ -3738,6 +3741,9 @@ void smp::cleanup_cpu() {
         for(unsigned i = 0; i < smp::count; i++) {
             _qs[i][cpuid].stop();
         }
+    }
+    if (alien::smp::_qs) {
+        alien::smp::_qs[cpuid].stop();
     }
 }
 
@@ -4006,6 +4012,10 @@ void smp::configure(boost::program_options::variables_map configuration)
         }
     }
     smp_queues_constructed.wait();
+    alien::smp::_qs = reinterpret_cast<alien::message_queue*>(operator new[] (sizeof(alien::message_queue) * smp::count));
+    for (unsigned i = 0; i < smp::count; ++i) {
+      new (&alien::smp::_qs[i]) alien::message_queue(_reactors[i]);
+    }
     start_all_queues();
     assign_io_queue(0, queue_idx);
     inited.wait();
