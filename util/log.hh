@@ -81,6 +81,10 @@ class logger {
     static std::atomic<bool> _stdout;
     static std::atomic<bool> _syslog;
 private:
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#endif
     struct stringer {
         // no need for virtual dtor, since not dynamically destroyed
         virtual void append(std::ostream& os) = 0;
@@ -93,6 +97,9 @@ private:
             os << arg;
         }
     };
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
     template <typename... Args>
     void do_log(log_level level, const char* fmt, Args&&... args);
     void really_do_log(log_level level, const char* fmt, stringer** stringers, size_t n);
