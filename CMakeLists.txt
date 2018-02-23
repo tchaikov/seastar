@@ -120,6 +120,7 @@ set(CORE_FILES
   core/app-template.cc
   core/dpdk_rte.cc
   core/exception_hacks.cc
+  core/linux-aio.cc
   core/fsqual.cc
   core/fstream.cc
   core/memory.cc
@@ -150,6 +151,7 @@ set(JSON_FILES
 
 set(NET_FILES
   net/arp.cc
+  net/config.cc
   net/dhcp.cc
   net/dns.cc
   net/dpdk.cc
@@ -558,6 +560,7 @@ target_link_libraries (seastar PUBLIC
   Boost::boost # Headers only.
   Cryptopp::cryptopp
   Lz4::lz4
+  Yaml-cpp::yaml-cpp
   fmt::fmt-header-only
   c-ares::cares)
 
