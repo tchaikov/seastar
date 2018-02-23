@@ -120,6 +120,7 @@ set(CORE_FILES
   core/app-template.cc
   core/dpdk_rte.cc
   core/exception_hacks.cc
+  core/linux-aio.cc
   core/fsqual.cc
   core/fstream.cc
   core/memory.cc
