@@ -926,6 +926,7 @@ public:
     future<size_t> read_some(pollable_fd_state& fd, const std::vector<iovec>& iov);
 
     future<size_t> write_some(pollable_fd_state& fd, const void* buffer, size_t size);
+    future<size_t> write_event(pollable_fd_state& fd, uint64_t value);
 
     future<> write_all(pollable_fd_state& fd, const void* buffer, size_t size);
 
@@ -1296,6 +1297,21 @@ reactor::write_some(pollable_fd_state& fd, const void* buffer, size_t len) {
             return write_some(fd, buffer, len);
         }
         if (size_t(*r) == len) {
+            fd.speculate_epoll(EPOLLOUT);
+        }
+        return make_ready_future<size_t>(*r);
+    });
+}
+
+inline
+future<size_t>
+reactor::write_event(pollable_fd_state& fd, uint64_t value) {
+    return writeable(fd).then([this, &fd, value] () mutable {
+        auto r = fd.fd.write(&value, sizeof(value));
+        if (!r) {
+            return write_event(fd, value);
+        }
+        if (size_t(*r) == sizeof(value)) {
             fd.speculate_epoll(EPOLLOUT);
         }
         return make_ready_future<size_t>(*r);
