@@ -910,6 +910,8 @@ public:
     future<size_t> read_some(pollable_fd_state& fd, const std::vector<iovec>& iov);
 
     future<size_t> write_some(pollable_fd_state& fd, const void* buffer, size_t size);
+    // unlike \c write_some(), \c write_a_bit writes using ::write() not ::send()
+    future<size_t> write_many(pollable_fd_state& fd, const void* buffer, size_t size);
 
     future<> write_all(pollable_fd_state& fd, const void* buffer, size_t size);
 
@@ -1267,6 +1269,21 @@ reactor::write_some(pollable_fd_state& fd, const void* buffer, size_t len) {
         auto r = fd.fd.send(buffer, len, MSG_NOSIGNAL);
         if (!r) {
             return write_some(fd, buffer, len);
+        }
+        if (size_t(*r) == len) {
+            fd.speculate_epoll(EPOLLOUT);
+        }
+        return make_ready_future<size_t>(*r);
+    });
+}
+
+inline
+future<size_t>
+reactor::write_many(pollable_fd_state& fd, const void* buffer, size_t len) {
+    return writeable(fd).then([this, &fd, buffer, len] () mutable {
+        auto r = fd.fd.write(buffer, len);
+        if (!r) {
+            return write_many(fd, buffer, len);
         }
         if (size_t(*r) == len) {
             fd.speculate_epoll(EPOLLOUT);
