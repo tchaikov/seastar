@@ -396,6 +396,8 @@ endif ()
 ### have_sanitize_vptr_flag
 ###
 
+include(CheckCXXCompilerFlag)
+
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67258
 check_cxx_compiler_flag (-fsanitize=vptr have_sanitize_vptr_flag)
 
