@@ -29,8 +29,8 @@
 
 #include <fmt/ostream.h>
 
-#include "core/app-template.hh"
-#include "core/thread.hh"
+#include <seastar/core/app-template.hh>
+#include <seastar/core/thread.hh>
 
 namespace perf_tests {
 namespace internal {

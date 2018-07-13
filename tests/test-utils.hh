@@ -25,7 +25,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "core/future.hh"
+#include <seastar/core/future.hh>
 #include "test_runner.hh"
 
 namespace seastar {

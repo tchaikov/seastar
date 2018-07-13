@@ -21,11 +21,12 @@
 
 #include <iostream>
 #include <limits>
-#include "tests/test-utils.hh"
-#include "core/shared_ptr.hh"
-#include "net/packet-data-source.hh"
-#include "apps/memcached/ascii.hh"
-#include "core/future-util.hh"
+#include "test-utils.hh"
+#include <seastar/core/shared_ptr.hh>
+#include <seastar/net/packet-data-source.hh>
+// Non-conventional path due to limitations of `configure.py`.
+#include <seastar/apps/memcached/ascii.hh>
+#include <seastar/core/future-util.hh>
 
 using namespace seastar;
 using namespace net;

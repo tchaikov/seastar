@@ -21,9 +21,9 @@
 
 #include <iostream>
 
-#include "core/app-template.hh"
-#include "core/future-util.hh"
-#include "core/reactor.hh"
+#include <seastar/core/app-template.hh>
+#include <seastar/core/future-util.hh>
+#include <seastar/core/reactor.hh>
 #include "test_runner.hh"
 
 namespace seastar {
