@@ -284,7 +284,11 @@ wrap_syscall(T result) {
 template <typename Extra>
 syscall_result_extra<Extra>
 wrap_syscall(int result, const Extra& extra) {
-    return {result, errno, extra};
+    syscall_result_extra<Extra> sr;
+    sr.result = result;
+    sr.error = errno;
+    sr.extra = extra;
+    return sr;
 }
 
 reactor_backend_epoll::reactor_backend_epoll()
