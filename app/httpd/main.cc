@@ -23,7 +23,7 @@
 #include <seastar/http/handlers.hh>
 #include <seastar/http/function_handlers.hh>
 #include <seastar/http/file_handler.hh>
-#include <seastar/apps/httpd/demo.json.hh>
+#include <seastar/app/httpd/demo.json.hh>
 #include <seastar/http/api_docs.hh>
 
 namespace bpo = boost::program_options;

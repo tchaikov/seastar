@@ -41,8 +41,8 @@
 #include <seastar/net/api.hh>
 #include <seastar/net/packet-data-source.hh>
 // These two paths are non-conventional due to limitations in `configure.py`.
-#include <seastar/apps/memcached/ascii.hh>
-#include "apps/memcached/memcached.hh"
+#include <seastar/app/memcached/ascii.hh>
+#include "app/memcached/memcached.hh"
 #include <unistd.h>
 
 #define PLATFORM "seastar"

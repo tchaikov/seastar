@@ -25,7 +25,7 @@
 #include <seastar/core/shared_ptr.hh>
 #include <seastar/net/packet-data-source.hh>
 // Non-conventional path due to limitations of `configure.py`.
-#include <seastar/apps/memcached/ascii.hh>
+#include <seastar/app/memcached/ascii.hh>
 #include <seastar/core/future-util.hh>
 
 using namespace seastar;

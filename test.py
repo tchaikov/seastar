@@ -100,13 +100,13 @@ if __name__ == "__main__":
     test_to_run = []
     modes_to_run = all_modes if not args.mode else [args.mode]
     for mode in modes_to_run:
-        prefix = os.path.join('build', mode, 'tests')
+        prefix = os.path.join('build', mode, 'test')
         for test in other_tests:
             test_to_run.append((os.path.join(prefix, test),'other'))
         for test in boost_tests:
             test_to_run.append((os.path.join(prefix, test),'boost'))
-        memcached_path = make_build_path(mode, 'apps', 'memcached', 'memcached')
-        test_to_run.append(('tests/memcached/test.py --memcached ' + memcached_path + (' --fast' if args.fast else ''),'other'))
+        memcached_path = make_build_path(mode, 'app', 'memcached', 'memcached')
+        test_to_run.append(('test/memcached/test.py --memcached ' + memcached_path + (' --fast' if args.fast else ''),'other'))
         test_to_run.append((os.path.join(prefix, 'distributed_test'),'other'))
 
 
@@ -149,7 +149,7 @@ if __name__ == "__main__":
         if test[1] == 'boost':
             path = path + " -- --smp={}".format(cpu_count)
         else:
-            if not re.search("tests/memcached/test.py", path):
+            if not re.search("test/memcached/test.py", path):
                 if re.search("allocator_test", path) or re.search("fair_queue_test", path):
                     path = path + " -- --smp={}".format(cpu_count)
                 else:
