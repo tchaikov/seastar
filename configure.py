@@ -945,7 +945,7 @@ with open(buildfile, 'w') as f:
                         Name: Seastar
                         URL: http://seastar-project.org/
                         Description: Advanced C++ framework for high-performance server applications on modern hardware.
-                        Version: 1.0
+                        Version: 2.0.0
                         Libs: -L$full_builddir/{mode} -L$full_builddir/{mode}/fmt/fmt -Wl,--whole-archive,-lseastar,--no-whole-archive -lfmt $cxxflags $cxflags_{mode} -Wl,--no-as-needed {static} {pie} {user_ldflags} {sanitize_libs} {libs}
                         Cflags: $cxxflags $cxxflags_{mode}
                         ''').format(**vars)
