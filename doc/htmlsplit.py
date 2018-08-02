@@ -43,7 +43,7 @@ def links(out, chapter):
         pass
 def flush(chapter, header, chunk):
     fn = 'index.html' if chapter == 0 else str(chapter) + '.html'
-    with open('split/' + fn, 'w') as out:
+    with open('tutorial-split/' + fn, 'w') as out:
         out.write(header)
         links(out, chapter)
         out.write(chunk)

@@ -1,0 +1,138 @@
+# Developing and using Seastar
+
+## Configuring the project
+
+- Use `cmake-cooking` to prepare a development environment with all dependencies:
+
+```
+./cooking.sh -r dev
+```
+
+- The same as above, and enable DPDK support:
+
+```
+./cooking.sh -r dev -- -DSeastar_DPDK=ON
+```
+
+- Use system packages for all dependencies except `fmt`, `c-ares`, and `dpdk`, which are provided by `cmake-cooking` (and not yet widely available via system package-managers):
+
+```
+./cooking.sh -r dev -i c-ares -i fmt -i dpdk
+```
+
+- Use `cmake-cooking` for all dependencies except for Boost:
+
+```
+./cooking.sh -r dev -e Boost
+```
+
+- The same, but compile in "release" mode:
+
+```
+./cooking.sh -r dev -e Boost -t Release
+```
+
+## Building the project
+
+```
+cd build
+ninja
+```
+
+## Running tests
+
+Make sure you are in the "build" directory.
+
+- Run unit tests:
+
+```
+ninja test_unit
+```
+
+- Run distribution tests (these take a long time the first time, but then the dependencies are cached):
+
+```
+ninja test_dist
+```
+
+- Run all tests:
+
+```
+ninja test
+```
+
+- Build and run a specific test:
+
+```
+ninja test_unit_thread_run
+```
+
+
+## Building documentation
+
+Make sure you are in the "build" directory.
+
+- Build all documentation:
+
+```
+ninja docs
+```
+
+- Build the tutorial in HTML form:
+
+```
+ninja doc_tutorial_html
+```
+
+- Build the tutorial in HTML form (one file per chapter):
+
+```
+ninja doc_tutorial_html_split
+```
+
+- Build the Doxygen documentation:
+
+```
+ninja doc_html
+```
+
+## Installing the project
+
+Choose the install path:
+
+```
+./cooking.sh -r dev -- -DCMAKE_INSTALL_PREFIX=/my/install/path
+```
+
+```
+ninja -C build install
+```
+
+## Using Seastar in an application
+
+Once Seastar has been installed, it is sufficient to add a dependency on Seastar with
+
+```
+find_package (Seastar ${VERSION} REQUIRED)
+
+add_executable (my_program
+  my_program.cc)
+  
+target_link_libraries (my_program
+  PRIVATE Seastar::seastar)
+```
+
+where `VERSION` is the desired version.
+
+If you'd like to use `cmake-cooking` to set up a development environment which includes Seastar and its dependencies (a "recipe"), you can include Seastar as follows:
+
+```
+cooking_ingredient (Seastar
+  SOURCE_DIR ${MY_SEASTAR_SOURCE_DIR}
+  COOKING_RECIPE dev
+  CMAKE_ARGS
+    -DSeastar_APPS=OFF
+    -DSeastar_DEMOS=OFF
+    -DSeastar_DOCS=OFF
+    -DSeastar_TESTING=OFF)
+```

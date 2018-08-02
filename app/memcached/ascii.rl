@@ -20,7 +20,7 @@
  */
 
 #include <seastar/core/ragel.hh>
-#include "app/memcached/memcached.hh"
+#include "memcached.hh"
 #include <memory>
 #include <algorithm>
 #include <functional>

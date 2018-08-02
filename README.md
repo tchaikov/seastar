@@ -11,7 +11,24 @@ It is based on [futures](http://en.wikipedia.org/wiki/Futures_and_promises).
 Building Seastar
 --------------------
 
-See instructions for [Fedora](doc/building-fedora.md), [CentOS](doc/building-centos.md) and [Ubuntu](doc/building-ubuntu.md).
+For more detailed instructions, read [HACKING.md](./HACKING.md).
+
+Configuring Seastar via
+
+```
+./cooking.sh -r dev
+```
+
+will create a localized development environment specific to Seastar by downloading, compiling, and installing all dependencies of the library.
+
+You can then compile:
+
+```
+$ cd build
+$ ninja
+```
+
+Alternatively, system packages (via RPM or APT packages, for example) can be used to supply dependencies as well. There are distribution-specific instructions for [Fedora](doc/building-fedora.md), [CentOS](doc/building-centos.md) and [Ubuntu](doc/building-ubuntu.md). In general, the `install-dependencies.sh` will attempt to install all necessary packages for your distribution.
 
 There are also instructions for building on any host that supports [Docker](doc/building-docker.md).
 
