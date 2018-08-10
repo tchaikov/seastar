@@ -19,6 +19,7 @@
  * Copyright 2016 Cloudius Systems
  */
 
+#include <arpa/nameser.h>
 #include <chrono>
 #include <experimental/string_view>
 
@@ -269,6 +270,53 @@ public:
         });
     }
 
+    future<srv_records> get_srv_records(srv_proto proto,
+                                        const sstring& service,
+                                        const sstring& domain) {
+        auto p = std::make_unique<promise<srv_records>>();
+        auto f = p->get_future();
+
+        const auto query = sprint("_%s._%s.%s",
+                                  service,
+                                  proto == srv_proto::tcp ? "tcp" : "udp",
+                                  domain);
+
+        dns_log.debug("Query srv {}", query);
+
+        dns_call call(*this);
+
+        ares_query(_channel, query.c_str(), ns_c_in, ns_t_srv,
+                   [](void* arg, int status, int timeouts,
+                      unsigned char* buf, int len) {
+            auto p = reinterpret_cast<promise<srv_records> *>(arg);
+
+            if (status == ARES_SUCCESS) {
+                ares_srv_reply *start = nullptr;
+                status = ares_parse_srv_reply(buf, len, &start);
+                if (status == ARES_SUCCESS) {
+                    auto records = make_srv_records(start);
+                    p->set_value(std::move(records));
+                    ares_free_data(start);
+                } else {
+                    dns_log.debug("Parse failed: {}", status);
+                    p->set_exception(std::system_error(status, ares_errorc));
+                }
+            } else {
+                dns_log.debug("Query failed: {}", status);
+                p->set_exception(std::system_error(status, ares_errorc));
+            }
+
+            delete p;
+        }, reinterpret_cast<void *>(p.release()));
+
+
+        poll_sockets();
+
+        return f.finally([this] {
+            end_call();
+        });
+    }
+
     future<sstring> resolve_addr(inet_address addr) {
         return get_host_by_addr(addr).then([](hostent h) {
             return make_ready_future<sstring>(h.names.front());
@@ -361,6 +409,18 @@ private:
 
             ares_process(_channel, &readers, &writers);
         } while (n != 0);
+    }
+
+    static srv_records make_srv_records(ares_srv_reply* start) {
+        srv_records records;
+        for (auto reply = start; reply; reply = reply->next) {
+            srv_record record = {reply->priority,
+                                 reply->weight,
+                                 reply->port,
+                                 sstring{reply->host}};
+            records.push_back(std::move(record));
+        }
+        return records;
     }
 
     static hostent make_hostent(const ::hostent& host) {
@@ -879,6 +939,12 @@ future<net::inet_address> net::dns_resolver::resolve_name(const sstring& name, o
 
 future<sstring> net::dns_resolver::resolve_addr(const inet_address& addr) {
     return _impl->resolve_addr(addr);
+}
+
+future<net::dns_resolver::srv_records> net::dns_resolver::get_srv_records(net::dns_resolver::srv_proto proto,
+                                                                          const sstring& service,
+                                                                          const sstring& domain) {
+    return _impl->get_srv_records(proto, service, domain);
 }
 
 future<> net::dns_resolver::close() {
