@@ -131,7 +131,7 @@ find_package (lz4 1.8.0 REQUIRED)
 
 find_package (GnuTLS 3.5.18 REQUIRED)
 find_package (LinuxMembarrier)
-find_package (Protobuf 3.3.1 REQUIRED)
+find_package (Protobuf 3.0.0 REQUIRED)
 find_package (Sanitizers REQUIRED)
 find_package (StdFilesystem REQUIRED)
 find_package (dl REQUIRED)
