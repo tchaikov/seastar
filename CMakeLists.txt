@@ -134,7 +134,6 @@ find_package (LinuxMembarrier)
 find_package (Protobuf 3.0.0 REQUIRED)
 find_package (Sanitizers REQUIRED)
 find_package (StdFilesystem REQUIRED)
-find_package (dl REQUIRED)
 find_package (hwloc 1.11.5)
 # No version information published.
 find_package (lksctp-tools REQUIRED)
@@ -477,7 +476,7 @@ target_link_libraries (seastar
     Boost::filesystem
     GnuTLS::gnutls
     StdFilesystem::filesystem
-    dl::dl
+    ${CMAKE_DL_LIBS}
     lksctp-tools::lksctp-tools
     protobuf::libprotobuf
     rt::rt
