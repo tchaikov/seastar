@@ -571,11 +571,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
       SEASTAR_ASAN_ENABLED
       SEASTAR_THREAD_STACK_GUARDS
     PRIVATE SEASTAR_DEFAULT_ALLOCATOR)
-  find_package (Sanitizers REQUIRED)
-  target_link_libraries (seastar
-    PRIVATE
-      debug Sanitizers::address
-      debug Sanitizers::undefined_behavior)
+  find_package (Sanitizers)
+  if (Sanitizers_FOUND)
+    target_link_libraries (seastar
+      PRIVATE
+        debug Sanitizers::address
+        debug Sanitizers::undefined_behavior)
+  endif ()
 endif ()
 
 #
