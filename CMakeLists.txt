@@ -129,9 +129,9 @@ find_package (lz4 1.8.0 REQUIRED)
 ## Private and private/public dependencies.
 ##
 
-find_package (GnuTLS 3.5.18 REQUIRED)
+find_package (GnuTLS 3.4.0 REQUIRED)
 find_package (LinuxMembarrier)
-find_package (Protobuf 3.0.0 REQUIRED)
+find_package (Protobuf 2.6.1 REQUIRED)
 find_package (StdFilesystem REQUIRED)
 find_package (hwloc 1.11.5)
 # No version information published.
@@ -140,7 +140,7 @@ find_package (lksctp-tools REQUIRED)
 find_package (numactl)
 find_package (ragel 7.0.0 REQUIRED)
 find_package (rt REQUIRED)
-find_package (yaml-cpp 0.5.3 REQUIRED)
+find_package (yaml-cpp 0.5.2 REQUIRED)
 
 #
 # Code generation helpers.
