@@ -132,7 +132,6 @@ find_package (lz4 1.8.0 REQUIRED)
 find_package (GnuTLS 3.5.18 REQUIRED)
 find_package (LinuxMembarrier)
 find_package (Protobuf 3.0.0 REQUIRED)
-find_package (Sanitizers REQUIRED)
 find_package (StdFilesystem REQUIRED)
 find_package (hwloc 1.11.5)
 # No version information published.
@@ -480,9 +479,7 @@ target_link_libraries (seastar
     lksctp-tools::lksctp-tools
     protobuf::libprotobuf
     rt::rt
-    yaml-cpp::yaml-cpp
-    debug Sanitizers::address
-    debug Sanitizers::undefined_behavior)
+    yaml-cpp::yaml-cpp)
 
 if (LinuxMembarrier_FOUND)
   target_compile_definitions (seastar
@@ -574,6 +571,11 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
       SEASTAR_ASAN_ENABLED
       SEASTAR_THREAD_STACK_GUARDS
     PRIVATE SEASTAR_DEFAULT_ALLOCATOR)
+  find_package (Sanitizers REQUIRED)
+  target_link_libraries (seastar
+    PRIVATE
+      debug Sanitizers::address
+      debug Sanitizers::undefined_behavior)
 endif ()
 
 #
