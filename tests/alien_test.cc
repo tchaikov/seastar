@@ -74,14 +74,12 @@ int main(int argc, char** argv)
     seastar::pollable_fd_state alien_done_fds{std::move(alien_done)};
     eventfd_t result = 0;
     app.run(argc, argv, [&] {
-        return seastar::now().then([engine_ready_fd] {
-            // engine ready!
-            ::eventfd_write(engine_ready_fd, ENGINE_READY);
-            return seastar::now();
-        }).then([&alien_done_fds, &result]() {
-            // check if alien has dismissed me.
-            return seastar::engine().read_some(alien_done_fds, &result, sizeof(result));
-        }).then([&result](size_t n) {
+        // engine ready!
+        ::eventfd_write(engine_ready_fd, ENGINE_READY);
+        // check if alien has dismissed me.
+        return seastar::engine().read_some(alien_done_fds,
+                                           &result,
+                                           sizeof(result)).then([&result](size_t n) {
             if (n != sizeof(result)) {
                 throw std::runtime_error("read from eventfd failed");
             }
