@@ -34,6 +34,13 @@ enum {
     ALIEN_DONE   = 42,
 };
 
+// currently the alien poller lives in smp_pollfn, so we cannot use
+// alien::submit_to() if number of CPU is less than 2
+static bool is_listening_to_alien()
+{
+    return smp::count > 1;
+}
+
 int main(int argc, char** argv)
 {
     // we need a protocol that both seastar and alien understand.
@@ -54,16 +61,18 @@ int main(int argc, char** argv)
         if (result != ENGINE_READY) {
             return -EINVAL;
         }
-        std::vector<std::future<int>> counts;
-        for (auto i : boost::irange(0u, smp::count)) {
-            // send messages from alien.
-            counts.push_back(alien::submit_to(i, [i] {
-                return seastar::make_ready_future<int>(i);
-            }));
-        }
         int total = 0;
-        for (auto& count : counts) {
-            total += count.get();
+        if (is_listening_to_alien()) {
+            std::vector<std::future<int>> counts;
+            for (auto i : boost::irange(0u, smp::count)) {
+                // send messages from alien.
+                counts.push_back(alien::submit_to(i, [i] {
+                    return seastar::make_ready_future<int>(i);
+                }));
+            }
+            for (auto& count : counts) {
+                total += count.get();
+            }
         }
         // i am done. dismiss the engine
         ::eventfd_write(alien_done, ALIEN_DONE);
@@ -93,11 +102,18 @@ int main(int argc, char** argv)
             seastar::engine().exit(0);
         });
     });
+    int ret = EXIT_SUCCESS;
     int total = zim.get();
-    const auto shards = boost::irange(0u, smp::count);
-    auto expected = std::accumulate(std::begin(shards), std::end(shards), 0);
-    if (total != expected) {
-        std::cerr << "Bad total: " << total << " != " << expected << std::endl;
-        return 1;
+    if (is_listening_to_alien()) {
+        const auto shards = boost::irange(0u, smp::count);
+        auto expected = std::accumulate(std::begin(shards), std::end(shards), 0);
+        if (total != expected) {
+            std::cerr << "Bad total: " << total << " != " << expected << std::endl;
+            ret = EXIT_FAILURE;
+        }
+    } else {
+        std::cout << "alien needs 2 or more cores to function." << std::endl;
     }
+    close(engine_ready_fd);
+    return ret;
 }
