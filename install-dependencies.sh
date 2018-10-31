@@ -50,8 +50,11 @@ repo_gpgcheck=0
 enabled=1
 enabled_metadata=1
 EOF
+        cmake_pkg=cmake3
+    else
+        cmake_pkg=cmake
     fi
-    yum install -y hwloc-devel numactl-devel libpciaccess-devel cryptopp-devel libxml2-devel xfsprogs-devel gnutls-devel lksctp-tools-devel lz4-devel gcc make protobuf-devel protobuf-compiler systemtap-sdt-devel libtool cmake yaml-cpp-devel
+    yum install -y hwloc-devel numactl-devel libpciaccess-devel cryptopp-devel libxml2-devel xfsprogs-devel gnutls-devel lksctp-tools-devel lz4-devel gcc make protobuf-devel protobuf-compiler systemtap-sdt-devel libtool $cmake_pkg yaml-cpp-devel
     if [ "$ID" = "fedora" ]; then
         dnf install -y gcc-c++ ninja-build ragel boost-devel libubsan libasan
     else # centos

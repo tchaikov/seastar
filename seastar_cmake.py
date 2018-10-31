@@ -16,6 +16,7 @@
 #
 
 import os
+import shutil
 
 SUPPORTED_MODES = ['release', 'debug']
 
@@ -23,7 +24,9 @@ ROOT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 BUILD_PATHS = { mode: os.path.join(ROOT_PATH, 'build', mode) for mode in SUPPORTED_MODES }
 
-CMAKE_BASIC_ARGS = ['cmake', '-G', 'Ninja']
+# prefer cmake3 over cmake, the cmake executable packaged by EPEL7 is named "cmake3"
+CMAKE_BASIC_ARGS = [shutil.which('cmake3') or shutil.which('cmake'),
+                    '-G', 'Ninja']
 
 def translate_arg(arg, new_name, value_when_none='no'):
     """

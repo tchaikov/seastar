@@ -224,7 +224,7 @@ def adjust_visibility_flags(compiler, flags):
 def configure_fmt(mode, cxx='g++', cc='gcc'):
     builddir = 'build/{}/fmt'.format(mode)
     os.makedirs(builddir, exist_ok=True)
-    subprocess.check_output(args=['cmake', '-G', 'Ninja', '../../../fmt', '-DCMAKE_CXX_COMPILER=' + cxx, '-DCMAKE_C_COMPILER=' + cc], cwd=builddir)
+    subprocess.check_output(args=seastar_cmake.CMAKE_BASIC_ARGS + ['../../../fmt', '-DCMAKE_CXX_COMPILER=' + cxx, '-DCMAKE_C_COMPILER=' + cc], cwd=builddir)
 
 modes = {
     'debug': {
