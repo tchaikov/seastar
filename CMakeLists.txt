@@ -799,10 +799,11 @@ file (GENERATE
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/seastar.pc
   INPUT ${CMAKE_CURRENT_BINARY_DIR}/pkgconfig/seastar.pc.in)
 
-file (GENERATE
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/seastar-testing.pc
-  INPUT ${CMAKE_CURRENT_BINARY_DIR}/pkgconfig/seastar-testing.pc.in)
-
+if (Seastar_INSTALL OR Seastar_TESTING)
+  file (GENERATE
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/seastar-testing.pc
+    INPUT ${CMAKE_CURRENT_BINARY_DIR}/pkgconfig/seastar-testing.pc.in)
+endif ()
 #
 # Installation and export.
 #
