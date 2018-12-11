@@ -225,7 +225,7 @@ find_package (Concepts)
 find_package (GnuTLS 3.3.26 REQUIRED)
 find_package (LinuxMembarrier)
 find_package (Protobuf 2.5.0 REQUIRED)
-find_package (Sanitizers REQUIRED)
+find_package (Sanitizers)
 find_package (StdFilesystem REQUIRED)
 find_package (hwloc 1.11.2)
 # No version information published.
@@ -580,9 +580,14 @@ target_link_libraries (seastar
     lksctp-tools::lksctp-tools
     protobuf::libprotobuf
     rt::rt
-    yaml-cpp::yaml-cpp
-    debug Sanitizers::address
-    debug Sanitizers::undefined_behavior)
+    yaml-cpp::yaml-cpp)
+
+if (Sanitizers_FOUND)
+  target_link_libraries (seastar
+    PRIVATE
+      debug Sanitizers::address
+      debug Sanitizers::undefined_behavior)
+endif ()
 
 #
 # We want asserts enabled on all modes, but cmake defaults to passing
@@ -792,10 +797,10 @@ if (Seastar_INSTALL)
   # Necessary here for pkg-config.
   include (GNUInstallDirs)
 
-  if (NOT ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug"))
-    set (Sanitizers_PKGCONFIG_COMPILER_OPTIONS "")
-  else ()
+  if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND Sanitizers_FOUND)
     set (Sanitizers_PKGCONFIG_COMPILER_OPTIONS ${Sanitizers_COMPILER_OPTIONS})
+  else ()
+    set (Sanitizers_PKGCONFIG_COMPILER_OPTIONS "")
   endif ()
 
   configure_file (
