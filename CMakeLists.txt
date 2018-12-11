@@ -637,7 +637,7 @@ endif()
 
 if ((CMAKE_BUILD_TYPE STREQUAL "Debug") OR (CMAKE_BUILD_TYPE STREQUAL "Sanitize"))
   if (NOT Sanitizers_FOUND)
-    message (FATAL_ERROR "Sanitizers are required for debug and sanitize modes!")
+    message (WARNING "Sanitizers are required for debug mode and sanitize modes!")
   endif ()
 endif ()
 
@@ -662,11 +662,13 @@ target_link_libraries (seastar
     yaml-cpp::yaml-cpp)
 
 if ((CMAKE_BUILD_TYPE STREQUAL "Debug") OR (CMAKE_BUILD_TYPE STREQUAL "Sanitize"))
-  set (Seastar_Sanitizers_OPTIONS ${Sanitizers_COMPILER_OPTIONS})
-  target_link_libraries (seastar
-    PUBLIC
-      Sanitizers::address
-      Sanitizers::undefined_behavior)
+  if (Sanitizers_FOUND)
+    set (Seastar_Sanitizers_OPTIONS ${Sanitizers_COMPILER_OPTIONS})
+    target_link_libraries (seastar
+      PUBLIC
+        Sanitizers::address
+        Sanitizers::undefined_behavior)
+  endif()
 endif ()
 
 #
