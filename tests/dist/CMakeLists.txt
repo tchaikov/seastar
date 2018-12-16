@@ -20,15 +20,20 @@
 # Copyright (C) 2018 Scylladb, Ltd.
 #
 
+set(srcs
+  consumer/Makefile
+  consumer/cmake_consumer.cc
+  consumer/pkgconfig_consumer.cc
+  consumer/recipe/test_dist.cmake)
+
+foreach(file ${srcs})
+  list(APPEND src_srcs ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+  list(APPEND bin_srcs ${CMAKE_CURRENT_BINARY_DIR}/${file})
+endforeach()
+
 add_custom_command (
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/consumer
-  DEPENDS
-    ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/consumer/CMakeLists.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/consumer/Makefile
-    ${CMAKE_CURRENT_SOURCE_DIR}/consumer/cmake_consumer.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/consumer/pkgconfig_consumer.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/consumer/recipe/test_dist.cmake
+  OUTPUT ${bin_srcs}
+  DEPENDS ${out_srcs}
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/consumer ${CMAKE_CURRENT_BINARY_DIR}/consumer)
 
 configure_file (
@@ -37,7 +42,8 @@ configure_file (
   COPYONLY)
 
 add_custom_target (test_dist_consumer_test_run
-  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/consumer
+  DEPENDS
+    ${bin_srcs}
   COMMAND
     ${CMAKE_COMMAND} -E env
     CONSUMER_SOURCE_DIR=${CMAKE_CURRENT_BINARY_DIR}/consumer
