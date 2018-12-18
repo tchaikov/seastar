@@ -160,8 +160,8 @@ cooking_ingredient (GnuTLS
     gmp
     nettle
   EXTERNAL_PROJECT_ARGS
-    URL https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.18.tar.xz
-    URL_MD5 c2d93d305ecbc55939bc2a8ed4a76a3d
+    URL https://www.gnupg.org/ftp/gcrypt/gnutls/v3.3/gnutls-3.3.26.tar.xz
+    URL_MD5 9840c06019bfa7db07ed8fd5e63106d5
     CONFIGURE_COMMAND
      ${CMAKE_COMMAND} -E env ${PKG_CONFIG_PATH}
       <SOURCE_DIR>/configure
@@ -180,8 +180,8 @@ cooking_ingredient (GnuTLS
 cooking_ingredient (Protobuf
   REQUIRES zlib
   EXTERNAL_PROJECT_ARGS
-    URL https://github.com/protocolbuffers/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
-    URL_MD5 73c28d3044e89782bdc8d9fdcfbb5792
+    URL https://github.com/protocolbuffers/protobuf/releases/download/v2.5.0/protobuf-2.5.0.tar.gz
+    URL_MD5 b751f772bdeb2812a2a8e7202bf1dae8
     CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> --srcdir=<SOURCE_DIR>
     BUILD_COMMAND <DISABLE>
     INSTALL_COMMAND ${make_command} install)
@@ -191,8 +191,8 @@ cooking_ingredient (hwloc
     numactl
     libpciaccess
   EXTERNAL_PROJECT_ARGS
-    URL https://download.open-mpi.org/release/hwloc/v1.11/hwloc-1.11.5.tar.gz
-    URL_MD5 8f5fe6a9be2eb478409ad5e640b2d3ba
+    URL https://download.open-mpi.org/release/hwloc/v1.11/hwloc-1.11.2.tar.gz
+    URL_MD5 e4ca55c2a5c5656da4a4e37c8fc51b23
     CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> --srcdir=<SOURCE_DIR>
     BUILD_COMMAND <DISABLE>
     INSTALL_COMMAND ${make_command} install)
@@ -228,8 +228,8 @@ cooking_ingredient (yaml-cpp
     -DYAML_CPP_BUILD_TESTS=OFF
     -DBUILD_SHARED_LIBS=ON
   EXTERNAL_PROJECT_ARGS
-    URL https://github.com/jbeder/yaml-cpp/archive/yaml-cpp-0.5.3.tar.gz
-    URL_MD5 2bba14e6a7f12c7272f87d044e4a7211)
+    URL https://github.com/jbeder/yaml-cpp/archive/release-0.5.1.tar.gz
+    URL_MD5 76c47d4a961797092650806dfdfc6cd9)
 
 ##
 ## Public dependencies.
@@ -289,8 +289,8 @@ cooking_ingredient (fmt
 
 cooking_ingredient (lz4
   EXTERNAL_PROJECT_ARGS
-    URL https://github.com/lz4/lz4/archive/v1.8.0.tar.gz
-    URL_MD5 6247bf0e955899969d1600ff34baed6b
+    URL https://github.com/lz4/lz4/archive/v1.7.3.tar.gz
+    URL_MD5 7e94b203f8c85e600c430017a9ef8b3d
     # This is upsetting.
     BUILD_IN_SOURCE ON
     CONFIGURE_COMMAND <DISABLE>
