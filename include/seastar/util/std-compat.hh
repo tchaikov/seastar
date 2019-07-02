@@ -275,6 +275,14 @@ namespace filesystem = std::experimental::filesystem;
 #error No filesystem header detected.
 #endif
 
+template<class T>
+typename std::remove_reference_t<T> copy_elision(T&& t) noexcept {
+#if defined(__cpp_guaranteed_copy_elision)
+  return t;
+#else
+  return std::move(t);
+#endif
+}
 using string_view = basic_string_view<char>;
 
 } // namespace compat
