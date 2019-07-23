@@ -151,9 +151,17 @@ set (Seastar_ALLOC_PAGE_SIZE
   STRING
   "Override the Seastar allocator page size, in bytes.")
 
+
+# When Seastar is embedded with `add_subdirectory`, disable the non-library targets.
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  set (Seastar_standalone ON)
+else()
+  set (Seastar_standalone OFF)
+endif()
+
 option (Seastar_APPS
   "Enable application targets."
-  ON)
+  ${Seastar_standalone})
 
 set (Seastar_CXX_DIALECT
   "gnu++17"
@@ -169,11 +177,11 @@ set (Seastar_CXX_FLAGS
 
 option (Seastar_DEMOS
   "Enable demonstration targets."
-  ON)
+  ${Seastar_standalone})
 
 option (Seastar_DOCS
   "Enable documentation targets."
-  ON)
+  ${Seastar_standalone})
 
 option (Seastar_DPDK
   "Enable DPDK support."
@@ -217,7 +225,7 @@ set (Seastar_LD_FLAGS
 
 option (Seastar_INSTALL
   "Install targets."
-  ON)
+  ${Seastar_standalone})
 
 option (Seastar_NUMA
   "Enable NUMA support."
@@ -229,7 +237,7 @@ option (Seastar_STD_OPTIONAL_VARIANT_STRINGVIEW
 
 option (Seastar_TESTING
   "Enable testing targets."
-  ON)
+  ${Seastar_standalone})
 
 option (Seastar_COMPRESS_DEBUG
   "Compress debug info."
@@ -248,15 +256,6 @@ set (Seastar_TEST_TIMEOUT
 option (Seastar_UNUSED_RESULT_ERROR
   "Make [[nodiscard]] violations an error (instead of a warning)."
   OFF)
-
-# When Seastar is embedded with `add_subdirectory`, disable the non-library targets.
-if (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
-  set (Seastar_APPS OFF)
-  set (Seastar_DEMOS OFF)
-  set (Seastar_DOCS OFF)
-  set (Seastar_INSTALL OFF)
-  set (Seastar_TESTING OFF)
-endif ()
 
 #
 # Useful (non-cache) variables.
