@@ -152,6 +152,7 @@ public:
 /// becomes ready.
 class thread {
     std::unique_ptr<thread_context> _context;
+    compat::optional<future<>> _done;
     static thread_local thread* _current;
 public:
     /// \brief Constructs a \c thread object that does not represent a thread
@@ -183,6 +184,7 @@ public:
     /// Waits for thread execution to terminate, and marks the thread object as not
     /// representing a running thread of execution.
     future<> join();
+    bool joinable() const;
     /// \brief Voluntarily defer execution of current thread.
     ///
     /// Gives other threads/fibers a chance to run on current CPU.
@@ -208,7 +210,8 @@ public:
 template <typename Func>
 inline
 thread::thread(thread_attributes attr, Func func)
-        : _context(std::make_unique<thread_context>(std::move(attr), std::move(func))) {
+        : _context(std::make_unique<thread_context>(std::move(attr), std::move(func))),
+          _done(_context->_done.get_future()) {
 }
 
 template <typename Func>
@@ -221,7 +224,13 @@ inline
 future<>
 thread::join() {
     _context->_joined = true;
-    return _context->_done.get_future();
+    return std::move(*_done);
+}
+
+inline
+bool
+thread::joinable() const {
+    return _done && _done->available();
 }
 
 /// Executes a callable in a seastar thread.
