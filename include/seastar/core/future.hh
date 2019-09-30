@@ -407,6 +407,11 @@ struct future_state :  public future_state_base, private internal::uninitialized
         }
         _u.st = state::invalid;
     }
+    void ignore_result() noexcept {
+        if (_u.st == state::result) {
+            _u.st = state::result_unavailable;
+        }
+    }
     using get0_return_type = typename internal::get0_return_type<T...>::type;
     static get0_return_type get0(std::tuple<T...>&& x) {
         return internal::get0_return_type<T...>::get0(std::move(x));
@@ -1140,7 +1145,7 @@ public:
     /// \param func - function to be called when the future becomes available,
     /// \return a \c future representing the return value of \c func, applied
     ///         to the eventual value of this future.
-    template <typename Func, typename Result = futurize_t<std::result_of_t<Func(future)>>>
+    template <typename Func, typename Result = futurize_t<std::result_of_t<Func(future&&)>>>
     GCC6_CONCEPT( requires ::seastar::CanApply<Func, future> )
     Result
     then_wrapped(Func&& func) noexcept {
@@ -1156,12 +1161,17 @@ public:
 
 private:
 
-    template <typename Func, typename Result = futurize_t<std::result_of_t<Func(future)>>>
+    template <typename Func, typename Result = futurize_t<std::result_of_t<Func(future&&)>>>
     Result
     then_wrapped_impl(Func&& func) noexcept {
-        using futurator = futurize<std::result_of_t<Func(future)>>;
+        using futurator = futurize<std::result_of_t<Func(future&&)>>;
         if (available() && !need_preempt()) {
-            return futurator::apply(std::forward<Func>(func), future(get_available_state()));
+            if (_promise) {
+              detach_promise();
+            }
+            auto futret = futurator::apply(std::forward<Func>(func), std::move(*this));
+            _state.ignore_result();
+            return futret;
         }
         typename futurator::type fut(future_for_get_promise_marker{});
         // If there is a std::bad_alloc in schedule() there is nothing that can be done about it, we cannot break future
