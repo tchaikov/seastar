@@ -368,7 +368,7 @@ struct future_state :  public future_state_base, private internal::uninitialized
         assert(_u.st == state::result);
         return this->uninitialized_get();
     }
-    std::tuple<T...> take() && {
+    std::tuple<T...>&& take() && {
         assert(_u.st != state::future);
         if (_u.st >= state::exception_min) {
             // Move ex out so future::~future() knows we've handled it
@@ -377,7 +377,7 @@ struct future_state :  public future_state_base, private internal::uninitialized
         _u.st = state::result_unavailable;
         return std::move(this->uninitialized_get());
     }
-    std::tuple<T...> get() && {
+    std::tuple<T...>&& get() && {
         assert(_u.st != state::future);
         if (_u.st >= state::exception_min) {
             // Move ex out so future::~future() knows we've handled it
@@ -385,7 +385,7 @@ struct future_state :  public future_state_base, private internal::uninitialized
         }
         return std::move(this->uninitialized_get());
     }
-    std::tuple<T...> get() const& {
+    const std::tuple<T...>& get() const& {
         assert(_u.st != state::future);
         if (_u.st >= state::exception_min) {
             std::rethrow_exception(_u.ex);
@@ -992,7 +992,14 @@ public:
     /// then it need not be available; instead, the thread will
     /// be paused until the future becomes available.
     [[gnu::always_inline]]
-    std::tuple<T...> get() {
+    std::tuple<T...> get() & {
+        if (!_state.available()) {
+            do_wait();
+        }
+        return get_available_state().take();
+    }
+    [[gnu::always_inline]]
+    std::tuple<T...>&& get() && {
         if (!_state.available()) {
             do_wait();
         }
