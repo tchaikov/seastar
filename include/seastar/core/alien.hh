@@ -130,21 +130,22 @@ void run_on(unsigned shard, Func func) {
 
 namespace internal {
 template<typename Func>
-using return_tuple_t = typename futurize<std::result_of_t<Func()>>::tuple_type;
+using return_value_t = typename futurize<std::result_of_t<Func()>>::value_type;
+
 
 template<typename Func,
-         bool = std::is_empty<return_tuple_t<Func>>::value>
+         bool = std::is_void_v<std::result_of_t<Func()>>>
 struct return_type_of {
     using type = void;
-    static void set(std::promise<void>& p, std::tuple<>&&) {
+    static void set(std::promise<void>& p, return_value_t<Func>&&) {
         p.set_value();
     }
 };
 template<typename Func>
 struct return_type_of<Func, false> {
-    using type = std::tuple_element_t<0, return_tuple_t<Func>>;
-    static void set(std::promise<type>& p, std::tuple<type>&& t) {
-        p.set_value(std::get<0>(std::move(t)));
+    using type = return_value_t<Func>;
+    static void set(std::promise<type>& p, return_value_t<Func>&& t) {
+        p.set_value(std::move(t));
     }
 };
 template <typename Func> using return_type_t = typename return_type_of<Func>::type;
