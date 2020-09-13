@@ -27,6 +27,7 @@
 #include <malloc.h>
 #include <algorithm>
 #include <cstddef>
+#include <string_view>
 
 namespace seastar {
 
