@@ -221,6 +221,10 @@ option (Seastar_DPDK
   "Enable DPDK support."
   OFF)
 
+option (Seastar_SPDK
+  "Enable SPDK support."
+  OFF)
+
 option (Seastar_EXCLUDE_APPS_FROM_ALL
   "When enabled alongside Seastar_APPS, do not build applications by default."
   OFF)
@@ -521,6 +525,10 @@ add_library (seastar STATIC
   include/seastar/core/simple-stream.hh
   include/seastar/core/slab.hh
   include/seastar/core/sleep.hh
+  include/seastar/core/spdk_app.hh
+  include/seastar/core/spdk_bdev.hh
+  include/seastar/core/spdk_options.hh
+  include/seastar/core/spdk_thread.hh
   include/seastar/core/sstring.hh
   include/seastar/core/stall_sampler.hh
   include/seastar/core/stream.hh
@@ -653,6 +661,10 @@ add_library (seastar STATIC
   src/core/scollectd-impl.hh
   src/core/systemwide_memory_barrier.cc
   src/core/smp.cc
+  src/core/spdk_app.cc
+  src/core/spdk_bdev.cc
+  src/core/spdk_options.cc
+  src/core/spdk_thread.cc
   src/core/sstring.cc
   src/core/thread.cc
   src/core/uname.cc
@@ -759,6 +771,12 @@ target_link_libraries (seastar
     yaml-cpp::yaml-cpp
     Valgrind::valgrind
     Threads::Threads)
+
+if (Seastar_SPDK)
+  target_link_libraries (seastar
+    PRIVATE
+      spdk::spdk)
+endif ()
 
 set (Seastar_SANITIZE_MODES "Debug" "Sanitize")
 if ((Seastar_SANITIZE STREQUAL "ON") OR
@@ -921,6 +939,16 @@ if (Seastar_DPDK)
   # This just provides the include path to cmake
   target_link_libraries (seastar
     PUBLIC dpdk::dpdk)
+endif ()
+
+if (Seastar_SPDK)
+  target_compile_definitions (seastar
+    PUBLIC SEASTAR_HAVE_SPDK)
+  target_link_libraries (seastar
+    PUBLIC spdk::spdk)
+endif ()
+if (Seastar_DPDK AND Seastar_SPDK)
+  message (FATAL_ERROR "DPDK and SPDK support cannot be enabled at the same time!")
 endif ()
 
 if (Seastar_HWLOC)
@@ -1255,6 +1283,7 @@ if (Seastar_INSTALL)
       ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Findlksctp-tools.cmake
       ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Findlz4.cmake
       ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Findnumactl.cmake
+      ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Findspdk.cmake
       ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Findragel.cmake
       ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Findrt.cmake
       ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Findyaml-cpp.cmake

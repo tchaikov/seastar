@@ -25,6 +25,7 @@
 #include <seastar/core/future.hh>
 #include <seastar/core/smp.hh>
 #include <seastar/core/smp_options.hh>
+#include <seastar/core/spdk_options.hh>
 #include <seastar/core/sstring.hh>
 #include <seastar/util/program-options.hh>
 #include <seastar/core/metrics_api.hh>
@@ -106,7 +107,10 @@ public:
         scollectd::options scollectd_opts;
         /// Configuration for the logging sub-system.
         log_cli::options log_opts;
-
+#ifdef SEASTAR_HAVE_SPDK
+        /// Configuration for SPDK
+        spdk::options spdk_opts;
+#endif
         seastar_options();
     };
 

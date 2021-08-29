@@ -85,6 +85,11 @@ add_tristate(
     help = 'DPDK support')
 add_tristate(
     arg_parser,
+    name = 'spdk',
+    dest = 'spdk',
+    help = 'SPDK support')
+add_tristate(
+    arg_parser,
     name = 'hwloc',
     dest = 'hwloc',
     help = 'hwloc support')
@@ -199,6 +204,7 @@ def configure_mode(mode):
         tr(CFLAGS, 'CXX_FLAGS'),
         tr(LDFLAGS, 'LD_FLAGS'),
         tr(args.dpdk, 'DPDK'),
+        tr(args.spdk, 'SPDK'),
         tr(infer_dpdk_machine(args.user_cflags), 'DPDK_MACHINE'),
         tr(args.hwloc, 'HWLOC', value_when_none='yes'),
         tr(args.io_uring, 'IO_URING', value_when_none=None),
@@ -216,6 +222,9 @@ def configure_mode(mode):
 
     if args.dpdk:
         ingredients_to_cook.add('dpdk')
+
+    if args.spdk:
+        ingredients_to_cook.add('spdk')
 
     # Generate a new build by pointing to the source directory.
     if ingredients_to_cook:

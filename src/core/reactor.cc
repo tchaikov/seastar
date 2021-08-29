@@ -96,6 +96,9 @@
 #include <seastar/core/dpdk_rte.hh>
 #include <rte_lcore.h>
 #include <rte_launch.h>
+#elif defined(SEASTAR_HAVE_SPDK)
+#include <seastar/core/spdk_app.hh>
+#include <spdk/env.h>
 #endif
 #include <seastar/core/prefetch.hh>
 #include <exception>
@@ -3530,6 +3533,11 @@ smp_options::smp_options(program_options::option_group* parent_group)
 #else
     , allow_cpus_in_remote_numa_nodes(*this, "allow-cpus-in-remote-numa-nodes", program_options::unused{})
 #endif
+#ifdef SEASTAR_HAVE_SPDK
+    , use_spdk(*this, "use-spdk", "Use SPDK PMD drivers")
+#else
+    , use_spdk(*this, "use-spdk", program_options::unused{})
+#endif
 {
 }
 
@@ -3562,7 +3570,7 @@ void smp::start_all_queues()
     _alien._qs[this_shard_id()].start();
 }
 
-#ifdef SEASTAR_HAVE_DPDK
+#if defined(SEASTAR_HAVE_DPDK) || defined(SEASTAR_HAVE_SPDK)
 
 int dpdk_thread_adaptor(void* f)
 {
@@ -3579,6 +3587,11 @@ void smp::join_all()
         rte_eal_mp_wait_lcore();
         return;
     }
+#elif defined(SEASTAR_HAVE_SPDK)
+    if (_using_spdk) {
+        spdk_env_thread_wait_all();
+        return;
+    }
 #endif
     for (auto&& t: smp::_threads) {
         t.join();
@@ -3586,8 +3599,8 @@ void smp::join_all()
 }
 
 void smp::pin(unsigned cpu_id) {
-    if (_using_dpdk) {
-        // dpdk does its own pinning
+    if (_using_dpdk || _using_spdk) {
+        // dpdk/spdk does its own pinning
         return;
     }
     pin_this_thread(cpu_id);
@@ -3616,6 +3629,11 @@ void smp::allocate_reactor(unsigned id, reactor_backend_selector rbs, reactor_co
 void smp::cleanup() noexcept {
     smp::_threads = std::vector<posix_thread>();
     _thread_loops.clear();
+#ifdef SEASTAR_HAVE_SPDK
+    if (_using_spdk) {
+        spdk::env::stop();
+    }
+#endif
 }
 
 void smp::cleanup_cpu() {
@@ -3632,7 +3650,7 @@ void smp::cleanup_cpu() {
 }
 
 void smp::create_thread(std::function<void ()> thread_loop) {
-    if (_using_dpdk) {
+    if (_using_dpdk || _using_spdk) {
         _thread_loops.push_back(std::move(thread_loop));
     } else {
         _threads.emplace_back(std::move(thread_loop));
@@ -3842,7 +3860,11 @@ unsigned smp::adjust_max_networking_aio_io_control_blocks(unsigned network_iocbs
     return network_iocbs;
 }
 
+#ifdef SEASTAR_HAVE_SPDK
+void smp::configure(const smp_options& smp_opts, const reactor_options& reactor_opts, const spdk::options& spdk_opts)
+#else
 void smp::configure(const smp_options& smp_opts, const reactor_options& reactor_opts)
+#endif
 {
 #ifndef SEASTAR_NO_EXCEPTION_HACK
     if (smp_opts.enable_glibc_exception_scaling_workaround.get_value()) {
@@ -3878,6 +3900,8 @@ void smp::configure(const smp_options& smp_opts, const reactor_options& reactor_
 #ifdef SEASTAR_HAVE_DPDK
     const auto* native_stack = dynamic_cast<const net::native_stack_options*>(reactor_opts.network_stack.get_selected_candidate_opts());
     _using_dpdk = native_stack && native_stack->dpdk_pmd;
+#elif defined(SEASTAR_HAVE_SPDK)
+    _using_spdk = smp_opts.use_spdk;
 #endif
     auto thread_affinity = smp_opts.thread_affinity.get_value();
     if (reactor_opts.overprovisioned
@@ -3886,6 +3910,8 @@ void smp::configure(const smp_options& smp_opts, const reactor_options& reactor_
     }
     if (!thread_affinity && _using_dpdk) {
         fmt::print("warning: --thread-affinity 0 ignored in dpdk mode\n");
+    } else if (!thread_affinity && _using_spdk) {
+        fmt::print("warning: --thread-affinity 0 ignored in spdk mode\n");
     }
     auto mbind = smp_opts.mbind.get_value();
     if (!thread_affinity) {
@@ -4033,6 +4059,15 @@ void smp::configure(const smp_options& smp_opts, const reactor_options& reactor_
         }
         dpdk::eal::init(cpus, reactor_opts._argv0, hugepages_path, native_stack ? bool(native_stack->dpdk_pmd) : false);
     }
+#elif defined(SEASTAR_HAVE_SPDK)
+    if (_using_spdk) {
+        try {
+            spdk::env::start(allocations, spdk_opts);
+        } catch (const std::exception& e) {
+            seastar_logger.error(e.what());
+            _exit(1);
+        }
+    }
 #endif
 
     // Better to put it into the smp class, but at smp construction time
@@ -4160,6 +4195,20 @@ void smp::configure(const smp_options& smp_opts, const reactor_options& reactor_
         auto it = _thread_loops.begin();
         RTE_LCORE_FOREACH_SLAVE(i) {
             rte_eal_remote_launch(dpdk_thread_adaptor, static_cast<void*>(&*(it++)), i);
+        }
+    }
+#elif defined(SEASTAR_HAVE_SPDK)
+    if (_using_spdk) {
+        auto it = _thread_loops.begin();
+        SPDK_ENV_FOREACH_CORE(i) {
+            if (i == spdk_env_get_current_core()) {
+                continue;
+            }
+            int rc = spdk_env_thread_launch_pinned(i, dpdk_thread_adaptor, static_cast<void*>(&*(it++)));
+            if (rc < 0) {
+                seastar_logger.error("Unable to start reactor thread on core {} using SPDK", i);
+                _exit(1);
+            }
         }
     }
 #endif

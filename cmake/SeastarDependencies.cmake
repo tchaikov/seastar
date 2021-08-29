@@ -100,6 +100,7 @@ macro (seastar_find_dependencies)
     lksctp-tools # No version information published.
     numactl # No version information published.
     rt
+    spdk
     yaml-cpp)
 
   # Arguments to `find_package` for each 3rd-party dependency.
@@ -140,6 +141,16 @@ macro (seastar_find_dependencies)
     OPTION ${Seastar_NUMA})
   seastar_set_dep_args (yaml-cpp REQUIRED
     VERSION 0.5.1)
+  seastar_set_dep_args (spdk
+    OPTION ${Seastar_SPDK}
+    VERSION 22.05.0
+    COMPONENTS
+      event_bdev
+      event_accel
+      bdev
+      accel
+      init
+      env_dpdk)
 
   foreach (third_party ${_seastar_all_dependencies})
     if (NOT _seastar_dep_skip_${third_party})
