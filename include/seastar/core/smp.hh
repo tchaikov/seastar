@@ -301,6 +301,7 @@ class smp : public std::enable_shared_from_this<smp> {
     static thread_local smp_message_queue**_qs;
     static thread_local std::thread::id _tmain;
     bool _using_dpdk = false;
+    bool _using_spdk = false;
 
     template <typename Func>
     using returns_future = is_future<std::result_of_t<Func()>>;
