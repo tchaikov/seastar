@@ -93,6 +93,9 @@
 #include <seastar/core/dpdk_rte.hh>
 #include <rte_lcore.h>
 #include <rte_launch.h>
+#elif defined(SEASTAR_HAVE_SPDK)
+#include <seastar/core/spdk_app.hh>
+#include <spdk/env.h>
 #endif
 #include <seastar/core/prefetch.hh>
 #include <exception>
@@ -3573,6 +3576,9 @@ smp::get_options_description()
 #ifdef SEASTAR_HAVE_HWLOC
         ("allow-cpus-in-remote-numa-nodes", bpo::value<bool>()->default_value(true), "if some CPUs are found not to have any local NUMA nodes, allow assigning them to remote ones")
 #endif
+#ifdef SEASTAR_HAVE_SPDK
+        ("spdk-pmd", "Use SPDK PMD drivers")
+#endif
         ;
     return opts;
 }
@@ -3606,7 +3612,7 @@ void smp::start_all_queues()
     _alien._qs[this_shard_id()].start();
 }
 
-#ifdef SEASTAR_HAVE_DPDK
+#if defined(SEASTAR_HAVE_DPDK) || defined(SEASTAR_HAVE_SPDK)
 
 int dpdk_thread_adaptor(void* f)
 {
@@ -3623,6 +3629,11 @@ void smp::join_all()
         rte_eal_mp_wait_lcore();
         return;
     }
+#elif defined(SEASTAR_HAVE_SPDK)
+    if (_using_spdk) {
+        spdk_env_thread_wait_all();
+        return;
+    }
 #endif
     for (auto&& t: smp::_threads) {
         t.join();
@@ -3630,8 +3641,8 @@ void smp::join_all()
 }
 
 void smp::pin(unsigned cpu_id) {
-    if (_using_dpdk) {
-        // dpdk does its own pinning
+    if (_using_dpdk || _using_spdk) {
+        // dpdk/spdk does its own pinning
         return;
     }
     pin_this_thread(cpu_id);
@@ -3660,6 +3671,11 @@ void smp::allocate_reactor(unsigned id, reactor_backend_selector rbs, reactor_co
 void smp::cleanup() noexcept {
     smp::_threads = std::vector<posix_thread>();
     _thread_loops.clear();
+#ifdef SEASTAR_HAVE_SPDK
+    if (_using_spdk) {
+        spdk::env::stop();
+    }
+#endif
 }
 
 void smp::cleanup_cpu() {
@@ -3676,7 +3692,7 @@ void smp::cleanup_cpu() {
 }
 
 void smp::create_thread(std::function<void ()> thread_loop) {
-    if (_using_dpdk) {
+    if (_using_dpdk || _using_spdk) {
         _thread_loops.push_back(std::move(thread_loop));
     } else {
         _threads.emplace_back(std::move(thread_loop));
@@ -3918,6 +3934,8 @@ void smp::configure(boost::program_options::variables_map configuration, reactor
 
 #ifdef SEASTAR_HAVE_DPDK
     _using_dpdk = configuration.count("dpdk-pmd");
+#elif defined(SEASTAR_HAVE_SPDK)
+    _using_spdk = configuration.count("spdk-pmd");
 #endif
     auto thread_affinity = configuration["thread-affinity"].as<bool>();
     if (configuration.count("overprovisioned")
@@ -3926,6 +3944,8 @@ void smp::configure(boost::program_options::variables_map configuration, reactor
     }
     if (!thread_affinity && _using_dpdk) {
         fmt::print("warning: --thread-affinity 0 ignored in dpdk mode\n");
+    } else if (!thread_affinity && _using_spdk) {
+        fmt::print("warning: --thread-affinity 0 ignored in spdk mode\n");
     }
     auto mbind = configuration["mbind"].as<bool>();
     if (!thread_affinity) {
@@ -4071,6 +4091,15 @@ void smp::configure(boost::program_options::variables_map configuration, reactor
         }
         dpdk::eal::init(cpus, configuration);
     }
+#elif defined(SEASTAR_HAVE_SPDK)
+    if (_using_spdk) {
+        try {
+            spdk::env::start(allocations, configuration);
+        } catch (const std::exception& e) {
+            seastar_logger.error(e.what());
+            _exit(1);
+        }
+    }
 #endif
 
     // Better to put it into the smp class, but at smp construction time
@@ -4187,6 +4216,20 @@ void smp::configure(boost::program_options::variables_map configuration, reactor
         auto it = _thread_loops.begin();
         RTE_LCORE_FOREACH_WORKER(i) {
             rte_eal_remote_launch(dpdk_thread_adaptor, static_cast<void*>(&*(it++)), i);
+        }
+    }
+#elif defined(SEASTAR_HAVE_SPDK)
+    if (_using_spdk) {
+        auto it = _thread_loops.begin();
+        SPDK_ENV_FOREACH_CORE(i) {
+            if (i == spdk_env_get_current_core()) {
+                continue;
+            }
+            int rc = spdk_env_thread_launch_pinned(i, dpdk_thread_adaptor, static_cast<void*>(&*(it++)));
+            if (rc < 0) {
+                seastar_logger.error("Unable to start reactor thread on core {} using SPDK", i);
+                _exit(1);
+            }
         }
     }
 #endif
