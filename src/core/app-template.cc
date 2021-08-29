@@ -61,6 +61,9 @@ app_template::seastar_options::seastar_options()
     , smp_opts(this)
     , scollectd_opts(this)
     , log_opts(this)
+#ifdef SEASTAR_HAVE_SPDK
+    , spdk_opts(this)
+#endif
 {
 }
 
@@ -238,7 +241,11 @@ app_template::run_deprecated(int ac, char ** av, std::function<void ()>&& func) 
     }
 
     try {
+#ifdef SEASTAR_HAVE_SPDK
+        _smp->configure(_opts.smp_opts, _opts.reactor_opts, _opts.spdk_opts);
+#else
         _smp->configure(_opts.smp_opts, _opts.reactor_opts);
+#endif
     } catch (...) {
         std::cerr << "Could not initialize seastar: " << std::current_exception() << std::endl;
         return 1;

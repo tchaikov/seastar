@@ -78,6 +78,10 @@ struct smp_options : public program_options::option_group {
     /// them to remote ones.
     /// \note Unused when seastar is compiled without \p HWLOC support.
     program_options::value<bool> allow_cpus_in_remote_numa_nodes;
+    /// Enable SPDK PMD drivers
+    ///
+    /// Default: \p false.
+    program_options::value<> use_spdk;
 
 public:
     smp_options(program_options::option_group* parent_group);

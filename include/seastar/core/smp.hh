@@ -49,6 +49,12 @@ class instance;
 
 }
 
+namespace spdk {
+
+struct options;
+
+}
+
 namespace internal {
 
 unsigned smp_service_group_id(smp_service_group ssg) noexcept;
@@ -305,6 +311,7 @@ class smp : public std::enable_shared_from_this<smp> {
     static thread_local smp_message_queue**_qs;
     static thread_local std::thread::id _tmain;
     bool _using_dpdk = false;
+    bool _using_spdk = false;
 
     template <typename Func>
     using returns_future = is_future<std::invoke_result_t<Func>>;
@@ -312,7 +319,11 @@ class smp : public std::enable_shared_from_this<smp> {
     using returns_void = std::is_same<std::invoke_result_t<Func>, void>;
 public:
     explicit smp(alien::instance& alien) : _alien(alien) {}
+#ifdef SEASTAR_HAVE_SPDK
+    void configure(const smp_options& smp_opts, const reactor_options& reactor_opts, const spdk::options& spdk_opts);
+#else
     void configure(const smp_options& smp_opts, const reactor_options& reactor_opts);
+#endif
     void cleanup() noexcept;
     void cleanup_cpu();
     void arrive_at_event_loop_end();
