@@ -111,5 +111,10 @@ seastar_add_demo (sharded_parameter
 seastar_add_demo (file
   SOURCES file_demo.cc)
 
+if (Seastar_SPDK)
+  seastar_add_demo (spdk_bdev
+    SOURCES spdk_bdev_demo.cc)
+endif ()
+
 seastar_add_demo (tutorial_examples
   SOURCES tutorial_examples.cc)
