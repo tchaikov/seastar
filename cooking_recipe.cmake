@@ -299,3 +299,14 @@ cooking_ingredient (lz4
     CONFIGURE_COMMAND <DISABLE>
     BUILD_COMMAND <DISABLE>
     INSTALL_COMMAND ${make_command} PREFIX=<INSTALL_DIR> install)
+
+cooking_ingredient (spdk
+  EXTERNAL_PROJECT_ARGS
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/spdk
+    BUILD_IN_SOURCE ON
+    CONFIGURE_COMMAND
+      <SOURCE_DIR>/configure --with-dpdk --without-isal --disable-tests --disable-unit-tests --disable-examples --disable-apps --prefix=<INSTALL_DIR>
+    BUILD_COMMAND
+      ${make_command}
+    INSTALL_COMMAND
+      ${make_command} install)

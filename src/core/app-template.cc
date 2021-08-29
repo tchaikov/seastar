@@ -23,6 +23,7 @@
 #include <seastar/core/reactor.hh>
 #include <seastar/core/alien.hh>
 #include <seastar/core/scollectd.hh>
+#include <seastar/core/spdk_app.hh>
 #include <seastar/core/metrics_api.hh>
 #include <boost/program_options.hpp>
 #include <seastar/core/print.hh>
@@ -67,7 +68,9 @@ app_template::app_template(app_template::config cfg)
         _opts_conf_file.add(smp::get_options_description());
         _opts_conf_file.add(scollectd::get_options_description());
         _opts_conf_file.add(log_cli::get_options_description());
-
+#ifdef SEASTAR_HAVE_SPDK
+        _opts_conf_file.add(spdk::app::get_options_description());
+#endif
         _opts.add(_opts_conf_file);
 }
 

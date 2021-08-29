@@ -93,6 +93,9 @@
 #include <seastar/core/dpdk_rte.hh>
 #include <rte_lcore.h>
 #include <rte_launch.h>
+#elif defined(SEASTAR_HAVE_SPDK)
+#include <seastar/core/spdk_app.hh>
+#include <spdk/env.h>
 #endif
 #include <seastar/core/prefetch.hh>
 #include <exception>
@@ -3669,6 +3672,11 @@ void smp::allocate_reactor(unsigned id, reactor_backend_selector rbs, reactor_co
 void smp::cleanup() noexcept {
     smp::_threads = std::vector<posix_thread>();
     _thread_loops.clear();
+#ifdef SEASTAR_HAVE_SPDK
+    if (_using_spdk) {
+        spdk::env::stop();
+    }
+#endif
 }
 
 void smp::cleanup_cpu() {
@@ -3927,6 +3935,8 @@ void smp::configure(boost::program_options::variables_map configuration, reactor
 
 #ifdef SEASTAR_HAVE_DPDK
     _using_dpdk = configuration.count("dpdk-pmd");
+#elif defined(SEASTAR_HAVE_SPDK)
+    _using_spdk = configuration.count("spdk-pmd");
 #endif
     auto thread_affinity = configuration["thread-affinity"].as<bool>();
     if (configuration.count("overprovisioned")
@@ -3935,6 +3945,8 @@ void smp::configure(boost::program_options::variables_map configuration, reactor
     }
     if (!thread_affinity && _using_dpdk) {
         fmt::print("warning: --thread-affinity 0 ignored in dpdk mode\n");
+    } else if (!thread_affinity && _using_spdk) {
+        fmt::print("warning: --thread-affinity 0 ignored in spdk mode\n");
     }
     auto mbind = configuration["mbind"].as<bool>();
     if (!thread_affinity) {
@@ -4079,6 +4091,15 @@ void smp::configure(boost::program_options::variables_map configuration, reactor
             cpus[a.cpu_id] = true;
         }
         dpdk::eal::init(cpus, configuration);
+    }
+#elif defined(SEASTAR_HAVE_SPDK)
+    if (_using_spdk) {
+        try {
+            spdk::env::start(allocations, configuration);
+        } catch (const std::exception& e) {
+            seastar_logger.error(e.what());
+            _exit(1);
+        }
     }
 #endif
 

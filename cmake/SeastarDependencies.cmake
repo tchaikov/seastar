@@ -53,6 +53,7 @@ macro (seastar_find_dependencies)
     c-ares
     cryptopp
     dpdk # No version information published.
+    spdk
     fmt
     lz4
     # Private and private/public dependencies.
@@ -92,6 +93,15 @@ macro (seastar_find_dependencies)
   set (_seastar_dep_args_lksctp-tools REQUIRED)
   set (_seastar_dep_args_rt REQUIRED)
   set (_seastar_dep_args_yaml-cpp 0.5.1 REQUIRED)
+  set (_seastar_dep_args_spdk
+    21.10.0
+    COMPONENTS
+      event_bdev
+      event_accel
+      bdev
+      accel
+      init
+      env_dpdk)
 
   foreach (third_party ${_seastar_all_dependencies})
     find_package ("${third_party}" ${_seastar_dep_args_${third_party}})
