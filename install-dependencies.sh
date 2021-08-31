@@ -42,6 +42,7 @@ debian_packages=(
     libsctp-dev
     gcc
     make
+    meson
     python3
     systemtap-sdt-dev
     libtool
@@ -77,6 +78,7 @@ redhat_packages=(
     lz4-devel
     gcc
     make
+    meson
     python3
     systemtap-sdt-devel
     libtool
@@ -152,6 +154,7 @@ arch_packages=(
     lksctp-tools
     lz4
     make
+    meson
     libtool
     cmake
     yaml-cpp
@@ -192,6 +195,7 @@ opensuse_packages=(
     liblz4-devel
     libnuma-devel
     lksctp-tools-devel
+    meson
     ninja
     ragel
     xfsprogs-devel
