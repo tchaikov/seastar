@@ -468,7 +468,7 @@ public:
     }
 
     ethernet_address hw_address() override {
-        struct ether_addr mac;
+        struct rte_ether_addr mac;
         rte_eth_macaddr_get(_port_idx, &mac);
 
         return mac.addr_bytes;
@@ -621,14 +621,14 @@ class dpdk_qp : public net::qp {
             if (oi.needs_ip_csum) {
                 head->ol_flags |= PKT_TX_IP_CKSUM;
                 // TODO: Take a VLAN header into an account here
-                head->l2_len = sizeof(struct ether_hdr);
+                head->l2_len = sizeof(struct rte_ether_hdr);
                 head->l3_len = oi.ip_hdr_len;
             }
             if (qp.port().hw_features().tx_csum_l4_offload) {
                 if (oi.protocol == ip_protocol_num::tcp) {
                     head->ol_flags |= PKT_TX_TCP_CKSUM;
                     // TODO: Take a VLAN header into an account here
-                    head->l2_len = sizeof(struct ether_hdr);
+                    head->l2_len = sizeof(struct rte_ether_hdr);
                     head->l3_len = oi.ip_hdr_len;
 
                     if (oi.tso_seg_size) {
@@ -640,7 +640,7 @@ class dpdk_qp : public net::qp {
                 } else if (oi.protocol == ip_protocol_num::udp) {
                     head->ol_flags |= PKT_TX_UDP_CKSUM;
                     // TODO: Take a VLAN header into an account here
-                    head->l2_len = sizeof(struct ether_hdr);
+                    head->l2_len = sizeof(struct rte_ether_hdr);
                     head->l3_len = oi.ip_hdr_len;
                 }
             }
