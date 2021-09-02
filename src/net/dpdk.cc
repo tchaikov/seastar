@@ -1716,27 +1716,9 @@ void dpdk_device::init_port_fini()
     });
 
     // TODO: replace deprecated filter api with generic flow api
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     if (_num_queues > 1) {
-        if (!rte_eth_dev_filter_supported(_port_idx, RTE_ETH_FILTER_HASH)) {
-            printf("Port %d: HASH FILTER configuration is supported\n", _port_idx);
-
-            // Setup HW touse the TOEPLITZ hash function as an RSS hash function
-            struct rte_eth_hash_filter_info info = {};
-
-            info.info_type = RTE_ETH_HASH_FILTER_GLOBAL_CONFIG;
-            info.info.global_conf.hash_func = RTE_ETH_HASH_FUNCTION_TOEPLITZ;
-
-            if (rte_eth_dev_filter_ctrl(_port_idx, RTE_ETH_FILTER_HASH,
-                                        RTE_ETH_FILTER_SET, &info) < 0) {
-                rte_exit(EXIT_FAILURE, "Cannot set hash function on a port %d\n", _port_idx);
-            }
-        }
-
         set_rss_table();
     }
-    #pragma GCC diagnostic pop
 
     // Wait for a link
     check_port_link_status();
