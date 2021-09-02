@@ -1858,7 +1858,8 @@ bool dpdk_qp<HugetlbfsMemBackend>::map_dma()
     auto m = memory::get_memory_layout();
     rte_iova_t iova = rte_mem_virt2iova((const void*)m.start);
 
-    return rte_vfio_dma_map(m.start, iova, m.end - m.start) == 0;
+    return rte_vfio_container_dma_map(RTE_VFIO_DEFAULT_CONTAINER_FD,
+                                      m.start, iova, m.end - m.start) == 0;
 }
 
 void dpdk_device::check_port_link_status()
