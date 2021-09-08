@@ -23,7 +23,7 @@
 find_package (PkgConfig REQUIRED)
 pkg_check_modules (dpdk_PC libdpdk)
 
-if (dpdk_PC_FOUND)
+if (dpdk_PC_STATIC_FOUND)
   find_package_handle_standard_args (dpdk
     REQUIRED_VARS
       dpdk_PC_STATIC_CFLAGS
@@ -40,6 +40,26 @@ if (dpdk_PC_FOUND)
       PROPERTIES
         INTERFACE_COMPILE_OPTIONS "${dpdk_PC_STATIC_CFLAGS}"
         INTERFACE_INCLUDE_DIRECTORIES "${dpdk_PC_STATIC_INCLUDE_DIRS}"
+        INTERFACE_LINK_LIBRARIES "${dpdk_LIBRARIES}"
+        INTERFACE_LINK_DIRECTORIES "${dpdk_LINK_DIRECTORIES}")
+    return ()
+  endif ()
+elseif (dpdk_PC_FOUND)
+  find_package_handle_standard_args (dpdk
+    REQUIRED_VARS
+      dpdk_PC_CFLAGS
+      dpdk_PC_INCLUDEDIR
+      dpdk_PC_INCLUDE_DIRS
+      dpdk_PC_LIBRARIES)
+  if (dpdk_FOUND AND NOT (TARGET dpdk::dpdk))
+    set (dpdk_INCLUDE_DIR ${dpdk_PC_INCLUDEDIR})
+    set (dpdk_LINK_DIRECTORIES ${dpdk_PC_LIBRARY_DIRS})
+    set (dpdk_LIBRARIES ${dpdk_PC_LIBRARIES})
+    add_library (dpdk::dpdk INTERFACE IMPORTED)
+    set_target_properties (dpdk::dpdk
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${dpdk_PC_CFLAGS}"
+        INTERFACE_INCLUDE_DIRECTORIES "${dpdk_PC_INCLUDE_DIRS}"
         INTERFACE_LINK_LIBRARIES "${dpdk_LIBRARIES}"
         INTERFACE_LINK_DIRECTORIES "${dpdk_LINK_DIRECTORIES}")
     return ()
