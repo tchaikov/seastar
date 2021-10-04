@@ -1365,13 +1365,12 @@ static constexpr int debug_allocation_pattern = 0xab;
 
 void* allocate(size_t size) {
     if (!is_reactor_thread) {
-        if (original_malloc_func) {
-            alloc_stats::increment(alloc_stats::types::foreign_mallocs);
-            return original_malloc_func(size);
+        malloc_func_type malloc_func = original_malloc_func;
+        if (!malloc_func) {
+            malloc_func = reinterpret_cast<malloc_func_type>(dlsym(RTLD_NEXT, "malloc"));
         }
-        // original_malloc_func might be null for allocations before main
-        // in constructors before original_malloc_func ctor is called
-        init_cpu_mem();
+        alloc_stats::increment(alloc_stats::types::foreign_mallocs);
+        return malloc_func(size);
     }
     if (size <= sizeof(free_object)) {
         size = sizeof(free_object);
