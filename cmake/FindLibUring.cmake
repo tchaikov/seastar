@@ -36,9 +36,21 @@ find_path (URING_INCLUDE_DIR
     ${URING_PC_INCLUDEDIR}
     ${URING_PC_INCLUDE_DIRS})
 
+if (URING_INCLUDE_DIR)
+  include (CheckStructHasMember)
+  include (CMakePushCheckState)
+  cmake_push_check_state (RESET)
+  list(APPEND CMAKE_REQUIRED_INCLUDES ${URING_INCLUDE_DIR})
+  CHECK_STRUCT_HAS_MEMBER ("struct io_uring" features liburing.h
+    HAVE_IOURING_FEATURES LANGUAGE CXX)
+  cmake_pop_check_state ()
+endif ()
+
 mark_as_advanced (
   URING_LIBRARY
-  URING_INCLUDE_DIR)
+  URING_INCLUDE_DIR
+  HAVE_IOURING_FEATURES)
+
 
 include (FindPackageHandleStandardArgs)
 
@@ -46,6 +58,7 @@ find_package_handle_standard_args (LibUring
   REQUIRED_VARS
     URING_LIBRARY
     URING_INCLUDE_DIR
+    HAVE_IOURING_FEATURES
   VERSION_VAR URING_PC_VERSION)
 
 set (URING_LIBRARIES ${URING_LIBRARY})
