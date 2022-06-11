@@ -39,7 +39,7 @@ using namespace util;
 class test_source_impl : public data_source_impl {
     short _current_letter = 0; // a-z corresponds to 0-25
     size_t _buffer_size;
-    size_t _remaining_size;
+    uint64_t _remaining_size;
 public:
     test_source_impl(size_t buffer_size, size_t total_size)
         : _buffer_size(buffer_size), _remaining_size(total_size) {
