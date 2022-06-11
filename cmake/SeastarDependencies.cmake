@@ -68,7 +68,7 @@ macro (seastar_find_dependencies)
     rt
     yaml-cpp)
 
-  # Arguments to `find_package` for each 3rd-party dependency.
+    # Arguments to `find_package` for each 3rd-party dependency.
   # Note that the version specification is a "minimal" version requirement.
 
   # `unit_test_framework` is not required in the case we are building Seastar
@@ -90,8 +90,8 @@ macro (seastar_find_dependencies)
   set (_seastar_dep_args_GnuTLS 3.3.26 REQUIRED)
   set (_seastar_dep_args_StdAtomic REQUIRED)
   set (_seastar_dep_args_hwloc 1.11.2)
-  set (_seastar_dep_args_lksctp-tools REQUIRED)
-  set (_seastar_dep_args_rt REQUIRED)
+  set (_seastar_dep_args_lksctp-tools)
+  set (_seastar_dep_args_rt)
   set (_seastar_dep_args_yaml-cpp 0.5.1 REQUIRED)
 
   foreach (third_party ${_seastar_all_dependencies})

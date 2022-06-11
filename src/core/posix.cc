@@ -22,7 +22,7 @@
 #include <seastar/core/posix.hh>
 #include <seastar/core/align.hh>
 #include <sys/mman.h>
-#include <sys/inotify.h>
+//#include <sys/inotify.h>
 
 namespace seastar {
 
@@ -38,12 +38,14 @@ file_desc::temporary(sstring directory) {
     return file_desc(fd);
 }
 
+#ifdef __linux__
 file_desc
 file_desc::inotify_init(int flags) {
     int fd = ::inotify_init1(flags);
     throw_system_error_on(fd == -1, "could not create inotify instance");
     return file_desc(fd);
 }
+#endif
 
 void mmap_deleter::operator()(void* ptr) const {
     ::munmap(ptr, _size);

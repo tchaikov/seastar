@@ -35,11 +35,12 @@
 #include <seastar/util/tmp_file.hh>
 #include <seastar/util/alloc_failure_injector.hh>
 #include <seastar/util/closeable.hh>
+#ifdef __linux__
 #include <seastar/util/internal/magic.hh>
-
+#endif
 #include <boost/range/adaptor/transformed.hpp>
 #include <iostream>
-#include <sys/statfs.h>
+//#include <sys/statfs.h>
 #include <fcntl.h>
 
 #include "core/file-impl.hh"
@@ -499,6 +500,7 @@ SEASTAR_TEST_CASE(test_file_stat_method) {
   });
 }
 
+#ifdef __linux__
 SEASTAR_TEST_CASE(test_file_write_lifetime_method) {
     return tmp_dir::do_with_thread([] (tmp_dir& t) {
         auto oflags = open_flags::rw | open_flags::create;
@@ -611,6 +613,7 @@ SEASTAR_TEST_CASE(test_file_ioctl) {
         BOOST_REQUIRE_THROW(f.ioctl_short(FIGETBSZ, 0ul).get(), std::system_error);
     });
 }
+#endif
 
 class test_layered_file : public layered_file_impl {
 public:
@@ -757,6 +760,7 @@ namespace seastar {
     extern bool aio_nowait_supported;
 }
 
+#ifdef __linux__
 SEASTAR_TEST_CASE(test_nowait_flag_correctness) {
     return tmp_dir::do_with_thread([] (tmp_dir& t) {
         auto oflags = open_flags::rw | open_flags::create;
@@ -794,7 +798,7 @@ SEASTAR_TEST_CASE(test_nowait_flag_correctness) {
         }
     });
 }
-
+#endif
 SEASTAR_TEST_CASE(test_destruct_just_constructed_append_challenged_file) {
     return tmp_dir::do_with_thread([] (tmp_dir& t) {
         sstring filename = (t.get_path() / "testfile.tmp").native();

@@ -307,7 +307,7 @@ SEASTAR_TEST_CASE(test_all_simple) {
     BOOST_REQUIRE_EQUAL(a, 1);
     BOOST_REQUIRE_EQUAL(b, 2);
 }
-
+#ifdef __linux__
 SEASTAR_TEST_CASE(test_all_permutations) {
     std::vector<std::chrono::milliseconds> delays = { 0ms, 0ms, 2ms, 2ms, 4ms, 6ms };
     auto make_delayed_future_returning_nr = [&] (int nr) {
@@ -333,7 +333,7 @@ SEASTAR_TEST_CASE(test_all_permutations) {
         BOOST_REQUIRE_EQUAL(f, 5);
     } while (std::ranges::next_permutation(delays).found);
 }
-
+#endif
 SEASTAR_TEST_CASE(test_all_ready_exceptions) {
     try {
         co_await coroutine::all(

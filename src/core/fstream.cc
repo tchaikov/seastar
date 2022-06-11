@@ -28,7 +28,7 @@
 #include <seastar/core/io_intent.hh>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
-#include <malloc.h>
+//#include <malloc.h>
 #include <string.h>
 
 namespace seastar {

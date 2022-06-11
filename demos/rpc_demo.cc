@@ -131,14 +131,14 @@ int main(int ac, char** av) {
 
         if (config.count("server")) {
             std::cout << "client" << std::endl;
-            auto test7 = myrpc.make_client<long (long a, long b)>(7);
-            auto test9 = myrpc.make_client<long (long a, long b)>(9); // do not send optional
-            auto test9_1 = myrpc.make_client<long (long a, long b, int c)>(9); // send optional
-            auto test9_2 = myrpc.make_client<long (long a, long b, int c, long d)>(9); // send more data than handler expects
-            auto test10 = myrpc.make_client<long ()>(10); // receive less then replied
-            auto test10_1 = myrpc.make_client<future<rpc::tuple<long, int>> ()>(10); // receive all
-            auto test11 = myrpc.make_client<future<rpc::tuple<long, rpc::optional<int>>> ()>(11); // receive more then replied
-            auto test12 = myrpc.make_client<void (int sleep_ms, sstring payload)>(12); // large payload vs. server limits
+            auto test7 = myrpc.make_client<uint32_t (int32_t a, int32_t b)>(7);
+            auto test9 = myrpc.make_client<uint32_t (int32_t a, int32_t b)>(9); // do not send optional
+            auto test9_1 = myrpc.make_client<uint32_t (int32_t a, int32_t b, int32_t c)>(9); // send optional
+            auto test9_2 = myrpc.make_client<uint32_t (int32_t a, int32_t b, int32_t c, int32_t d)>(9); // send more data than handler expects
+            auto test10 = myrpc.make_client<uint32_t ()>(10); // receive less then replied
+            auto test10_1 = myrpc.make_client<future<rpc::tuple<uint32_t, uint32_t>> ()>(10); // receive all
+            auto test11 = myrpc.make_client<future<rpc::tuple<uint32_t, rpc::optional<uint32_t>>> ()>(11); // receive more then replied
+            auto test12 = myrpc.make_client<void (uint32_t sleep_ms, sstring payload)>(12); // large payload vs. server limits
             auto test_nohandler = myrpc.make_client<void ()>(100000000); // non existing verb
             auto test_nohandler_nowait = myrpc.make_client<rpc::no_wait_type ()>(100000000); // non existing verb, no_wait call
             rpc::client_options co;
@@ -248,7 +248,7 @@ int main(int ac, char** av) {
             });
         } else {
             std::cout << "server on port " << port << std::endl;
-            myrpc.register_handler(7, [](long a, long b) mutable {
+            myrpc.register_handler(7, [](uint32_t a, uint32_t b) mutable {
                 auto p = make_lw_shared<promise<>>();
                 auto t = make_lw_shared<timer<>>();
                 fmt::print("test7 got {:d} {:d}\n", a, b);
@@ -260,7 +260,7 @@ int main(int ac, char** av) {
                 t->arm(1s);
                 return f;
             });
-            myrpc.register_handler(9, [] (long a, long b, rpc::optional<int> c) {
+            myrpc.register_handler(9, [] (uint32_t a, uint32_t b, rpc::optional<int> c) {
                 long r = 2;
                 fmt::print("test9 got {:d} {:d} ", a, b);
                 if (c) {
@@ -272,7 +272,7 @@ int main(int ac, char** av) {
             });
             myrpc.register_handler(10, [] {
                 fmt::print("test 10\n");
-                return make_ready_future<rpc::tuple<long, int>>(rpc::tuple<long, int>(1, 2));
+                return make_ready_future<rpc::tuple<uint32_t, uint8_t>>(rpc::tuple<uint32_t, uint8_t>(1, 2));
             });
             myrpc.register_handler(11, [] {
                 fmt::print("test 11\n");

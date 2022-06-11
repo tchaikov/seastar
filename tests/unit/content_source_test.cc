@@ -40,7 +40,7 @@ public:
         return make_ready_future<temporary_buffer<char>>(std::move(_tmp));
     }
     virtual future<temporary_buffer<char>> skip(uint64_t n) override {
-        _tmp.trim_front(std::min(_tmp.size(), n));
+        _tmp.trim_front(std::min<uint64_t>(_tmp.size(), n));
         return make_ready_future<temporary_buffer<char>>();
     }
 };
@@ -134,7 +134,7 @@ public:
         return make_ready_future<temporary_buffer<char>>(std::move(byte));
     }
     virtual future<temporary_buffer<char>> skip(uint64_t n) override {
-        _tmp.trim_front(std::min(_tmp.size(), n));
+        _tmp.trim_front(std::min<uint64_t>(_tmp.size(), n));
         return make_ready_future<temporary_buffer<char>>();
     }
 };

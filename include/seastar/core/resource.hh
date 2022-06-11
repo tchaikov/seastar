@@ -28,6 +28,9 @@
 #include <seastar/util/spinlock.hh>
 #include <vector>
 #include <set>
+#ifdef __APPLE__
+#include <seastar/util/pthread-compat.h>
+#endif
 #include <sched.h>
 #include <boost/any.hpp>
 #include <unordered_map>

@@ -32,7 +32,9 @@
 #include <sys/mman.h>
 #include <sys/signal.h>
 
+#if __has_include(<valgrind/valgrind.h>)
 #include <valgrind/valgrind.h>
+#endif
 
 using namespace seastar;
 using namespace std::chrono_literals;
@@ -214,10 +216,11 @@ static void bypass_stack_guard(int sig, siginfo_t* si, void* ctx) {
 // This test will fail with a regular stack size, because we only probe
 // around 10KiB of data, and the stack guard resides after 128'th KiB.
 seastar::future<> test_thread_custom_stack_size_failure::run_test_case() {
+#ifdef RUNNING_ON_VALGRIND
     if (RUNNING_ON_VALGRIND) {
         return make_ready_future<>();
     }
-
+#endif
     sstring x = "x";
     sstring y = "y";
 

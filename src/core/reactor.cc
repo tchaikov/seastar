@@ -23,9 +23,13 @@
 
 #include <cinttypes>
 #include <sys/syscall.h>
-#include <sys/vfs.h>
-#include <sys/statfs.h>
+//#include <sys/vfs.h>
+//#include <sys/statfs.h>
+#if _POSIX_C_SOURCE >= 199309L
 #include <sys/time.h>
+#else
+#include <seastar/util/timer-compat.h>
+#endif
 #include <sys/resource.h>
 #include <sys/inotify.h>
 #include <seastar/core/task.hh>

@@ -310,8 +310,10 @@ seastar_add_test (file_utils
 seastar_add_test (foreign_ptr
   SOURCES foreign_ptr_test.cc)
 
-seastar_add_test (fsnotifier
-  SOURCES fsnotifier_test.cc)
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  seastar_add_test (fsnotifier
+    SOURCES fsnotifier_test.cc)
+endif ()
 
 seastar_add_test (fstream
   SOURCES
@@ -416,8 +418,7 @@ seastar_add_test (stream_reader
   SOURCES stream_reader_test.cc)
 
 seastar_add_test (thread
-  SOURCES thread_test.cc
-  LIBRARIES Valgrind::valgrind)
+  SOURCES thread_test.cc)
 
 seastar_add_test (scheduling_group
   SOURCES scheduling_group_test.cc)

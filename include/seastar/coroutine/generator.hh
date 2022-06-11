@@ -79,7 +79,7 @@ public:
     void unhandled_exception() noexcept;
 
     template<std::convertible_to<T> U>
-    std::suspend_always yield_value(U&& value) noexcept {
+    suspend_always yield_value(U&& value) noexcept {
         assert(_generator);
         _generator->put_next_value(std::forward<U>(value));
         assert(_wait_for_next_value);
@@ -94,8 +94,8 @@ public:
         _generator = g;
     }
 
-    std::suspend_always initial_suspend() const noexcept { return {}; }
-    std::suspend_never final_suspend() const noexcept {
+    suspend_always initial_suspend() const noexcept { return {}; }
+    suspend_never final_suspend() const noexcept {
         assert(_generator);
         _generator->on_finished();
         return {};

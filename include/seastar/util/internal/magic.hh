@@ -21,7 +21,9 @@
 
 #pragma once
 
+#ifdef __linux__
 #include <linux/magic.h>
+#endif
 
 namespace seastar {
 

@@ -40,7 +40,7 @@ namespace internal {
  * */
 class content_length_source_impl : public data_source_impl {
     input_stream<char>& _inp;
-    size_t _remaining_bytes = 0;
+    uint64_t _remaining_bytes = 0;
 public:
     content_length_source_impl(input_stream<char>& inp, size_t length)
         : _inp(inp), _remaining_bytes(length) {

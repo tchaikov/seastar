@@ -31,10 +31,14 @@
 #include <utility>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <sys/eventfd.h>
-#include <sys/timerfd.h>
+//#include <sys/eventfd.h>
+//#include <sys/timerfd.h>
 #include <sys/socket.h>
-#include <sys/epoll.h>
+//#include <sys/epoll.h>
+#ifdef __APPLE__
+#include <seastar/util/timer-compat.h>
+#include <seastar/util/pthread-compat.h>
+#endif
 #include <sys/mman.h>
 #include <signal.h>
 #include <system_error>
@@ -111,11 +115,14 @@ public:
         throw_system_error_on(fd == -1, "socket");
         return file_desc(fd);
     }
+  #if defined(__linux__) || defined(__unix__)
     static file_desc eventfd(unsigned initval, int flags) {
         int fd = ::eventfd(initval, flags);
         throw_system_error_on(fd == -1, "eventfd");
         return file_desc(fd);
     }
+  #endif
+  #if defined(__linux__)
     static file_desc epoll_create(int flags = 0) {
         int fd = ::epoll_create1(flags);
         throw_system_error_on(fd == -1, "epoll_create1");
@@ -126,6 +133,7 @@ public:
         throw_system_error_on(fd == -1, "timerfd_create");
         return file_desc(fd);
     }
+  #endif
     static file_desc temporary(sstring directory);
     file_desc dup() const {
         int fd = ::dup(get());
@@ -133,14 +141,22 @@ public:
         return file_desc(fd);
     }
     file_desc accept(socket_address& sa, int flags = 0) {
+#ifdef __unix__
         auto ret = ::accept4(_fd, &sa.as_posix_sockaddr(), &sa.addr_length, flags);
+#else
+        auto ret = ::accept(_fd, &sa.as_posix_sockaddr(), &sa.addr_length);
+#endif
         throw_system_error_on(ret == -1, "accept4");
         return file_desc(ret);
     }
     static file_desc inotify_init(int flags);
     // return nullopt if no connection is availbale to be accepted
     std::optional<file_desc> try_accept(socket_address& sa, int flags = 0) {
+#ifdef __unix__
         auto ret = ::accept4(_fd, &sa.as_posix_sockaddr(), &sa.addr_length, flags);
+#else
+        auto ret = ::accept(_fd, &sa.as_posix_sockaddr(), &sa.addr_length);
+#endif
         if (ret == -1 && errno == EAGAIN) {
             return {};
         }
@@ -308,11 +324,12 @@ public:
         throw_system_error_on(r == -1, "pread");
         return size_t(r);
     }
+#ifdef __linux__
     void timerfd_settime(int flags, const itimerspec& its) {
         auto r = ::timerfd_settime(_fd, flags, &its, NULL);
         throw_system_error_on(r == -1, "timerfd_settime");
     }
-
+#endif
     mmap_area map(size_t size, unsigned prot, unsigned flags, size_t offset,
             void* addr = nullptr) {
         void *x = mmap(addr, size, prot, flags, _fd, offset);

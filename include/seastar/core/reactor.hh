@@ -29,7 +29,11 @@
 #include <seastar/core/idle_cpu_handler.hh>
 #include <memory>
 #include <type_traits>
+#ifdef __linux__
 #include <sys/epoll.h>
+#elif defined(__unix__) || defined(__APPLE__)
+#include <sys/event.h>
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unordered_map>
@@ -770,7 +774,11 @@ size_t iovec_len(const iovec* begin, size_t len)
 inline int hrtimer_signal() {
     // We don't want to use SIGALRM, because the boost unit test library
     // also plays with it.
+#ifdef __linux__
     return SIGRTMIN;
+#else
+    return SIGPROF;
+#endif
 }
 
 

@@ -24,7 +24,7 @@
 #include <seastar/core/deleter.hh>
 #include <seastar/util/eclipse.hh>
 #include <seastar/util/std-compat.hh>
-#include <malloc.h>
+// #include <malloc.h>
 #include <algorithm>
 #include <cstddef>
 

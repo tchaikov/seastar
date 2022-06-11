@@ -27,8 +27,8 @@
 #include <memory>
 #include <vector>
 #include <cmath>
-#include <sys/vfs.h>
-#include <sys/sysmacros.h>
+// #include <sys/vfs.h>
+// #include <sys/sysmacros.h>
 #include <boost/range/irange.hpp>
 #include <boost/program_options.hpp>
 #include <boost/iterator/counting_iterator.hpp>

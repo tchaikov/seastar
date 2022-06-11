@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <endian.h>
+//#include <endian.h>
 #include <sys/time.h>
 #include <sys/uio.h>
 #include <signal.h>

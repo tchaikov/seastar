@@ -23,15 +23,19 @@
 
 #include <sys/syscall.h>
 #include <dirent.h>
-#include <linux/types.h> // for xfs, below
+//#include <linux/types.h> // for xfs, below
+#ifdef __linux__
 #include <linux/fs.h> // BLKBSZGET
-#include <linux/major.h>
+#elif defined(__APPLE__)
+#include <sys/disk.h>
+#endif
+//#include <linux/major.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <xfs/linux.h>
+//#include <xfs/linux.h>
 #define min min    /* prevent xfs.h from defining min() as a macro */
-#include <xfs/xfs.h>
+//#include <xfs/xfs.h>
 #undef min
 #include <boost/range/numeric.hpp>
 #include <boost/range/adaptor/transformed.hpp>
@@ -61,7 +65,9 @@ struct fs_info {
     unsigned append_concurrency;
     bool fsync_is_exclusive;
     bool nowait_works;
+#ifdef __linux__
     std::optional<dioattr> dioinfo;
+#endif
 };
 
 };
@@ -122,6 +128,7 @@ posix_file_impl::~posix_file_impl() {
 
 void
 posix_file_impl::configure_dma_alignment(const internal::fs_info& fsi) {
+#ifdef __linux__
     if (fsi.dioinfo) {
         const dioattr& da = *fsi.dioinfo;
         _memory_dma_alignment = da.d_mem;
@@ -132,6 +139,7 @@ posix_file_impl::configure_dma_alignment(const internal::fs_info& fsi) {
         static bool xfs_with_relaxed_overwrite_alignment = kernel_uname().whitelisted({"5.12"});
         _disk_overwrite_dma_alignment = xfs_with_relaxed_overwrite_alignment ? da.d_miniosz : _disk_write_dma_alignment;
     }
+#endif
 }
 
 void posix_file_impl::configure_io_lengths() noexcept {
@@ -236,6 +244,7 @@ posix_file_impl::fcntl_short(int op, uintptr_t arg) noexcept {
     return make_ready_future<int>(ret);
 }
 
+#ifdef __linux__
 future<>
 posix_file_impl::discard(uint64_t offset, uint64_t length) noexcept {
     return engine()._thread_pool->submit<syscall_result<int>>([this, offset, length] () mutable {
@@ -246,6 +255,7 @@ posix_file_impl::discard(uint64_t offset, uint64_t length) noexcept {
         return make_ready_future<>();
     });
 }
+#endif
 
 future<>
 posix_file_impl::allocate(uint64_t position, uint64_t length) noexcept {
@@ -317,7 +327,11 @@ future<uint64_t>
 blockdev_file_impl::size(void) noexcept {
     return engine()._thread_pool->submit<syscall_result_extra<size_t>>([this] {
         uint64_t size;
+#ifdef __linux__
         int ret = ::ioctl(_fd, BLKGETSIZE64, &size);
+#else
+        int ret = ::ioctl(_fd, DKIOCGETBLOCKSIZE, &size);
+#endif
         return wrap_syscall(ret, size);
     }).then([] (syscall_result_extra<uint64_t> ret) {
         ret.throw_if_error();

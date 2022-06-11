@@ -150,7 +150,7 @@ SEASTAR_TEST_CASE(test_consume_skip_bytes) {
              */
             future<consumption_result_type> operator()(tmp_buf buf) {
                 if (_count < 8000) {
-                    auto delta = std::min(buf.size(), 8000 - _count);
+                    auto delta = std::min<uint64_t>(buf.size(), 8000 - _count);
                     for (auto c : buf.share(0, delta)) {
                         BOOST_REQUIRE_EQUAL(c, 'a');
                     }

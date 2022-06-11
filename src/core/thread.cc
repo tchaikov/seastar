@@ -26,7 +26,9 @@
 #include <ucontext.h>
 #include <algorithm>
 
+#if __has_include(<valgrind/valgrind.h>)
 #include <valgrind/valgrind.h>
+#endif
 
 /// \cond internal
 
@@ -197,7 +199,9 @@ thread_context::make_stack(size_t stack_size) {
     if (mem == nullptr) {
         throw std::bad_alloc();
     }
+#ifdef VALGRIND_STACK_REGISTER
     int valgrind_id = VALGRIND_STACK_REGISTER(mem, reinterpret_cast<char*>(mem) + stack_size);
+#endif
     auto stack = stack_holder(new (mem) char[stack_size], stack_deleter(valgrind_id));
 #ifdef SEASTAR_ASAN_ENABLED
     // Avoid ASAN false positive due to garbage on stack
@@ -213,7 +217,9 @@ thread_context::make_stack(size_t stack_size) {
 }
 
 void thread_context::stack_deleter::operator()(char* ptr) const noexcept {
+#ifdef VALGRIND_STACK_DEREGISTER
     VALGRIND_STACK_DEREGISTER(valgrind_id);
+#endif
     free(ptr);
 }
 

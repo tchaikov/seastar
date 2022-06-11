@@ -21,6 +21,9 @@
 
 #pragma once
 
+#ifdef __clang__
+#undef _LIBCPP_HAS_NO_INCOMPLETE_RANGES
+#endif
 #include <ranges>
 
 #include <boost/container/small_vector.hpp>

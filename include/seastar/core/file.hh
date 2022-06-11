@@ -32,7 +32,9 @@
 #include <system_error>
 #include <sys/statvfs.h>
 #include <sys/ioctl.h>
+#ifdef __linux__
 #include <linux/fs.h>
+#endif
 #include <sys/uio.h>
 #include <unistd.h>
 

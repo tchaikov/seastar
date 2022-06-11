@@ -353,7 +353,9 @@ seastar_find_dependencies ()
 find_package (ragel 6.10 REQUIRED)
 find_package (Threads REQUIRED)
 find_package (PthreadSetName REQUIRED)
-find_package (Valgrind REQUIRED)
+if(UNIX AND NOT APPLE)
+  find_package (Valgrind REQUIRED)
+endif ()
 
 #
 # Code generation helpers.
@@ -369,7 +371,7 @@ function (seastar_generate_ragel)
     OUTPUT ${args_OUT_FILE}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${out_dir}
     COMMAND ${ragel_RAGEL_EXECUTABLE} -G2 -o ${args_OUT_FILE} ${args_IN_FILE}
-    COMMAND sed -i -e "'1h;2,$$H;$$!d;g'" -re "'s/static const char _nfa[^;]*;//g'" ${args_OUT_FILE})
+    COMMAND sed -E -e "'1h;2,$$H;$$!d;g'" -e "'s/static const char _nfa[^;]*;//g'" -i '' ${args_OUT_FILE})
 
   add_custom_target (${args_TARGET}
     DEPENDS ${args_OUT_FILE})
@@ -427,10 +429,23 @@ if (Seastar_DPDK)
   set (seastar_dpdk_obj seastar-dpdk.o)
 endif ()
 
+if (UNIX AND NOT APPLE)
+  set (platform_files
+    include/seastar/core/linux-aio.hh
+    include/seastar/core/fsqual.hh
+    src/core/fsnotify.cc
+    src/core/fsqual.cc
+    src/core/linux-aio.cc)
+else ()
+  set (platform_files
+    src/util/timer-compat.cc)
+endif ()
+
 add_library (seastar STATIC
   ${http_chunk_parsers_file}
   ${http_request_parser_file}
   ${seastar_dpdk_obj}
+  ${platform_files}
   include/seastar/core/abort_source.hh
   include/seastar/core/alien.hh
   include/seastar/core/align.hh
@@ -457,7 +472,6 @@ add_library (seastar STATIC
   include/seastar/core/fair_queue.hh
   include/seastar/core/file.hh
   include/seastar/core/file-types.hh
-  include/seastar/core/fsqual.hh
   include/seastar/core/fstream.hh
   include/seastar/core/function_traits.hh
   include/seastar/core/future-util.hh
@@ -467,7 +481,6 @@ add_library (seastar STATIC
   include/seastar/core/iostream.hh
   include/seastar/util/later.hh
   include/seastar/core/layered_file.hh
-  include/seastar/core/linux-aio.hh
   include/seastar/core/loop.hh
   include/seastar/core/lowres_clock.hh
   include/seastar/core/manual_clock.hh
@@ -617,12 +630,9 @@ add_library (seastar STATIC
   src/core/exception_hacks.cc
   src/core/execution_stage.cc
   src/core/file-impl.hh
-  src/core/fsnotify.cc
-  src/core/fsqual.cc
   src/core/fstream.cc
   src/core/future.cc
   src/core/future-util.cc
-  src/core/linux-aio.cc
   src/core/memory.cc
   src/core/metrics.cc
   src/core/on_internal_error.cc
@@ -737,10 +747,7 @@ target_link_libraries (seastar
     ${CMAKE_DL_LIBS}
     GnuTLS::gnutls
     StdAtomic::atomic
-    lksctp-tools::lksctp-tools
-    rt::rt
     yaml-cpp::yaml-cpp
-    Valgrind::valgrind
     Threads::Threads)
 
 set (Seastar_SANITIZE_MODES "Debug" "Sanitize")

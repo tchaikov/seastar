@@ -30,7 +30,9 @@
 #include <seastar/core/posix.hh>
 #include <seastar/core/metrics_registration.hh>
 #include <seastar/core/scheduling.hh>
+#ifdef __linux__
 #include <linux/perf_event.h>
+#endif
 
 namespace seastar {
 
@@ -80,7 +82,14 @@ public:
 public:
     explicit cpu_stall_detector(cpu_stall_detector_config cfg = {});
     virtual ~cpu_stall_detector() = default;
-    static int signal_number() { return SIGRTMIN + 1; }
+    static int signal_number() {
+#ifdef __linux__
+      return SIGRTMIN + 1;
+#else
+      // see also timer_settime()
+      return SIGPROF;
+#endif
+    }
     void start_task_run(sched_clock::time_point now);
     void end_task_run(sched_clock::time_point now);
     void generate_trace();
@@ -100,6 +109,8 @@ private:
     virtual void arm_timer() override;
     virtual void start_sleep() override;
 };
+
+#ifdef __linux__
 
 class cpu_stall_detector_linux_perf_event : public cpu_stall_detector {
     file_desc _fd;
@@ -162,7 +173,7 @@ public:
     virtual bool reap_event_and_check_spuriousness() override;
     virtual void maybe_report_kernel_trace() override;
 };
-
+#endif
 std::unique_ptr<cpu_stall_detector> make_cpu_stall_detector(cpu_stall_detector_config cfg = {});
 
 }
