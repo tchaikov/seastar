@@ -22,8 +22,11 @@
 #include <exception>
 #include <numeric>
 
+#include <boost/range/irange.hpp>
+
 #include <seastar/core/circular_buffer.hh>
 #include <seastar/core/future-util.hh>
+#include <seastar/core/sleep.hh>
 #include <seastar/testing/test_case.hh>
 #include <seastar/core/sleep.hh>
 #include <seastar/util/later.hh>
@@ -490,6 +493,36 @@ SEASTAR_TEST_CASE(test_maybe_yield) {
     done = true;
     co_await std::move(spinner_fut);
     BOOST_REQUIRE(true); // the test will hang if it doesn't work.
+}
+
+struct struct_with_coroutine {
+    future<> loop_with_coroutine() {
+        return seastar::parallel_for_each(boost::irange(0, 1), [this](int) {
+            return parallel_for_each(boost::irange(0, 1), [this](int) -> future<> {
+                    while (!done()) {
+                        co_await loop_body();
+                        ++count;
+                    }
+                });
+        });
+    }
+    static constexpr uint32_t expected = 0xbeaf;
+    future<> loop_body() {
+        BOOST_REQUIRE_EQUAL(check, expected);
+        co_await seastar::sleep(1ms);
+    }
+    bool done() const {
+        BOOST_REQUIRE_EQUAL(check, expected);
+        std::cout << count << std::endl;
+        return count > 2;
+    }
+    unsigned count = 0;
+    uint32_t check = expected;
+};
+
+SEASTAR_TEST_CASE(test_lambda_capturing_this) {
+    struct_with_coroutine swc;
+    co_await swc.loop_with_coroutine();
 }
 
 #if __has_include(<coroutine>) && !defined(__clang__)
