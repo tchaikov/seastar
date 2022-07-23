@@ -46,6 +46,12 @@ endif ()
 # This is the minimum version of Boost we need the CMake-bundled `FindBoost.cmake` to know about.
 find_package (Boost ${_seastar_boost_version} MODULE)
 
+if (Seastar_COLORED_LOG)
+  set (_seastar_fmt_version 6.0.0)
+else ()
+  set (_seastar_fmt_version 5.0.0)
+endif ()
+
 # - set _seastar_dep_args_<package> for additional args for find_package().
 #   add REQUIRED if the corresponding option is explicitly enabled, so
 #   find_package() can stop the cmake generation.
@@ -122,7 +128,7 @@ macro (seastar_find_dependencies)
   seastar_set_dep_args (dpdk
     OPTION ${Seastar_DPDK})
   seastar_set_dep_args (fmt REQUIRED
-    VERSION 5.0.0)
+    VERSION ${_seastar_fmt_version})
   seastar_set_dep_args (lz4 REQUIRED
     VERSION 1.7.3)
   seastar_set_dep_args (GnuTLS REQUIRED

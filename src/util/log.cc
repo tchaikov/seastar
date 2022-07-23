@@ -25,6 +25,9 @@
 #elif FMT_VERSION >= 50000
 #include <fmt/time.h>
 #endif
+#ifdef SEASTAR_COLORED_LOG
+#include <fmt/color.h>
+#endif
 
 #include <seastar/util/log.hh>
 #include <seastar/core/smp.hh>
@@ -261,6 +264,12 @@ logger::rate_limit::rate_limit(std::chrono::milliseconds interval)
     : _interval(interval), _next(clock::now())
 { }
 
+#ifdef SEASTAR_COLORED_LOG
+#define COLORED(color, text) fmt::format(fg(color), "{}", text)
+#else
+#define COLORED(color, text) text
+#endif
+
 void
 logger::do_log(log_level level, log_writer& writer) {
     bool is_ostream_enabled = _ostream.load(std::memory_order_relaxed);
@@ -269,11 +278,11 @@ logger::do_log(log_level level, log_writer& writer) {
       return;
     }
     static array_map<sstring, 20> level_map = {
-            { int(log_level::debug), "DEBUG" },
-            { int(log_level::info),  "INFO "  },
-            { int(log_level::trace), "TRACE" },
-            { int(log_level::warn),  "WARN "  },
-            { int(log_level::error), "ERROR" },
+            { int(log_level::debug), COLORED(fmt::terminal_color::green,  "DEBUG") },
+            { int(log_level::info),  COLORED(fmt::terminal_color::white,  "INFO ") },
+            { int(log_level::trace), COLORED(fmt::terminal_color::blue,   "TRACE") },
+            { int(log_level::warn),  COLORED(fmt::terminal_color::yellow, "WARN ") },
+            { int(log_level::error), COLORED(fmt::terminal_color::red,    "ERROR") },
     };
     auto print_once = [&] (internal::log_buf::inserter_iterator it) {
       if (local_engine) {

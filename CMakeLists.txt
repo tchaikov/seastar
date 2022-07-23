@@ -63,6 +63,12 @@ option (Seastar_SSTRING
   "Use seastar's own string implementation"
   ON)
 
+if (DEFINED Seastar_COLORED_LOG)
+  option (Seastar_COLORED_LOG
+    "Print colored logging messages using ANSI escape code"
+    OFF)
+endif ()
+
 set (Seastar_API_LEVEL
   "6"
   CACHE
@@ -194,8 +200,13 @@ function (set_option_if_package_is_found option_name package_name)
   if (DEFINED ${option_name})
     return ()
   endif ()
+  cmake_parse_arguments (args "" "VERSION" "" ${ARGN})
   if (${package_name}_FOUND)
-    set (${option_name} ON CACHE BOOL "")
+    if (DEFINED args_VERSION AND ${fmt}_VERSION LESS args_VERSION)
+      set (${option_name} OFF CACHE BOOL "")
+    else ()
+      set (${option_name} ON CACHE BOOL "")
+    endif ()
   endif ()
 endfunction ()
 
@@ -856,6 +867,13 @@ endif ()
 if (Seastar_ALLOC_PAGE_SIZE)
   target_compile_definitions (seastar
     PUBLIC SEASTAR_OVERRIDE_ALLOCATOR_PAGE_SIZE=${Seastar_ALLOC_PAGE_SIZE})
+endif ()
+
+set_option_if_package_is_found (Seastar_COLORED_LOG fmt
+  VERSION 6.0.0)
+if (Seastar_COLORED_LOG)
+  target_compile_definitions (seastar
+    PRIVATE SEASTAR_COLORED_LOG)
 endif ()
 
 target_compile_definitions (seastar
