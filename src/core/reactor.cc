@@ -4026,6 +4026,16 @@ void smp::configure(const smp_options& smp_opts, const reactor_options& reactor_
     if (thread_affinity) {
         smp::pin(allocations[0].cpu_id);
     }
+#ifdef SEASTAR_HAVE_SPDK
+    if (_using_spdk) {
+        try {
+            spdk::env::start(allocations, spdk_opts);
+        } catch (const std::exception& e) {
+            seastar_logger.error(e.what());
+            _exit(1);
+        }
+    }
+#endif
     if (smp_opts.memory_allocator == memory_allocator::seastar) {
         memory::configure(allocations[0].mem, mbind, hugepages_path);
     }
@@ -4058,15 +4068,6 @@ void smp::configure(const smp_options& smp_opts, const reactor_options& reactor_
             cpus[a.cpu_id] = true;
         }
         dpdk::eal::init(cpus, reactor_opts._argv0, hugepages_path, native_stack ? bool(native_stack->dpdk_pmd) : false);
-    }
-#elif defined(SEASTAR_HAVE_SPDK)
-    if (_using_spdk) {
-        try {
-            spdk::env::start(allocations, spdk_opts);
-        } catch (const std::exception& e) {
-            seastar_logger.error(e.what());
-            _exit(1);
-        }
     }
 #endif
 
