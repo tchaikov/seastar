@@ -44,6 +44,7 @@ struct options : program_options::option_group {
     program_options::value<std::string> mem_size;
     program_options::value<> no_pci;
     program_options::value<> single_file_segments;
+    program_options::value<std::string> env_context;
     options(program_options::option_group* parent_group);
 };
 

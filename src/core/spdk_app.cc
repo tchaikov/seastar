@@ -94,6 +94,11 @@ void start(const std::vector<resource::cpu>& cpuset,
     if (opts.iova) {
         env_opts.iova_mode = opts.iova.get_selected_candidate_name().c_str();
     }
+    std::string env_context;
+    if (opts.env_context) {
+        env_context = opts.env_context.get_value();
+        env_opts.env_context = reinterpret_cast<void*>(env_context.data());
+    }
     if (spdk_env_init(&env_opts) < 0) {
         throw std::runtime_error("unable to initialize SPDK env");
     }

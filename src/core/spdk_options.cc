@@ -53,6 +53,7 @@ options::options(program_options::option_group* parent_group)
     , mem_size(*this, "spdk-mem-size", {}, "memory size in MB for DPDK")
     , no_pci(*this, "spdk-no-pci", "disable PCI access")
     , single_file_segments(*this, "spdk-single-file-segments", "force creating just one hugetlbfs file")
+    , env_context(*this, "spdk-env-context", {}, "Opaque context for use of the env implementation")
 {
 }
 
