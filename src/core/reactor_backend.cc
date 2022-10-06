@@ -1140,6 +1140,10 @@ try_create_uring(unsigned queue_len, bool throw_on_error) {
             IORING_OP_READV,
             IORING_OP_WRITEV,
             IORING_OP_FSYNC,
+            IORING_OP_RECV,
+            IORING_OP_RECVMSG,
+            IORING_OP_SEND,
+            IORING_OP_SENDMSG,
             };
     auto maybe_throw = [&] (auto exception) {
         if (throw_on_error) {
@@ -1313,11 +1317,16 @@ private:
         }
         return sqe;
     }
-    future<> poll(pollable_fd_state& fd, int events) {
+
+    static bool is_speculated(pollable_fd_state& fd, int events) {
         if (events & fd.events_known) {
             fd.events_known &= ~events;
-            return make_ready_future<>();
+            return true;
         }
+        return false;
+    }
+
+    future<> poll(pollable_fd_state& fd, int events) {
         auto sqe = get_sqe();
         ::io_uring_prep_poll_add(sqe, fd.fd.get(), events);
         auto ufd = static_cast<uring_pollable_fd_state*>(&fd);
@@ -1346,9 +1355,17 @@ private:
                 ::io_uring_prep_fsync(sqe, req.fd(), IORING_FSYNC_DATASYNC);
                 break;
             case o::recv:
+                ::io_uring_prep_recv(sqe, req.fd(), req.address(), req.size(), req.flags());
+                break;
             case o::recvmsg:
+                ::io_uring_prep_recvmsg(sqe, req.fd(), req.msghdr(), req.flags());
+                break;
             case o::send:
+                ::io_uring_prep_send(sqe, req.fd(), req.address(), req.size(), req.flags());
+                break;
             case o::sendmsg:
+                ::io_uring_prep_sendmsg(sqe, req.fd(), req.msghdr(), req.flags());
+                break;
             case o::accept:
             case o::connect:
             case o::poll_add:
@@ -1478,51 +1495,143 @@ public:
         fd.fd.shutdown(how);
     }
     virtual future<size_t> read_some(pollable_fd_state& fd, void* buffer, size_t len) override {
-        return readable(fd).then([this, &fd, buffer, len] () mutable {
+        if (is_speculated(fd, POLLIN)) {
             auto r = fd.fd.read(buffer, len);
-            if (!r) {
-                return read_some(fd, buffer, len);
+            if (r) {
+                if (size_t(*r) == len) {
+                    fd.speculate_epoll(EPOLLIN);
+                }
+                return make_ready_future<size_t>(*r);
             }
-            if (size_t(*r) == len) {
-                fd.speculate_epoll(EPOLLIN);
-            }
-            return make_ready_future<size_t>(*r);
+        }
+        return readable(fd).then([this, &fd, buffer, len] () mutable {
+            class read_completion final : public io_completion {
+                pollable_fd_state& _fd;
+                const size_t _to_read;
+                promise<size_t> _result;
+            public:
+                read_completion(pollable_fd_state& fd, size_t to_read)
+                    : _fd(fd), _to_read(to_read) {}
+                void complete(size_t bytes) noexcept final {
+                    if (bytes == _to_read) {
+                        _fd.speculate_epoll(EPOLLIN);
+                    }
+                    _result.set_value(bytes);
+                    delete this;
+                }
+                void set_exception(std::exception_ptr eptr) noexcept final {
+                    _result.set_exception(eptr);
+                    delete this;
+                }
+                future<size_t> get_future() {
+                    return _result.get_future();
+                }
+            };
+            auto desc = std::make_unique<read_completion>(fd, len);
+            auto req = internal::io_request::make_read(fd.fd.get(), -1, buffer, len, false);
+            auto fut = desc->get_future();
+            _r._io_sink.submit(desc.release(), std::move(req));
+            return fut;
         });
     }
     virtual future<size_t> read_some(pollable_fd_state& fd, const std::vector<iovec>& iov) override {
-        return readable(fd).then([this, &fd, iov = iov] () mutable {
+        if (is_speculated(fd, POLLIN)) {
             ::msghdr mh = {};
-            mh.msg_iov = &iov[0];
+            mh.msg_iov = const_cast<iovec*>(iov.data());
             mh.msg_iovlen = iov.size();
-            auto r = fd.fd.recvmsg(&mh, 0);
-            if (!r) {
-                return read_some(fd, iov);
+            auto r = fd.fd.recvmsg(&mh, MSG_DONTWAIT);
+            if (r) {
+                if (size_t(*r) == internal::iovec_len(iov)) {
+                    fd.speculate_epoll(EPOLLIN);
+                }
+                return make_ready_future<size_t>(*r);
             }
-            if (size_t(*r) == internal::iovec_len(iov)) {
-                fd.speculate_epoll(EPOLLIN);
+        }
+        class read_completion final : public io_completion {
+            pollable_fd_state& _fd;
+            std::vector<iovec> _iov;
+            ::msghdr _mh = {};
+            promise<size_t> _result;
+        public:
+            read_completion(pollable_fd_state& fd, const std::vector<iovec>& iov)
+                : _fd(fd), _iov(iov) {
+                _mh.msg_iov = const_cast<iovec*>(_iov.data());
+                _mh.msg_iovlen = _iov.size();
             }
-            return make_ready_future<size_t>(*r);
-        });
+            void complete(size_t bytes) noexcept final {
+                if (bytes == internal::iovec_len(_iov)) {
+                    _fd.speculate_epoll(EPOLLIN);
+                }
+                _result.set_value(bytes);
+                delete this;
+            }
+            void set_exception(std::exception_ptr eptr) noexcept final {
+                _result.set_exception(eptr);
+                delete this;
+            }
+            ::msghdr* msghdr() {
+                return &_mh;
+            }
+            future<size_t> get_future() {
+                return _result.get_future();
+            }
+        };
+        auto desc = std::make_unique<read_completion>(fd, iov);
+        auto req = internal::io_request::make_recvmsg(fd.fd.get(), desc->msghdr(), MSG_DONTWAIT);
+        auto fut = desc->get_future();
+        _r._io_sink.submit(desc.release(), std::move(req));
+        return fut;
     }
     virtual future<temporary_buffer<char>> read_some(pollable_fd_state& fd, internal::buffer_allocator* ba) override {
-        return readable(fd).then([this, &fd, ba] {
+        if (is_speculated(fd, POLLIN)) {
             auto buffer = ba->allocate_buffer();
             auto r = fd.fd.read(buffer.get_write(), buffer.size());
-            if (!r) {
-                // Speculation failure, try again with real polling this time
-                // Note we release the buffer and will reallocate it when poll
-                // completes.
-                return read_some(fd, ba);
+            if (r) {
+                if (size_t(*r) == buffer.size()) {
+                    fd.speculate_epoll(EPOLLIN);
+                }
+                return make_ready_future<temporary_buffer<char>>(std::move(buffer));
             }
-            if (size_t(*r) == buffer.size()) {
-                fd.speculate_epoll(EPOLLIN);
-            }
-            buffer.trim(*r);
-            return make_ready_future<temporary_buffer<char>>(std::move(buffer));
+        }
+        return readable(fd).then([this, &fd, ba] {
+            class read_completion final : public io_completion {
+                pollable_fd_state& _fd;
+                temporary_buffer<char> _buffer;
+                promise<temporary_buffer<char>> _result;
+            public:
+                read_completion(pollable_fd_state& fd, temporary_buffer<char> buffer)
+                    : _fd(fd), _buffer(std::move(buffer)) {}
+                void complete(size_t bytes) noexcept final {
+                    if (bytes == _buffer.size()) {
+                        _fd.speculate_epoll(EPOLLIN);
+                    }
+                    _buffer.trim(bytes);
+                    _result.set_value(std::move(_buffer));
+                    delete this;
+                }
+                void set_exception(std::exception_ptr eptr) noexcept final {
+                    _result.set_exception(eptr);
+                    delete this;
+                }
+                future<temporary_buffer<char>> get_future() {
+                    return _result.get_future();
+                }
+                char* get_write() {
+                    return _buffer.get_write();
+                }
+                size_t get_size() {
+                    return _buffer.size();
+                }
+            };
+            auto desc = std::make_unique<read_completion>(fd, ba->allocate_buffer());
+            auto req = internal::io_request::make_read(fd.fd.get(), -1, desc->get_write(), desc->get_size(), false);
+            auto fut = desc->get_future();
+            _r._io_sink.submit(desc.release(), std::move(req));
+            return fut;
         });
     }
     virtual future<size_t> write_some(pollable_fd_state& fd, net::packet& p) override {
-        return writeable(fd).then([this, &fd, &p] () mutable {
+        if (is_speculated(fd, EPOLLOUT)) {
             static_assert(offsetof(iovec, iov_base) == offsetof(net::fragment, base) &&
                 sizeof(iovec::iov_base) == sizeof(net::fragment::base) &&
                 offsetof(iovec, iov_len) == offsetof(net::fragment, size) &&
@@ -1531,31 +1640,89 @@ public:
                 sizeof(iovec) == sizeof(net::fragment)
                 , "net::fragment and iovec should be equivalent");
 
-            iovec* iov = reinterpret_cast<iovec*>(p.fragment_array());
-            msghdr mh = {};
-            mh.msg_iov = iov;
+            ::msghdr mh = {};
+            mh.msg_iov = reinterpret_cast<iovec*>(p.fragment_array());
             mh.msg_iovlen = std::min<size_t>(p.nr_frags(), IOV_MAX);
-            auto r = fd.fd.sendmsg(&mh, MSG_NOSIGNAL);
-            if (!r) {
-                return write_some(fd, p);
+            auto r = fd.fd.sendmsg(&mh, MSG_NOSIGNAL | MSG_DONTWAIT);
+            if (r) {
+                if (size_t(*r) == p.len()) {
+                    fd.speculate_epoll(EPOLLOUT);
+                }
+                return make_ready_future<size_t>(*r);
             }
-            if (size_t(*r) == p.len()) {
-                fd.speculate_epoll(EPOLLOUT);
+        }
+        class write_completion final : public io_completion {
+            pollable_fd_state& _fd;
+            ::msghdr _mh = {};
+            const size_t _to_write;
+            promise<size_t> _result;
+        public:
+            write_completion(pollable_fd_state& fd, net::packet& p)
+                : _fd(fd), _to_write(p.len()) {
+                _mh.msg_iov = reinterpret_cast<iovec*>(p.fragment_array());
+                _mh.msg_iovlen = std::min<size_t>(p.nr_frags(), IOV_MAX);
             }
-            return make_ready_future<size_t>(*r);
-        });
+            void complete(size_t bytes) noexcept final {
+                if (bytes == _to_write) {
+                    _fd.speculate_epoll(EPOLLIN);
+                }
+                _result.set_value(bytes);
+                delete this;
+            }
+            void set_exception(std::exception_ptr eptr) noexcept final {
+                _result.set_exception(eptr);
+                delete this;
+            }
+            ::msghdr* msghdr() {
+                return &_mh;
+            }
+            future<size_t> get_future() {
+                return _result.get_future();
+            }
+        };
+        auto desc = std::make_unique<write_completion>(fd, p);
+        auto req = internal::io_request::make_sendmsg(fd.fd.get(), desc->msghdr(), MSG_NOSIGNAL | MSG_DONTWAIT);
+        auto fut = desc->get_future();
+        _r._io_sink.submit(desc.release(), std::move(req));
+        return fut;
     }
     virtual future<size_t> write_some(pollable_fd_state& fd, const void* buffer, size_t len) override {
-        return writeable(fd).then([this, &fd, buffer, len] () mutable {
-            auto r = fd.fd.send(buffer, len, MSG_NOSIGNAL);
-            if (!r) {
-                return write_some(fd, buffer, len);
+        if (is_speculated(fd, EPOLLOUT)) {
+            auto r = fd.fd.send(buffer, len, MSG_NOSIGNAL | MSG_DONTWAIT);
+            if (r) {
+                if (size_t(*r) == len) {
+                    fd.speculate_epoll(EPOLLOUT);
+                }
+                return make_ready_future<size_t>(*r);
             }
-            if (size_t(*r) == len) {
-                fd.speculate_epoll(EPOLLOUT);
+        }
+        class write_completion final : public io_completion {
+            pollable_fd_state& _fd;
+            const size_t _to_write;
+            promise<size_t> _result;
+        public:
+            write_completion(pollable_fd_state& fd, size_t to_write)
+                : _fd(fd), _to_write(to_write) {}
+            void complete(size_t bytes) noexcept final {
+                if (bytes == _to_write) {
+                    _fd.speculate_epoll(EPOLLOUT);
+                }
+                _result.set_value(bytes);
+                delete this;
             }
-            return make_ready_future<size_t>(*r);
-        });
+            void set_exception(std::exception_ptr eptr) noexcept final {
+                _result.set_exception(eptr);
+                delete this;
+            }
+            future<size_t> get_future() {
+                return _result.get_future();
+            }
+        };
+        auto desc = std::make_unique<write_completion>(fd, len);
+        auto req = internal::io_request::make_send(fd.fd.get(), buffer, len, MSG_NOSIGNAL | MSG_DONTWAIT);
+        auto fut = desc->get_future();
+        _r._io_sink.submit(desc.release(), std::move(req));
+        return fut;
     }
     virtual void signal_received(int signo, siginfo_t* siginfo, void* ignore) override {
         _r._signals.action(signo, siginfo, ignore);
@@ -1580,6 +1747,9 @@ public:
     }
     virtual pollable_fd_state_ptr make_pollable_fd_state(file_desc fd, pollable_fd::speculation speculate) override {
         return pollable_fd_state_ptr(new uring_pollable_fd_state(std::move(fd), std::move(speculate)));
+    }
+    virtual bool do_blocking_io() const override {
+        return true;
     }
 };
 

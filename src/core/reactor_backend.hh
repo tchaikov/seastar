@@ -212,6 +212,10 @@ public:
     virtual void start_handling_signal() = 0;
 
     virtual pollable_fd_state_ptr make_pollable_fd_state(file_desc fd, pollable_fd::speculation speculate) = 0;
+
+    virtual bool do_blocking_io() const {
+        return false;
+    }
 };
 
 // reactor backend using file-descriptor & epoll, suitable for running on
