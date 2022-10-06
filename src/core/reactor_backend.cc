@@ -1144,6 +1144,8 @@ try_create_uring(unsigned queue_len, bool throw_on_error) {
             IORING_OP_RECVMSG,
             IORING_OP_SEND,
             IORING_OP_SENDMSG,
+            IORING_OP_ACCEPT,
+            IORING_OP_CONNECT,
             };
     auto maybe_throw = [&] (auto exception) {
         if (throw_on_error) {
@@ -1367,7 +1369,11 @@ private:
                 ::io_uring_prep_sendmsg(sqe, req.fd(), req.msghdr(), req.flags());
                 break;
             case o::accept:
+                ::io_uring_prep_accept(sqe, req.fd(), req.posix_sockaddr(), req.socklen_ptr(), req.flags());
+                break;
             case o::connect:
+                ::io_uring_prep_connect(sqe, req.fd(), req.posix_sockaddr(), req.socklen());
+                break;
             case o::poll_add:
             case o::poll_remove:
             case o::cancel:
@@ -1486,10 +1492,98 @@ public:
         delete pfd;
     }
     virtual future<std::tuple<pollable_fd, socket_address>> accept(pollable_fd_state& listenfd) override {
-        return _r.do_accept(listenfd);
+        if (is_speculated(listenfd, POLLIN | POLLOUT)) {
+            listenfd.maybe_no_more_recv();
+            socket_address sa;
+            auto maybe_fd = listenfd.fd.try_accept(sa, SOCK_CLOEXEC);
+            if (maybe_fd) {
+                listenfd.speculate_epoll(EPOLLIN);
+                pollable_fd pfd(std::move(*maybe_fd), pollable_fd::speculation(EPOLLOUT));
+                return make_ready_future<std::tuple<pollable_fd, socket_address>>(std::move(pfd), std::move(sa));
+            }
+        }
+        class accept_completion final : public io_completion {
+            pollable_fd_state& _listenfd;
+            socket_address _sa;
+            promise<std::tuple<pollable_fd, socket_address>> _result;
+        public:
+            accept_completion(pollable_fd_state& listenfd)
+                : _listenfd(listenfd) {}
+            void complete(size_t fd) noexcept final {
+                _listenfd.speculate_epoll(EPOLLIN);
+                pollable_fd pfd(file_desc::from_fd(fd), pollable_fd::speculation(EPOLLOUT));
+                _result.set_value(std::move(pfd), std::move(_sa));
+                delete this;
+            }
+            void set_exception(std::exception_ptr eptr) noexcept final {
+                _result.set_exception(eptr);
+                delete this;
+            }
+            future<std::tuple<pollable_fd, socket_address>> get_future() {
+                return _result.get_future();
+            }
+            ::sockaddr* posix_sockaddr() {
+                return &_sa.as_posix_sockaddr();
+            }
+            socklen_t* socklen_ptr() {
+                return &_sa.addr_length;
+            }
+        };
+        auto desc = std::make_unique<accept_completion>(listenfd);
+        return readable_or_writeable(listenfd).then([&listenfd, desc = std::move(desc), this]() mutable {
+            auto req = internal::io_request::make_accept(listenfd.fd.get(), desc->posix_sockaddr(), desc->socklen_ptr(), SOCK_CLOEXEC);
+            auto fut = desc->get_future();
+            _r._io_sink.submit(desc.release(), std::move(req));
+            return fut;
+        }).handle_exception_type([&listenfd] (const std::system_error &e) {
+            if (e.code() == std::errc::invalid_argument) {
+                // The chances are that we shutting down the connection.
+                listenfd.maybe_no_more_recv();
+            }
+            return make_exception_future<std::tuple<pollable_fd, socket_address>>(e);
+        });
     }
     virtual future<> connect(pollable_fd_state& fd, socket_address& sa) override {
-        return _r.do_connect(fd, sa);
+        class connect_completion final : public io_completion {
+            socket_address _sa;
+            promise<> _result;
+        public:
+            void complete(size_t fd) noexcept final {
+                _result.set_value();
+                delete this;
+            }
+            void set_exception(std::exception_ptr eptr) noexcept final {
+                _result.set_exception(eptr);
+                delete this;
+            }
+            future<> get_future() {
+                return _result.get_future();
+            }
+            ::sockaddr* posix_sockaddr() {
+                return &_sa.as_posix_sockaddr();
+            }
+            socklen_t socklen() const {
+                return _sa.addr_length;
+            }
+        };
+        auto desc = std::make_unique<connect_completion>();
+        auto req = internal::io_request::make_connect(fd.fd.get(), desc->posix_sockaddr(), desc->socklen());
+        auto fut = desc->get_future();
+        _r._io_sink.submit(desc.release(), std::move(req));
+        return fut.handle_exception_type([] (const std::system_error &e) {
+            if (e.code() == std::errc::operation_in_progress) {
+                return make_ready_future();
+            }
+            throw;
+        }).then([&fd, this] {
+            return writeable(fd);
+        }).then([&fd] {
+            auto err = fd.fd.getsockopt<int>(SOL_SOCKET, SO_ERROR);
+            if (err != 0) {
+                throw std::system_error(err, std::system_category());
+            }
+            return make_ready_future();
+        });
     }
     virtual void shutdown(pollable_fd_state& fd, int how) override {
         fd.fd.shutdown(how);
