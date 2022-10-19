@@ -203,6 +203,9 @@ public:
     virtual future<size_t> write_some(pollable_fd_state& fd, net::packet& p) = 0;
     virtual future<size_t> write_some(pollable_fd_state& fd, const void* buffer, size_t len) = 0;
 
+    virtual bool do_blocking_io() const {
+        return false;
+    }
     virtual void signal_received(int signo, siginfo_t* siginfo, void* ignore) = 0;
     virtual void start_tick() = 0;
     virtual void stop_tick() = 0;

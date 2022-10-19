@@ -1340,24 +1340,30 @@ private:
                 break;
             case o::readv:
                 ::io_uring_prep_readv(sqe, req.fd(), req.iov(), req.iov_len(), req.pos());
+                // ::io_uring_sqe_set_flags(sqe, IOSQE_ASYNC);
                 break;
             case o::writev:
                 ::io_uring_prep_writev(sqe, req.fd(), req.iov(), req.iov_len(), req.pos());
+                // ::io_uring_sqe_set_flags(sqe, IOSQE_ASYNC);
                 break;
             case o::fdatasync:
                 ::io_uring_prep_fsync(sqe, req.fd(), IORING_FSYNC_DATASYNC);
                 break;
             case o::recv:
                 ::io_uring_prep_recv(sqe, req.fd(), req.address(), req.size(), req.flags());
+                // ::io_uring_sqe_set_flags(sqe, IOSQE_ASYNC);
                 break;
             case o::recvmsg:
                 ::io_uring_prep_recvmsg(sqe, req.fd(), req.msghdr(), req.flags());
+                // ::io_uring_sqe_set_flags(sqe, IOSQE_ASYNC);
                 break;
             case o::send:
                 ::io_uring_prep_send(sqe, req.fd(), req.address(), req.size(), req.flags());
+                // ::io_uring_sqe_set_flags(sqe, IOSQE_ASYNC);
                 break;
             case o::sendmsg:
                 ::io_uring_prep_sendmsg(sqe, req.fd(), req.msghdr(), req.flags());
+                // ::io_uring_sqe_set_flags(sqe, IOSQE_ASYNC);
                 break;
             case o::accept:
                 ::io_uring_prep_accept(sqe, req.fd(), req.posix_sockaddr(), req.socklen_ptr(), req.flags());
@@ -1494,12 +1500,14 @@ public:
             try {
                 listenfd.maybe_no_more_recv();
                 socket_address sa;
-                auto maybe_fd = listenfd.fd.try_accept(sa, SOCK_NONBLOCK | SOCK_CLOEXEC);
+                auto maybe_fd = listenfd.fd.try_accept(sa, SOCK_CLOEXEC);
                 if (maybe_fd) {
+                    seastar_logger.error("accept done");
                     listenfd.speculate_epoll(EPOLLIN);
                     pollable_fd pfd(std::move(*maybe_fd), pollable_fd::speculation(EPOLLOUT));
                     return make_ready_future<std::tuple<pollable_fd, socket_address>>(std::move(pfd), std::move(sa));
                 }
+                seastar_logger.error("accepted fast path failed");
             } catch (...) {
                 return current_exception_as_future<std::tuple<pollable_fd, socket_address>>();
             }
@@ -1512,6 +1520,7 @@ public:
             accept_completion(pollable_fd_state& listenfd)
                 : _listenfd(listenfd) {}
             void complete(size_t fd) noexcept final {
+                seastar_logger.error("accepted slow path done");
                 _listenfd.speculate_epoll(EPOLLIN);
                 pollable_fd pfd(file_desc::from_fd(fd), pollable_fd::speculation(EPOLLOUT));
                 _result.set_value(std::move(pfd), std::move(_sa));
@@ -1548,7 +1557,7 @@ public:
             }
         };
         auto desc = std::make_unique<accept_completion>(listenfd);
-        auto req = internal::io_request::make_accept(listenfd.fd.get(), desc->posix_sockaddr(), desc->socklen_ptr(), SOCK_NONBLOCK | SOCK_CLOEXEC);
+        auto req = internal::io_request::make_accept(listenfd.fd.get(), desc->posix_sockaddr(), desc->socklen_ptr(), SOCK_CLOEXEC);
         return submit_request(std::move(desc), std::move(req));
     }
     virtual future<> connect(pollable_fd_state& fd, socket_address& sa) override {
@@ -1586,10 +1595,12 @@ public:
         fd.fd.shutdown(how);
     }
     virtual future<size_t> read_some(pollable_fd_state& fd, void* buffer, size_t len) override {
+        seastar_logger.error("read buf...");
         if (fd.take_speculation(POLLIN)) {
             try {
                 auto r = fd.fd.read(buffer, len);
                 if (r) {
+                    seastar_logger.error("read buf done");
                     if (size_t(*r) == len) {
                         fd.speculate_epoll(EPOLLIN);
                     }
@@ -1607,6 +1618,7 @@ public:
             read_completion(pollable_fd_state& fd, size_t to_read)
                 : _fd(fd), _to_read(to_read) {}
             void complete(size_t bytes) noexcept final {
+                seastar_logger.error("read buf slow done");
                 if (bytes == _to_read) {
                     _fd.speculate_epoll(EPOLLIN);
                 }
@@ -1626,13 +1638,15 @@ public:
         return submit_request(std::move(desc), std::move(req));
     }
     virtual future<size_t> read_some(pollable_fd_state& fd, const std::vector<iovec>& iov) override {
+        seastar_logger.error("read iov...");
         if (fd.take_speculation(POLLIN)) {
             ::msghdr mh = {};
             mh.msg_iov = const_cast<iovec*>(iov.data());
             mh.msg_iovlen = iov.size();
             try {
-                auto r = fd.fd.recvmsg(&mh, 0);
+                auto r = fd.fd.recvmsg(&mh, MSG_DONTWAIT);
                 if (r) {
+                    seastar_logger.error("recv msg done");
                     if (size_t(*r) == internal::iovec_len(iov)) {
                         fd.speculate_epoll(EPOLLIN);
                     }
@@ -1654,6 +1668,7 @@ public:
                 _mh.msg_iovlen = _iov.size();
             }
             void complete(size_t bytes) noexcept final {
+                seastar_logger.error("recv msg slow done");
                 if (bytes == internal::iovec_len(_iov)) {
                     _fd.speculate_epoll(EPOLLIN);
                 }
@@ -1676,10 +1691,12 @@ public:
         return submit_request(std::move(desc), std::move(req));
     }
     virtual future<temporary_buffer<char>> read_some(pollable_fd_state& fd, internal::buffer_allocator* ba) override {
+        seastar_logger.error("read ba...");
         if (fd.take_speculation(POLLIN)) {
             auto buffer = ba->allocate_buffer();
             try {
                 auto r = fd.fd.read(buffer.get_write(), buffer.size());
+                seastar_logger.error("read done");
                 if (r) {
                     if (size_t(*r) == buffer.size()) {
                         fd.speculate_epoll(EPOLLIN);
@@ -1700,6 +1717,7 @@ public:
                 read_completion(pollable_fd_state& fd, temporary_buffer<char> buffer)
                     : _fd(fd), _buffer(std::move(buffer)) {}
                 void complete(size_t bytes) noexcept final {
+                    seastar_logger.error("read slow done");
                     if (bytes == _buffer.size()) {
                         _fd.speculate_epoll(EPOLLIN);
                     }
@@ -1740,7 +1758,7 @@ public:
             mh.msg_iov = reinterpret_cast<iovec*>(p.fragment_array());
             mh.msg_iovlen = std::min<size_t>(p.nr_frags(), IOV_MAX);
             try {
-                auto r = fd.fd.sendmsg(&mh, MSG_NOSIGNAL);
+                auto r = fd.fd.sendmsg(&mh, MSG_NOSIGNAL | MSG_DONTWAIT);
                 if (r) {
                     if (size_t(*r) == p.len()) {
                         fd.speculate_epoll(EPOLLOUT);
@@ -1787,7 +1805,7 @@ public:
     virtual future<size_t> write_some(pollable_fd_state& fd, const void* buffer, size_t len) override {
         if (fd.take_speculation(EPOLLOUT)) {
             try {
-                auto r = fd.fd.send(buffer, len, MSG_NOSIGNAL);
+                auto r = fd.fd.send(buffer, len, MSG_NOSIGNAL | MSG_DONTWAIT);
                 if (r) {
                     if (size_t(*r) == len) {
                         fd.speculate_epoll(EPOLLOUT);
@@ -1824,6 +1842,11 @@ public:
         auto req = internal::io_request::make_send(fd.fd.get(), buffer, len, MSG_NOSIGNAL);
         return submit_request(std::move(desc), std::move(req));
     }
+
+    virtual bool do_blocking_io() const override {
+        return true;
+    }
+
     virtual void signal_received(int signo, siginfo_t* siginfo, void* ignore) override {
         _r._signals.action(signo, siginfo, ignore);
     }
