@@ -203,6 +203,16 @@ namespace seastar::spdk {
 future<int> app::run(const options& opts,
                      std::function<future<> ()>&& func) noexcept
 {
+    return run(opts, [func = std::move(func)] {
+        return func().then([] {
+            return 0;
+        });
+    });
+}
+
+future<int> app::run(const options& opts,
+                     std::function<future<int> ()>&& func) noexcept
+{
     spdk_log_open(spdk_do_log);
 
     return seastar::async([&opts, func = std::move(func), this] {

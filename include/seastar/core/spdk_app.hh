@@ -53,6 +53,8 @@ class app {
 public:
     future<int> run(const options& opts,
                     std::function<future<> ()>&& func) noexcept;
+    future<int> run(const options& opts,
+                    std::function<future<int> ()>&& func) noexcept;
 private:
     future<> start(const options& opts);
     future<> stop();
