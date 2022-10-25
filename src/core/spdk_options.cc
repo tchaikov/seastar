@@ -23,6 +23,7 @@
 
 #include <seastar/core/spdk_options.hh>
 #include <spdk/init.h>
+#include <spdk/trace.h>
 
 namespace seastar::spdk {
 
@@ -44,6 +45,7 @@ static auto iova_modes()
 
 options::options(program_options::option_group* parent_group)
     : program_options::option_group(parent_group, "SPDK options")
+    , name(*this, "spdk-name", "spdk", "RPC listen address")
     , rpc_addr(*this, "spdk-rpc-socket", SPDK_DEFAULT_RPC_ADDR, "RPC listen address")
     , json_config(*this, "spdk-config", {}, "JSON config file")
     , json_ignore_init_errors(*this, "spdk-json-ignore-init-errors", "don't exit on invalid config entry")
@@ -53,6 +55,8 @@ options::options(program_options::option_group* parent_group)
     , mem_size(*this, "spdk-mem-size", {}, "memory size in MB for DPDK")
     , no_pci(*this, "spdk-no-pci", "disable PCI access")
     , single_file_segments(*this, "spdk-single-file-segments", "force creating just one hugetlbfs file")
+    , tracepoint_entries(*this, "spdk-tracepoint-entries", SPDK_DEFAULT_NUM_TRACE_ENTRIES, "number of tracepoint entries preserved in ringbuffer")
+    , tracepoint_masks(*this, "spdk-tracepoint-masks", {}, "tracepoint masks for spdk trace buffers")
     , env_context(*this, "spdk-env-context", {}, "Opaque context for use of the env implementation")
 {
 }

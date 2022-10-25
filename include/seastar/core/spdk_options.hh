@@ -35,6 +35,7 @@ enum class iova_mode {
 
 /// SPDK configuration options.
 struct options : program_options::option_group {
+    program_options::value<std::string> name;
     program_options::value<std::string> rpc_addr;
     program_options::value<std::string> json_config;
     program_options::value<> json_ignore_init_errors;
@@ -44,6 +45,8 @@ struct options : program_options::option_group {
     program_options::value<std::string> mem_size;
     program_options::value<> no_pci;
     program_options::value<> single_file_segments;
+    program_options::value<unsigned> tracepoint_entries;
+    program_options::value<std::string> tracepoint_masks;
     program_options::value<std::string> env_context;
     options(program_options::option_group* parent_group);
 };

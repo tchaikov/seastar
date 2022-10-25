@@ -21,6 +21,11 @@
  */
 #ifdef SEASTAR_HAVE_SPDK
 
+#include <bit>
+#include <bitset>
+#include <charconv>
+#include <ranges>
+
 #include <seastar/core/spdk_app.hh>
 #include <seastar/core/spdk_options.hh>
 #include <seastar/util/defer.hh>
@@ -31,6 +36,7 @@
 #include <spdk/log.h>
 #include <spdk/string.h>
 #include <spdk/thread.h>
+#include <spdk/trace.h>
 
 namespace seastar::spdk {
 
@@ -196,6 +202,69 @@ struct run_with_spdk_thread {
     }
 };
 
+int setup_trace(std::string_view name,
+                 std::string_view group_masks,
+                 uint64_t num_entries)
+{
+    // setup the ringbuffer shm for holding the tracepoints
+    if (num_entries == 0) {
+        return 0;
+    }
+    if (!std::has_single_bit(num_entries)) {
+        seastar::spdk::logger.error("tracepoint-entries must be power of 2");
+        return 1;
+    }
+    // mimic the behavior of an SPDK app, see also
+    // spdk/lib/event/app.c: app_setup_trace(struct spdk_app_opts *opts)
+    std::string shm_name = fmt::format("{}_trace.pid{}", name, static_cast<int>(getpid()));
+    if (int rc = spdk_trace_init(shm_name.c_str(), num_entries); rc != 0) {
+        seastar::spdk::logger.error("unable to init trace buffer {}", shm_name);
+        return rc;
+    }
+    // parse a comma-separaterd tracepoint group and its optional mask, like
+    // "nvmf_tcp:0x1,thread", please note, unlike spdk, we don't support the notation like
+    // "nvmf_tcp,thread:0x1"
+    for (const auto gm : std::views::split(group_masks, ",")) {
+        std::string_view group_and_mask{gm.begin(), gm.end()};
+        std::string group;
+        uint64_t per_group_mask = 0;
+        if (auto mask_pos = group_and_mask.find(':'); mask_pos != group_and_mask.npos) {
+            group = group_and_mask.substr(0, mask_pos);
+            auto mask_str = group_and_mask.substr(mask_pos + 1);
+            auto [ptr, ec] = std::from_chars(mask_str.data(),
+                                             mask_str.data() + mask_str.size(),
+                                             per_group_mask, 16);
+            if (ec != std::errc() || ptr != mask_str.data() + mask_str.size()) {
+                seastar::spdk::logger.warn("unrecognized tracepoint mask: {} for {}",
+                                           mask_str, group);
+                return 1;
+            }
+        } else {
+            group.assign(group_and_mask);
+            per_group_mask = std::numeric_limits<uint64_t>::max();
+        }
+        // please note, group could contain more than one group. for instance "all" implies that
+        // all tracepoint groups should be enabled. so we need to set all
+        uint64_t group_mask = spdk_trace_create_tpoint_group_mask(group.c_str());
+        if (group_mask == 0) {
+            seastar::spdk::logger.warn("unrecognized tracepoint group: {}", group);
+            continue;
+        }
+        std::bitset<SPDK_TRACE_MAX_GROUP_ID> enabled_groups(group_mask);
+        for (std::size_t group_id = 0; group_id < enabled_groups.size(); group_id++) {
+            if (enabled_groups.test(group_id)) {
+                seastar::spdk::logger.debug("tracepoint {} ({}) enabled with {:#x}",
+                                            group, group_id, per_group_mask);
+                spdk_trace_set_tpoints(group_id, per_group_mask);
+            }
+        }
+    }
+    seastar::spdk::logger.info("tracepoint located at /dev/shm/{}", shm_name);
+    seastar::spdk::logger.info("use 'spdk_trace -s {} -p {}' to capture a snapshot of events at runtime",
+                               name, getpid());
+    return 0;
+}
+
 }
 
 namespace seastar::spdk {
@@ -228,6 +297,13 @@ future<int> app::run(const options& opts,
         app_thread = spdk_thread_create("app_thread", &cpu_mask);
         if (app_thread == nullptr) {
             throw std::bad_alloc();
+        }
+        if (opts.tracepoint_masks) {
+            if (setup_trace(opts.name.get_value(),
+                            opts.tracepoint_masks.get_value(),
+                            opts.tracepoint_entries.get_value())) {
+                return 1;
+            }
         }
         run_with_spdk_thread run_with(app_thread);
         start(opts).get();
@@ -292,6 +368,7 @@ future<> app::stop()
 {
     logger.info("app stopping");
     spdk_rpc_finish();
+    spdk_trace_cleanup();
     auto fini_desc = std::make_unique<msg_desc>();
     auto fini_done = fini_desc->get_future();
     spdk_subsystem_fini(spdk_subsystem_fini_cpl, fini_desc.release());
