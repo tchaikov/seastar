@@ -101,25 +101,29 @@ future<> executor::start()
 
 future<> executor::stop()
 {
+    logger.info("executor#{} stop", seastar::this_shard_id());
+    poller.reset();
     if (seastar::this_shard_id() == 0) {
         s_executor = nullptr;
         spdk_thread_lib_fini();
     }
-    poller.reset();
     return make_ready_future<>();
 }
 
 bool executor::poll()
 {
     int nr = 0;
-    for (auto& entry : _threads) {
-        spdk_thread *thread = entry.thread();
+    for (auto entry = _threads.begin(), last = _threads.end(); entry != last;) {
+        spdk_thread *thread = entry->thread();
         nr += spdk_thread_poll(thread, 0, _tsc_last);
         _tsc_last = spdk_thread_get_last_tsc(thread);
         if (__builtin_expect(spdk_thread_is_exited(thread) &&
                              spdk_thread_is_idle(thread), false)) {
-            _threads.erase(internal::thread_entry::container_list_t::s_iterator_to(entry));
-            spdk_thread_destroy(thread);
+            _threads.erase_and_dispose(entry++, [](auto* entry) {
+                spdk_thread_destroy(entry->thread());
+            });
+        } else {
+            ++entry;
         }
     }
     return nr > 0;
