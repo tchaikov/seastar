@@ -101,7 +101,7 @@ int main(int ac, char** av) {
         }).then_wrapped([] (auto f) {
             try {
                 f.get();
-                return 1;
+                return 0;
             } catch (std::exception& e) {
                 std::cerr << e.what() << std::endl;
                 return 1;
