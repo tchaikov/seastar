@@ -48,7 +48,7 @@ static int thread_do_op(spdk_thread* thread, spdk_thread_op op)
     case SPDK_THREAD_OP_NEW: {
         spdk_cpuset* cpumask = spdk_thread_get_cpumask(thread);
         unsigned shard = 0;
-        while (shard < smp::count) {
+        for (; shard < smp::count; shard++) {
             if (spdk_cpuset_get_cpu(cpumask, shard)) {
                 break;
             }
