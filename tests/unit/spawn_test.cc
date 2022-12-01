@@ -102,6 +102,7 @@ SEASTAR_TEST_CASE(test_spawn_input) {
             }).then([] (temporary_buffer<char> echo) {
                 BOOST_CHECK_EQUAL(sstring(echo.get(), echo.size()), text);
             }).finally([&p] {
+
                 return p.wait().discard_result();
             });
         });
