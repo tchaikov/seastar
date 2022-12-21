@@ -564,6 +564,8 @@ function (_cooking_determine_common_cmake_args output)
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     -DCMAKE_PREFIX_PATH=${prefix_path_with_colons}
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     PARENT_SCOPE)
 endfunction ()
 
