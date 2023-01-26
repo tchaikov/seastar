@@ -24,8 +24,9 @@
 #include <seastar/core/memory.hh>
 #include <seastar/core/temporary_buffer.hh>
 #include <seastar/util/std-compat.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// Creates a `temporary_buffer` allocated by a custom allocator
 ///

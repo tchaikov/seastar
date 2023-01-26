@@ -23,6 +23,8 @@
 
 #include <memory>
 
+export module seastar:util.indirect;
+
 namespace seastar {
 
 // This header defines functors for comparing and hashing pointers by pointed-to values instead of pointer addresses.

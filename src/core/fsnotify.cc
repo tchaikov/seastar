@@ -19,10 +19,7 @@
  * Copyright 2020 ScyllaDB Ltd.
  */
 
-#include <seastar/core/internal/pollable_fd.hh>
-#include <seastar/core/posix.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/core/fsnotify.hh>
+module seastar;
 
 namespace seastar::experimental {
 

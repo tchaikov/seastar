@@ -21,12 +21,13 @@
 
 #pragma once
 
-#include <seastar/core/deleter.hh>
-#include <seastar/util/eclipse.hh>
-#include <seastar/util/std-compat.hh>
-#include <malloc.h>
 #include <algorithm>
 #include <cstddef>
+#include <string_view>
+#include <malloc.h>
+
+export module seastar:core.temporary_buffer;
+import :core.deleter;
 
 namespace seastar {
 
@@ -58,7 +59,7 @@ namespace seastar {
 ///    tcp output)
 ///
 /// \tparam CharType underlying character type (must be a variant of \c char).
-template <typename CharType>
+export template <typename CharType>
 class temporary_buffer {
     static_assert(sizeof(CharType) == 1, "must buffer stream of bytes");
     CharType* _buffer;

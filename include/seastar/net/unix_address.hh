@@ -25,7 +25,9 @@
 #include <sys/un.h>
 #include <string>
 
-namespace seastar {
+export module seastar:net.unix_address;
+
+export namespace seastar {
 
 /*!
     A helper struct for creating/manipulating UNIX-domain sockets.

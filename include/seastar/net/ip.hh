@@ -30,17 +30,6 @@
 #include <map>
 #include <list>
 #include <chrono>
-#include <seastar/core/array_map.hh>
-#include <seastar/net/byteorder.hh>
-#include <seastar/core/byteorder.hh>
-#include <seastar/net/arp.hh>
-#include <seastar/net/ip_checksum.hh>
-#include <seastar/net/const.hh>
-#include <seastar/net/packet-util.hh>
-#include <seastar/core/shared_ptr.hh>
-#include <seastar/net/toeplitz.hh>
-#include <seastar/net/udp.hh>
-#include <seastar/core/metrics_registration.hh>
 
 #include "ipv4_address.hh"
 #include "ipv6_address.hh"

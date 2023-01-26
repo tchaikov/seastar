@@ -21,31 +21,39 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
-#include <seastar/core/loop.hh>
-#include <seastar/core/semaphore.hh>
-#include <seastar/core/metrics_registration.hh>
-#include <seastar/core/posix.hh>
-#include <seastar/core/reactor_config.hh>
-#include <seastar/core/resource.hh>
+#include <deque>
 #include <boost/lockfree/spsc_queue.hpp>
 #include <boost/thread/barrier.hpp>
 #include <boost/range/irange.hpp>
-#include <deque>
+#include <optional>
 #include <thread>
 
 /// \file
 
+export module seastar:core.smp;
+import :core.cacheline;
+import :core.future;
+import :core.lowres_clock;
+import :core.metrics_registration;
+import :core.posix;
+import :core.scheduling;
+import :core.semaphore;
+import :core.sstring;
+import :core.task;
+
+#define SEASTAR_CONCEPT(x...) x
+
 namespace seastar {
 
-using shard_id = unsigned;
+SEASTAR_EXPORT using shard_id = unsigned;
 
-class smp_service_group;
+export class smp_service_group;
 class reactor_backend_selector;
+class reactor;
 
 namespace alien {
 
-class instance;
+export class instance;
 
 }
 
@@ -61,7 +69,7 @@ inline shard_id* this_shard_id_ptr() noexcept {
 }
 
 /// Returns shard_id of the of the current shard.
-inline shard_id this_shard_id() noexcept {
+SEASTAR_EXPORT inline shard_id this_shard_id() noexcept {
     return *internal::this_shard_id_ptr();
 }
 
@@ -100,7 +108,7 @@ struct smp_service_group_config {
 /// internal call may not call again via either ssg1 or ssg2, or it
 /// may form a cycle (and risking an ABBA deadlock). Create a
 /// new smp_service_group_instead.
-class smp_service_group {
+SEASTAR_EXPORT class smp_service_group {
     unsigned _id;
 #ifdef SEASTAR_DEBUG
     unsigned _version = 0;
@@ -125,7 +133,7 @@ internal::smp_service_group_id(smp_service_group ssg) noexcept {
 /// This makes is deadlock-safe, but can consume unbounded resources,
 /// and should therefore only be used when initiator concurrency is
 /// very low (e.g. administrative tasks).
-smp_service_group default_smp_service_group() noexcept;
+export smp_service_group default_smp_service_group() noexcept;
 
 /// Creates an smp_service_group with the specified configuration.
 ///
@@ -139,19 +147,19 @@ future<smp_service_group> create_smp_service_group(smp_service_group_config ssgc
 /// be used again once this function is called.
 future<> destroy_smp_service_group(smp_service_group ssg) noexcept;
 
-inline
+SEASTAR_EXPORT inline
 smp_service_group default_smp_service_group() noexcept {
     return smp_service_group(0);
 }
 
-using smp_timeout_clock = lowres_clock;
-using smp_service_group_semaphore = basic_semaphore<named_semaphore_exception_factory, smp_timeout_clock>;
-using smp_service_group_semaphore_units = semaphore_units<named_semaphore_exception_factory, smp_timeout_clock>;
+SEASTAR_EXPORT using smp_timeout_clock = lowres_clock;
+SEASTAR_EXPORT using smp_service_group_semaphore = basic_semaphore<named_semaphore_exception_factory, smp_timeout_clock>;
+SEASTAR_EXPORT using smp_service_group_semaphore_units = semaphore_units<named_semaphore_exception_factory, smp_timeout_clock>;
 
 static constexpr smp_timeout_clock::time_point smp_no_timeout = smp_timeout_clock::time_point::max();
 
 /// Options controlling the behaviour of \ref smp::submit_to().
-struct smp_submit_to_options {
+SEASTAR_EXPORT struct smp_submit_to_options {
     /// Controls resource allocation.
     smp_service_group service_group = default_smp_service_group();
     /// The timeout is relevant only to the time the call spends waiting to be
@@ -169,7 +177,7 @@ void init_default_smp_service_group(shard_id cpu);
 
 smp_service_group_semaphore& get_smp_service_groups_semaphore(unsigned ssg_id, shard_id t) noexcept;
 
-class smp_message_queue {
+SEASTAR_EXPORT class smp_message_queue {
     static constexpr size_t queue_length = 128;
     static constexpr size_t batch_size = 16;
     static constexpr size_t prefetch_cnt = 2;
@@ -297,7 +305,7 @@ class smp_message_queue;
 struct reactor_options;
 struct smp_options;
 
-class smp : public std::enable_shared_from_this<smp> {
+SEASTAR_EXPORT class smp : public std::enable_shared_from_this<smp> {
     alien::instance& _alien;
     std::vector<posix_thread> _threads;
     std::vector<std::function<void ()>> _thread_loops; // for dpdk

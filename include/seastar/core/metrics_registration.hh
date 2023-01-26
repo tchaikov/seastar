@@ -24,7 +24,10 @@
 #include <memory>
 #include <vector>
 
-#include <seastar/core/sstring.hh>
+#include <seastar/util/modules.hh>
+
+export module seastar:core.metrics_registration;
+import :core.sstring;
 
 /*!
  * \file metrics_registration.hh
@@ -56,10 +59,10 @@ struct metric_definition_impl;
 class metric_groups_impl;
 }
 
-using group_name_type = sstring; /*!< A group of logically related metrics */
-class metric_groups;
+SEASTAR_EXPORT using group_name_type = sstring; /*!< A group of logically related metrics */
+export class metric_groups;
 
-class metric_definition {
+SEASTAR_EXPORT class metric_definition {
     std::unique_ptr<impl::metric_definition_impl> _impl;
 public:
     metric_definition(const impl::metric_definition_impl& impl) noexcept;
@@ -69,7 +72,7 @@ public:
     friend impl::metric_groups_impl;
 };
 
-class metric_group_definition {
+SEASTAR_EXPORT class metric_group_definition {
 public:
     group_name_type name;
     std::initializer_list<metric_definition> metrics;
@@ -86,7 +89,7 @@ public:
  * Initialization can be done in the constructor or with a call to add_group
  * @see metrics.hh for example and supported metrics
  */
-class metric_groups {
+SEASTAR_EXPORT class metric_groups {
     std::unique_ptr<impl::metric_groups_def> _impl;
 public:
     metric_groups() noexcept;
@@ -152,7 +155,7 @@ public:
  * Initialization is done in the constructor or
  * with a call to add_group
  */
-class metric_group : public metric_groups {
+SEASTAR_EXPORT class metric_group : public metric_groups {
 public:
     metric_group() noexcept;
     metric_group(const metric_group&) = delete;

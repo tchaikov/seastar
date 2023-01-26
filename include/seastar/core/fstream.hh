@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 /// \file
 
 // File <-> streams adapters
@@ -30,14 +32,19 @@
 // interface to files, while retaining the zero-copy characteristics of
 // seastar files.
 
-#include <seastar/core/file.hh>
-#include <seastar/core/iostream.hh>
-#include <seastar/core/shared_ptr.hh>
+export module seastar:core.fstream;
+
+import :core.file;
+import :core.io_priority_class;
+import :core.iostream;
+import :core.shared_ptr;
+
+
 #include <seastar/core/internal/api-level.hh>
 
 namespace seastar {
 
-class file_input_stream_history {
+SEASTAR_EXPORT class file_input_stream_history {
     static constexpr uint64_t window_size = 4 * 1024 * 1024;
     struct window {
         uint64_t total_read = 0;
@@ -51,8 +58,8 @@ class file_input_stream_history {
 };
 
 /// Data structure describing options for opening a file input stream
-struct file_input_stream_options {
-    size_t buffer_size = 8192;    ///< I/O buffer size
+SEASTAR_EXPORT struct file_input_stream_options {
+    std::size_t buffer_size = 8192;    ///< I/O buffer size
     unsigned read_ahead = 0;      ///< Maximum number of extra read-ahead operations
     ::seastar::io_priority_class io_priority_class = default_priority_class();
     lw_shared_ptr<file_input_stream_history> dynamic_adjustments = { }; ///< Input stream history, if null dynamic adjustments are disabled
@@ -67,22 +74,22 @@ struct file_input_stream_options {
 /// \param options A set of options controlling the stream.
 ///
 /// \note Multiple input streams may exist concurrently for the same file.
-input_stream<char> make_file_input_stream(
+SEASTAR_EXPORT input_stream<char> make_file_input_stream(
         file file, uint64_t offset, uint64_t len, file_input_stream_options options = {});
 
 // Create an input_stream for a given file, with the specified options.
 // Multiple fibers of execution (continuations) may safely open
 // multiple input streams concurrently for the same file.
-input_stream<char> make_file_input_stream(
+SEASTAR_EXPORT input_stream<char> make_file_input_stream(
         file file, uint64_t offset, file_input_stream_options = {});
 
 // Create an input_stream for reading starting at a given position of the
 // given file. Multiple fibers of execution (continuations) may safely open
 // multiple input streams concurrently for the same file.
-input_stream<char> make_file_input_stream(
+SEASTAR_EXPORT input_stream<char> make_file_input_stream(
         file file, file_input_stream_options = {});
 
-struct file_output_stream_options {
+SEASTAR_EXPORT struct file_output_stream_options {
     // For small files, setting preallocation_size can make it impossible for XFS to find
     // an aligned extent. On the other hand, without it, XFS will divide the file into
     // file_size/buffer_size extents. To avoid fragmentation, we set the default buffer_size

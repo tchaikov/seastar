@@ -22,10 +22,14 @@
 #pragma once
 
 #include <memory>
-#include <seastar/core/scheduling.hh>
-#include <seastar/util/backtrace.hh>
+#include <utility>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+export module seastar:core.task;
+import :core.scheduling;
+import :util.backtrace;
+
+SEASTAR_EXPORT namespace seastar {
 
 class task {
 protected:

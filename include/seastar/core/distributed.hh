@@ -21,9 +21,9 @@
 
 #pragma once
 
-#include <seastar/core/sharded.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 
 template <typename Service>

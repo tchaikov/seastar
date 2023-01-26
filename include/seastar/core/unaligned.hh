@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <seastar/util/modules.hh>
+
 // The following unaligned_cast<T*>(p) is a portable replacement for
 // reinterpret_cast<T*>(p) which should be used every time address p
 // is not guaranteed to be properly aligned to alignof(T).
@@ -50,7 +52,7 @@
 
 namespace seastar {
 
-template <typename T>
+SEASTAR_EXPORT template <typename T>
 struct unaligned {
     // This is made to support only simple types, so it is fine to
     // require them to be trivially copy constructible.

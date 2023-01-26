@@ -10,8 +10,6 @@
 
 #pragma once
 
-#include <seastar/core/sstring.hh>
-
 namespace seastar {
 
 namespace http {

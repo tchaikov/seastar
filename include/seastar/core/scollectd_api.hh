@@ -4,10 +4,14 @@
 
 #pragma once
 
-#include <seastar/core/scollectd.hh>
-#include <seastar/core/metrics_api.hh>
+#include <vector>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+export module seastar:core.scollected_api;
+import :core.metrics;
+import :core.scollectd;
+
+SEASTAR_EXPORT namespace seastar {
 
 namespace scollectd {
 

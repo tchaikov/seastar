@@ -20,12 +20,11 @@
  * Copyright (C) 2017 ScyllaDB
  */
 
-#include <seastar/util/program-options.hh>
-#include <seastar/util/log-cli.hh>
-
 #include <regex>
 
 namespace bpo = boost::program_options;
+
+module seastar;
 
 namespace seastar {
 

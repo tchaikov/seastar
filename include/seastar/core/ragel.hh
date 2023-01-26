@@ -21,16 +21,13 @@
 
 #pragma once
 
-#include <seastar/core/sstring.hh>
-#include <seastar/core/temporary_buffer.hh>
-#include <seastar/util/eclipse.hh>
 #include <algorithm>
 #include <memory>
 #include <cassert>
-#include <seastar/util/std-compat.hh>
-#include <seastar/core/future.hh>
 
-namespace seastar {
+export module seastar:core.ragel;
+
+SEASTAR_EXPORT namespace seastar {
 
 // Support classes for Ragel parsers
 

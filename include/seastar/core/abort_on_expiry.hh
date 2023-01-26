@@ -21,11 +21,14 @@
 
 #pragma once
 
-#include <seastar/core/abort_source.hh>
-#include <seastar/core/timer.hh>
-#include <seastar/core/lowres_clock.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+export module seastar:core.abort_on_expiry;
+import :core.abort_source;
+import :core.lowres_clock;
+import :core.timer;
+
+SEASTAR_EXPORT namespace seastar {
 
 /// \addtogroup fiber-module
 /// @{

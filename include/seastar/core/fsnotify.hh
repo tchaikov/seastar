@@ -24,9 +24,7 @@
 #include <memory>
 #include <sys/inotify.h>
 
-#include <seastar/core/future.hh>
-#include <seastar/core/sstring.hh>
-#include <seastar/core/shared_ptr.hh>
+export module seastar:core.fsnotify;
 
 namespace seastar::experimental {
 

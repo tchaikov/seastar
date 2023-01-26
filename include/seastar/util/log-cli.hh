@@ -21,13 +21,6 @@
 
 #pragma once
 
-#include <seastar/util/log.hh>
-#include <seastar/util/program-options.hh>
-
-#include <seastar/core/sstring.hh>
-
-#include <boost/program_options.hpp>
-
 #include <algorithm>
 #include <unordered_map>
 

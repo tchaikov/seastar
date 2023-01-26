@@ -28,6 +28,8 @@
 #include <xmmintrin.h>
 #endif
 
+export module seastar:util.spinlock;
+
 namespace seastar {
 
 namespace internal {

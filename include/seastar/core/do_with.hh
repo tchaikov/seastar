@@ -21,10 +21,14 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
 #include <utility>
 #include <memory>
 #include <tuple>
+
+export module seastar:core.do_with;
+
+import :core.future;
+import :core.task;
 
 namespace seastar {
 
@@ -123,7 +127,7 @@ do_with_impl(T1&& rv1, T2&& rv2, More&&... more) {
 /// is destructed.
 ///
 /// \return whatever the function returns
-template <typename T1, typename T2, typename... More>
+SEASTAR_EXPORT template <typename T1, typename T2, typename... More>
 inline
 auto
 do_with(T1&& rv1, T2&& rv2, More&&... more) noexcept {
@@ -138,7 +142,7 @@ do_with(T1&& rv1, T2&& rv2, More&&... more) noexcept {
 ///        Caller must make sure that it outlives \c func.
 /// \param func function to be executed
 /// \returns whatever \c func returns
-template<typename Lock, typename Func>
+SEASTAR_EXPORT template<typename Lock, typename Func>
 inline
 auto with_lock(Lock& lock, Func&& func) {
     return lock.lock().then([&lock, func = std::forward<Func>(func)] () mutable {

@@ -26,19 +26,20 @@
 
 #include <exception>
 #include <seastar/util/concepts.hh>
+#include <seastar/util/modules.hh>
 
 /// \namespace seastar
 namespace seastar {
 
 /// The exception thrown by a default_null_deref_action.
-class checked_ptr_is_null_exception : public std::exception {};
+SEASTAR_EXPORT class checked_ptr_is_null_exception : public std::exception {};
 
 /// \brief
 /// Default not engaged seastar::checked_ptr dereferencing action (functor).
 ///
 /// Throws a seastar::checked_ptr_is_null_exception.
 ///
-struct default_null_deref_action {
+SEASTAR_EXPORT struct default_null_deref_action {
     /// \throw seastar::checked_ptr_is_null_exception
     void operator()() const {
         throw checked_ptr_is_null_exception();
@@ -92,7 +93,7 @@ inline T* checked_ptr_do_get(T* ptr) noexcept {
 ///
 /// \tparam NullDerefAction a functor that is invoked when a user tries to dereference a not engaged pointer.
 ///
-template<typename Ptr, typename NullDerefAction = default_null_deref_action>
+SEASTAR_EXPORT template<typename Ptr, typename NullDerefAction = default_null_deref_action>
 /// \cond SEASTAR_CONCEPT_DOC
 SEASTAR_CONCEPT( requires std::is_default_constructible<NullDerefAction>::value && requires (NullDerefAction action) {
     NullDerefAction();
@@ -184,7 +185,7 @@ public:
 
 }
 
-namespace std {
+SEASTAR_EXPORT namespace std {
 /// std::hash specialization for seastar::checked_ptr class
 template<typename T>
 struct hash<seastar::checked_ptr<T>> {

@@ -19,13 +19,7 @@
  * Copyright (C) 2021 Cloudius Systems, Ltd.
  */
 
-#include "core/program_options.hh"
-
-#include <seastar/util/log-cli.hh>
-#include <seastar/util/memory_diagnostics.hh>
-#include <seastar/core/reactor_config.hh>
-#include <seastar/core/resource.hh>
-#include <seastar/core/smp.hh>
+module seastar;
 
 namespace seastar::program_options {
 

@@ -21,11 +21,15 @@
 
 #pragma once
 
-#include <seastar/http/httpd.hh>
-#include <seastar/core/metrics.hh>
-#include <seastar/util/std-compat.hh>
+#include <optional>
 
-namespace seastar {
+export module seastar:core.prometheus;
+import :core.future;
+import :core.metrics;
+import :core.sstring;
+import :http.httpd;
+
+SEASTAR_EXPORT namespace seastar {
 
 namespace prometheus {
 

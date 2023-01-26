@@ -21,7 +21,11 @@
 
 #pragma once
 
-namespace seastar {
+#include <cstdint>
+
+export module seastar:net.consts;
+
+export namespace seastar {
 
 namespace net {
 

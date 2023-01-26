@@ -21,23 +21,13 @@
 
 
 #include <boost/intrusive/parent_from_member.hpp>
-#include <seastar/core/file.hh>
-#include <seastar/core/fair_queue.hh>
-#include <seastar/core/io_queue.hh>
-#include <seastar/core/io_intent.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/core/when_all.hh>
-#include <seastar/core/metrics.hh>
-#include <seastar/core/linux-aio.hh>
-#include <seastar/core/internal/io_desc.hh>
-#include <seastar/core/internal/io_sink.hh>
-#include <seastar/core/io_priority_class.hh>
-#include <seastar/util/log.hh>
 #include <chrono>
 #include <mutex>
 #include <array>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+
+module seastar;
 
 namespace seastar {
 

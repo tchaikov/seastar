@@ -18,8 +18,7 @@
 /*
  * Copyright (C) 2020 ScyllaDB
  */
-
-#include <seastar/core/sstring.hh>
+module seastar;
 
 using namespace seastar;
 

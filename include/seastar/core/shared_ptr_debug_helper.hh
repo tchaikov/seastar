@@ -21,12 +21,16 @@
 
 #pragma once
 
-#ifdef SEASTAR_DEBUG_SHARED_PTR
+//#ifdef SEASTAR_DEBUG_SHARED_PTR
 
 #include <thread>
 #include <cassert>
 
-#include <seastar/core/on_internal_error.hh>
+#include <seastar/util/modules.hh>
+
+export module seastar:core.shared_ptr_debug_helper;
+import :core.on_internal_error;
+import :util.log;
 
 namespace seastar {
 
@@ -35,7 +39,7 @@ extern logger seastar_logger;
 // A counter that is only comfortable being incremented on the cpu
 // it was created on.  Useful for verifying that a shared_ptr
 // or lw_shared_ptr isn't misued across cores.
-class debug_shared_ptr_counter_type {
+SEASTAR_EXPORT class debug_shared_ptr_counter_type {
     long _counter = 0;
     std::thread::id _cpu = std::this_thread::get_id();
 public:
@@ -72,5 +76,4 @@ private:
 
 }
 
-#endif
-
+//#endif

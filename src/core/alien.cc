@@ -20,10 +20,19 @@
  * Copyright (C) 2018 Red Hat
  */
 
-#include <seastar/core/alien.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/core/metrics.hh>
-#include <seastar/core/prefetch.hh>
+#include <atomic>
+#include <iterator>
+#include <memory>
+#include <vector>
+
+#define SEASTAR_MODULE(x)
+#define SEASTAR_EXPORT
+#define SEASTAR_EXPORT_MODULE(x)
+
+module seastar;
+
+import :core.prefetch;
+import :core.smp;
 
 namespace seastar {
 namespace alien {

@@ -21,9 +21,9 @@
 
 #pragma once
 
+#include <cstring>
+#include <functional>
 #include <set>
-#include <seastar/core/sstring.hh>
-#include "abort_on_ebadf.hh"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -45,10 +45,12 @@
 #include <chrono>
 #include <sys/uio.h>
 
-#include <seastar/net/socket_defs.hh>
-#include <seastar/util/std-compat.hh>
+export module seastar:core.posix;
+import :core.abort_on_ebadf;
+import :core.sstring;
+import :net.socket_defs;
 
-namespace seastar {
+export namespace seastar {
 
 /// \file
 /// \defgroup posix-support POSIX Support
@@ -358,9 +360,9 @@ private:
 
 namespace posix {
 
-static constexpr unsigned rcv_shutdown = 0x1;
-static constexpr unsigned snd_shutdown = 0x2;
-static inline constexpr unsigned shutdown_mask(int how) { return how + 1; }
+constexpr unsigned rcv_shutdown = 0x1;
+constexpr unsigned snd_shutdown = 0x2;
+inline constexpr unsigned shutdown_mask(int how) { return how + 1; }
 
 /// Converts a duration value to a `timespec`
 ///

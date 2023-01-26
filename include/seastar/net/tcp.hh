@@ -21,17 +21,6 @@
 
 #pragma once
 
-#include <seastar/core/shared_ptr.hh>
-#include <seastar/core/queue.hh>
-#include <seastar/core/semaphore.hh>
-#include <seastar/core/byteorder.hh>
-#include <seastar/core/metrics.hh>
-#include <seastar/net/net.hh>
-#include <seastar/net/ip_checksum.hh>
-#include <seastar/net/ip.hh>
-#include <seastar/net/const.hh>
-#include <seastar/net/packet-util.hh>
-#include <seastar/util/std-compat.hh>
 #include <unordered_map>
 #include <map>
 #include <functional>
@@ -40,6 +29,8 @@
 #include <random>
 #include <stdexcept>
 #include <system_error>
+
+export module seastar:net.tcp;
 
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 #include <cryptopp/md5.h>

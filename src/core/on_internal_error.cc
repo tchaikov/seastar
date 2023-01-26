@@ -19,11 +19,9 @@
  * Copyright 2020 ScyllaDB
  */
 
-#include <seastar/core/on_internal_error.hh>
-#include <seastar/util/backtrace.hh>
-#include <seastar/util/log.hh>
-
 #include <atomic>
+
+module seastar;
 
 static std::atomic<bool> abort_on_internal_error{false};
 

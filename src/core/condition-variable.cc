@@ -19,7 +19,7 @@
  * Copyright (C) 2020 ScyllaDB, Ltd.
  */
 
-#include <seastar/core/condition-variable.hh>
+module seastar;
 
 namespace seastar {
 

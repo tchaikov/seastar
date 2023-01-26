@@ -23,11 +23,6 @@
 
 #pragma once
 
-#include <seastar/core/do_with.hh>
-#include <seastar/core/loop.hh>
-#include <seastar/net/packet.hh>
-#include <seastar/util/variant_utils.hh>
-
 namespace seastar {
 
 inline future<temporary_buffer<char>> data_source_impl::skip(uint64_t n)

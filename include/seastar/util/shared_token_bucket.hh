@@ -23,18 +23,25 @@
 #pragma once
 
 #include <seastar/util/concepts.hh>
+#include <memory>
+#include <compare>
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
+
+export module seastar:util.shared_token_bucket;
+
+#define SEASTAR_CONCEPT(x...) x
 
 namespace seastar {
 namespace internal {
 
-static inline uint64_t wrapping_difference(const uint64_t& a, const uint64_t& b) noexcept {
+inline uint64_t wrapping_difference(const uint64_t& a, const uint64_t& b) noexcept {
     return std::max<int64_t>(a - b, 0);
 }
 
-static inline uint64_t fetch_add(std::atomic<uint64_t>& a, uint64_t b) noexcept {
+inline uint64_t fetch_add(std::atomic<uint64_t>& a, uint64_t b) noexcept {
     return a.fetch_add(b);
 }
 

@@ -24,7 +24,10 @@
 #include <cstdint>
 #include <cstdlib>
 
-namespace seastar {
+
+export module seastar:core.align;
+
+SEASTAR_EXPORT namespace seastar {
 
 template <typename T>
 inline constexpr

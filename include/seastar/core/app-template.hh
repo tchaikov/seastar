@@ -21,18 +21,19 @@
 #pragma once
 
 #include <boost/program_options.hpp>
-#include <functional>
-#include <seastar/core/future.hh>
-#include <seastar/core/smp.hh>
-#include <seastar/core/smp_options.hh>
-#include <seastar/core/sstring.hh>
-#include <seastar/util/program-options.hh>
-#include <seastar/core/metrics_api.hh>
-#include <seastar/core/scollectd.hh>
-#include <seastar/util/log-cli.hh>
 #include <chrono>
+#include <functional>
 
-namespace seastar {
+export module seastar:core.app_template;
+
+import :core.metrics;
+import :core.reactor_config;
+import :core.scollectd;
+import :core.smp_options;
+import :core.sstring;
+import :util.program_options;
+
+export namespace seastar {
 
 namespace alien {
 

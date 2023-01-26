@@ -21,11 +21,14 @@
 
 #pragma once
 
-#include <seastar/util/noncopyable_function.hh>
+#include <seastar/util/modules.hh>
+
+export module seastar:core.idle_cpu_handler;
+import :util.noncopyable_function;
 
 /// \file
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// Indicates the outcome of a user callback installed to take advantage of
 /// idle CPU cycles.

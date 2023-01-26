@@ -22,12 +22,14 @@
 #pragma once
 
 #include <chrono>
-#include <seastar/util/std-compat.hh>
 #include <atomic>
 #include <functional>
-#include <seastar/core/future.hh>
-#include <seastar/core/timer-set.hh>
-#include <seastar/core/scheduling.hh>
+#include <boost/intrusive/list.hpp>
+
+export module seastar:core.timer;
+import :core.scheduling;
+import :util.noncopyable_function;
+import :core.timer_set;
 
 /// \file
 
@@ -46,7 +48,7 @@
 /// Timer callbacks should be short and execute quickly. If involved processing
 /// is required, a timer can launch a continuation.
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 using steady_clock_type = std::chrono::steady_clock;
 

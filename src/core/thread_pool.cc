@@ -19,8 +19,9 @@
  * Copyright (C) 2019 ScyllaDB Ltd.
  */
 
-#include <seastar/core/reactor.hh>
-#include "core/thread_pool.hh"
+module seastar;
+
+import :core.syscall_work_queue;
 
 namespace seastar {
 

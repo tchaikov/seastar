@@ -21,12 +21,18 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
-#include <seastar/core/chunked_fifo.hh>
-#include <stdexcept>
+#include <concepts>
 #include <exception>
 #include <memory>
-#include <seastar/core/abort_source.hh>
+#include <optional>
+#include <stdexcept>
+
+export module seastar:core.abortable_fifo;
+import :core.abort_source;
+import :core.chunked_fifo;
+import :util.optimized_optional;
+
+#define SEASTAR_CONCEPT(x...) x
 
 namespace seastar {
 

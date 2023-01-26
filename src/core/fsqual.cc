@@ -19,9 +19,6 @@
  * under the License.
  */
 
-#include <seastar/core/posix.hh>
-#include <seastar/util/defer.hh>
-#include <seastar/core/linux-aio.hh>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <fcntl.h>
@@ -29,7 +26,8 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <type_traits>
-#include <seastar/core/fsqual.hh>
+
+module seastar;
 
 namespace seastar {
 

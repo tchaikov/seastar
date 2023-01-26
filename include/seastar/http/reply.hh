@@ -31,11 +31,7 @@
 //
 #pragma once
 
-#include <seastar/core/sstring.hh>
 #include <unordered_map>
-#include <seastar/http/mime_types.hh>
-#include <seastar/core/iostream.hh>
-#include <seastar/util/noncopyable_function.hh>
 
 namespace seastar {
 

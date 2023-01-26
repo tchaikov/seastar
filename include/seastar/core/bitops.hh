@@ -23,9 +23,11 @@
 
 #include <limits>
 #include <type_traits>
-#include <seastar/util/concepts.hh>
 
-namespace seastar {
+export module seastar:core.bitops;
+#define SEASTAR_CONCEPT(x...) x
+
+SEASTAR_EXPORT namespace seastar {
 
 inline
 constexpr unsigned count_leading_zeros(unsigned x) {

@@ -21,13 +21,16 @@
 
 #pragma once
 
-#include <seastar/core/transfer.hh>
-#include <seastar/core/bitops.hh>
-#include <seastar/util/concepts.hh>
+#include <seastar/util/modules.hh>
 #include <memory>
 #include <algorithm>
 
-namespace seastar {
+export module seastar:core.circular_buffer;
+import :core.bitops;
+
+#define SEASTAR_CONCEPT(x...) x
+
+SEASTAR_EXPORT namespace seastar {
 
 /// A growable double-ended queue container that can be efficiently
 /// extended (and shrunk) from both ends. Implementation is a single

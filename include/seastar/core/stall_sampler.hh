@@ -22,11 +22,10 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
-#include <seastar/util/noncopyable_function.hh>
-
 #include <chrono>
 #include <iosfwd>
+
+export module seastar:core.stall_sampler;
 
 // Instrumentation to detect context switches during reactor execution
 // and associated stall time, intended for use in tests

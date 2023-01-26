@@ -22,12 +22,15 @@
 #pragma once
 
 #include <cstddef>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+export module seastar:core.units;
 
-static constexpr size_t KB = 1 << 10;
-static constexpr size_t MB = 1 << 20;
-static constexpr size_t GB = 1 << 30;
+SEASTAR_EXPORT namespace seastar {
+
+constexpr size_t KB = 1 << 10;
+constexpr size_t MB = 1 << 20;
+constexpr size_t GB = 1 << 30;
 
 constexpr size_t operator"" _KiB(unsigned long long n) { return n << 10; }
 constexpr size_t operator"" _MiB(unsigned long long n) { return n << 20; }

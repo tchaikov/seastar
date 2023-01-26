@@ -19,16 +19,7 @@
  * Copyright 2016 ScyllaDB
  */
 
-#pragma once
-
-#include <seastar/core/file.hh>
-#include <seastar/core/shared_ptr.hh>
-
-#include <deque>
-#include <atomic>
-
 namespace seastar {
-class io_queue;
 
 namespace internal {
 

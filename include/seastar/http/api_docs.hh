@@ -18,8 +18,8 @@
 /*
  * Copyright 2015 Cloudius Systems
  */
-
 #pragma once
+#include <seastar/util/modules.hh>
 #include <seastar/json/json_elements.hh>
 #include <seastar/json/formatter.hh>
 #include <seastar/http/routes.hh>
@@ -27,7 +27,9 @@
 #include <string>
 #include <seastar/util/noncopyable_function.hh>
 
-namespace seastar {
+SEASTAR_EXPORT_MODULE(seastar:http);
+
+SEASTAR_EXPORT namespace seastar {
 
 namespace httpd {
 

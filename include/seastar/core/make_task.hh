@@ -22,10 +22,10 @@
 #pragma once
 
 #include <memory>
-#include <seastar/core/task.hh>
-#include <seastar/core/future.hh>
 
-namespace seastar {
+export module seastar:core.make_task;
+
+SEASTAR_EXPORT namespace seastar {
 
 template <typename Func>
 class lambda_task final : public task {

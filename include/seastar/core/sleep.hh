@@ -25,12 +25,13 @@
 #include <chrono>
 #include <functional>
 
-#include <seastar/core/abort_source.hh>
-#include <seastar/core/future.hh>
-#include <seastar/core/lowres_clock.hh>
-#include <seastar/core/timer.hh>
+export module seastar:core.sleep;
+import :core.abort_source;
+import :core.future;
+import :core.lowres_clock;
+import :core.timer;
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// \file
 

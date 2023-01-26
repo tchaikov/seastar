@@ -21,12 +21,6 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
-#include <seastar/core/posix.hh>
-#include <seastar/core/internal/pollable_fd.hh>
-#include <seastar/core/internal/poll.hh>
-#include <seastar/core/linux-aio.hh>
-#include <seastar/core/cacheline.hh>
 #include <fmt/ostream.h>
 #include <sys/time.h>
 #include <signal.h>

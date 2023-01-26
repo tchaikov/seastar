@@ -21,18 +21,20 @@
  */
 
 #pragma once
-#include <seastar/core/preempt.hh>
+#include <memory>
 #include <setjmp.h>
 #include <ucontext.h>
 #include <chrono>
-#include <seastar/util/std-compat.hh>
+
+export module seastar:core.thread_impl;
+import :core.preempt;
 
 namespace seastar {
 /// Clock used for scheduling threads
 using thread_clock = std::chrono::steady_clock;
 
 /// \cond internal
-class thread_context;
+export class thread_context;
 class scheduling_group;
 
 struct jmp_buf_link {

@@ -32,16 +32,13 @@
 #include <tuple>
 #include <chrono>
 
-#include <seastar/core/future.hh>
-#include <seastar/net/byteorder.hh>
-#include <seastar/core/shared_ptr.hh>
-#include <seastar/core/sstring.hh>
-#include <seastar/util/log.hh>
-#include <seastar/util/program-options.hh>
+export module seastar:core.scollectd;
+import :util.log;
+import :core.metrics;
+import :core.metrics_api;
+import :core.sstring;
 
-#include <seastar/core/metrics_api.hh>
-
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /**
  * Implementation of rudimentary collectd data gathering.

@@ -679,3 +679,15 @@ seastar_add_test (pipe
 
 seastar_add_test (spawn
   SOURCES spawn_test.cc)
+
+if (Seastar_CXX_MODULES)
+  add_executable (test_cxx_modules)
+  target_sources (test_cxx_modules
+    PRIVATE
+      test_cxx_modules.cc)
+  target_link_libraries (test_cxx_modules
+    PRIVATE
+      seastar_module)
+  target_compile_features (test_cxx_modules
+    PRIVATE cxx_std_20)
+endif ()

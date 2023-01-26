@@ -21,6 +21,7 @@
 
 #pragma once
 
+export module seastar:core.exception_hacks;
 namespace seastar {
 void init_phdr_cache();
 }

@@ -52,19 +52,13 @@
 // Spans have a size that is a power-of-two and are naturally aligned (aka buddy
 // allocator)
 
-#include <seastar/core/cacheline.hh>
-#include <seastar/core/memory.hh>
-#include <seastar/core/print.hh>
-#include <seastar/util/alloc_failure_injector.hh>
-#include <seastar/util/memory_diagnostics.hh>
-#include <seastar/util/std-compat.hh>
-#include <seastar/util/log.hh>
-#include <seastar/core/aligned_buffer.hh>
 #include <unordered_set>
 #include <iostream>
 #include <thread>
 
 #include <dlfcn.h>
+
+module seastar;
 
 namespace seastar {
 
@@ -129,10 +123,6 @@ __thread volatile int critical_alloc_section = 0;
 
 #ifndef SEASTAR_DEFAULT_ALLOCATOR
 
-#include <seastar/core/bitops.hh>
-#include <seastar/core/align.hh>
-#include <seastar/core/posix.hh>
-#include <seastar/core/shared_ptr.hh>
 #include <new>
 #include <cstdint>
 #include <algorithm>
@@ -140,12 +130,10 @@ __thread volatile int critical_alloc_section = 0;
 #include <cassert>
 #include <atomic>
 #include <mutex>
-#include <seastar/util/std-compat.hh>
 #include <functional>
 #include <cstring>
 #include <boost/intrusive/list.hpp>
 #include <sys/mman.h>
-#include <seastar/util/backtrace.hh>
 
 #ifdef SEASTAR_HAVE_NUMA
 #include <numaif.h>

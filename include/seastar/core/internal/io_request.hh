@@ -21,12 +21,15 @@
 
 #pragma once
 
-#include <seastar/core/sstring.hh>
-#include <seastar/core/linux-aio.hh>
-#include <seastar/core/internal/io_desc.hh>
-#include <seastar/core/on_internal_error.hh>
+#include <cassert>
+#include <cstdint>
+#include <vector>
 #include <sys/types.h>
 #include <sys/socket.h>
+
+export module seastar:core.internal.io_request;
+import :util.log;
+import :core.sstring;
 
 namespace seastar {
 extern logger io_log;

@@ -21,17 +21,20 @@
 
 #pragma once
 
-#include <seastar/core/deleter.hh>
-#include <seastar/core/temporary_buffer.hh>
-#include <seastar/net/packet.hh>
-#include <seastar/core/sstring.hh>
 #include <memory>
 #include <vector>
+#include <seastar/util/modules.hh>
 #include <seastar/util/std-compat.hh>
+
+export module seastar:core.scattered_message;
+import :net.packet;
+import :core.sstring;
+import :core.temporary_buffer;
+import :core.deleter;
 
 namespace seastar {
 
-template <typename CharType>
+SEASTAR_EXPORT template <typename CharType>
 class scattered_message {
 private:
     using fragment = net::fragment;

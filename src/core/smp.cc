@@ -19,13 +19,10 @@
  * Copyright 2019 ScyllaDB
  */
 
-#include <seastar/core/smp.hh>
-#include <seastar/core/loop.hh>
-#include <seastar/core/semaphore.hh>
-#include <seastar/core/print.hh>
-#include <seastar/core/on_internal_error.hh>
 #include <boost/range/algorithm/find_if.hpp>
 #include <vector>
+
+module seastar;
 
 namespace seastar {
 

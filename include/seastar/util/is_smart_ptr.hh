@@ -22,6 +22,9 @@
 #pragma once
 
 #include <memory> // for std::unique_ptr
+#include <type_traits>
+
+export module seastar:util.is_smart_ptr;
 
 namespace seastar {
 

@@ -22,8 +22,10 @@
 #pragma once
 
 #include <chrono>
-#include <seastar/util/program-options.hh>
-#include <seastar/util/memory_diagnostics.hh>
+#include <seastar/util/modules.hh>
+
+export module seastar:core.reactor_config;
+import :util.program_options;
 
 namespace seastar {
 
@@ -38,7 +40,7 @@ class reactor_backend_selector;
 class network_stack_factory;
 
 /// Configuration for the reactor.
-struct reactor_options : public program_options::option_group {
+SEASTAR_EXPORT struct reactor_options : public program_options::option_group {
     /// \brief Select network stack to use.
     ///
     /// Each network stack has it corresponding

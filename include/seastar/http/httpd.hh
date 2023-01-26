@@ -21,19 +21,9 @@
 
 #pragma once
 
-#include <seastar/http/request_parser.hh>
-#include <seastar/http/request.hh>
-#include <seastar/core/seastar.hh>
-#include <seastar/core/sstring.hh>
-#include <seastar/core/app-template.hh>
-#include <seastar/core/circular_buffer.hh>
-#include <seastar/core/distributed.hh>
-#include <seastar/core/queue.hh>
-#include <seastar/core/gate.hh>
-#include <seastar/core/metrics_registration.hh>
-#include <seastar/util/std-compat.hh>
 #include <iostream>
 #include <algorithm>
+#include <chrono>
 #include <unordered_map>
 #include <queue>
 #include <bitset>
@@ -41,9 +31,14 @@
 #include <cctype>
 #include <vector>
 #include <boost/intrusive/list.hpp>
-#include <seastar/http/routes.hh>
-#include <seastar/net/tls.hh>
-#include <seastar/core/shared_ptr.hh>
+
+export module seastar:http.httpd;
+import :core.iostream;
+import :core.temporary_buffer;
+import :core.metrics_registration;
+import :core.sstring;
+import :net.api;
+import :http.request_parser;
 
 namespace seastar {
 
@@ -207,7 +202,7 @@ public:
  *                  std::cout << "Seastar HTTP server listening on port " << port << " ...\n";
  *              });
  */
-class http_server_control {
+export class http_server_control {
     std::unique_ptr<distributed<http_server>> _server_dist;
 private:
     static sstring generate_server_name();

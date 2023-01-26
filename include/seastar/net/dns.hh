@@ -26,10 +26,6 @@
 #include <memory>
 #include <seastar/util/std-compat.hh>
 
-#include <seastar/core/future.hh>
-#include <seastar/core/sstring.hh>
-#include <seastar/core/shared_ptr.hh>
-#include <seastar/net/inet_address.hh>
 
 namespace seastar {
 

@@ -32,9 +32,8 @@
 #include <variant>
 #include <vector>
 #include <fmt/format.h>
-#include <seastar/core/iostream.hh>
-#include <seastar/core/posix.hh>
-#include <seastar/core/sstring.hh>
+
+export module seastar:util.process;
 
 namespace seastar::experimental {
 

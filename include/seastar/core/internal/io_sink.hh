@@ -21,9 +21,16 @@
 
 #pragma once
 
-#include <seastar/core/circular_buffer.hh>
-#include <seastar/core/internal/io_request.hh>
+#include <cstddef>
+#include <type_traits>
+#include <utility>
 #include <seastar/util/concepts.hh>
+
+export module seastar:core.internal.io_sink;
+import :core.internal.io_request;
+import :core.circular_buffer;
+
+#define SEASTAR_CONCEPT(x...) x
 
 namespace seastar {
 

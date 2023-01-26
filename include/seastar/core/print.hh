@@ -27,7 +27,7 @@
 #include <iomanip>
 #include <chrono>
 #include <sstream>
-#include <seastar/core/sstring.hh>
+#include <seastar/util/modules.hh>
 
 #if 0
 inline
@@ -40,7 +40,7 @@ operator<<(std::ostream& os, const void* ptr) {
 }
 #endif
 
-inline
+SEASTAR_EXPORT inline
 std::ostream&
 operator<<(std::ostream&& os, const void* ptr) {
     return os << ptr; // selects non-rvalue version
@@ -81,7 +81,7 @@ sprint(const sstring& fmt, A&&... a) {
     return os.str();
 }
 
-template <typename Iterator>
+SEASTAR_EXPORT template <typename Iterator>
 std::string
 format_separated(Iterator b, Iterator e, const char* sep = ", ") {
     std::string ret;
@@ -96,19 +96,20 @@ format_separated(Iterator b, Iterator e, const char* sep = ", ") {
     return ret;
 }
 
+SEASTAR_EXPORT
 template <typename TimePoint>
 struct usecfmt_wrapper {
     TimePoint val;
 };
 
-template <typename TimePoint>
+SEASTAR_EXPORT template <typename TimePoint>
 inline
 usecfmt_wrapper<TimePoint>
 usecfmt(TimePoint tp) {
     return { tp };
 };
 
-template <typename Clock, typename Rep, typename Period>
+SEASTAR_EXPORT template <typename Clock, typename Rep, typename Period>
 std::ostream&
 operator<<(std::ostream& os, usecfmt_wrapper<std::chrono::time_point<Clock, std::chrono::duration<Rep, Period>>> tp) {
     auto usec = std::chrono::duration_cast<std::chrono::microseconds>(tp.val.time_since_epoch()).count();
@@ -117,7 +118,7 @@ operator<<(std::ostream& os, usecfmt_wrapper<std::chrono::time_point<Clock, std:
     return os;
 }
 
-template <typename... A>
+SEASTAR_EXPORT template <typename... A>
 void
 log(A&&... a) {
     std::cout << usecfmt(std::chrono::high_resolution_clock::now()) << " ";
@@ -133,7 +134,7 @@ log(A&&... a) {
  * @return sstring object with the result of applying the given positional
  *         parameters on a given format string.
  */
-template <typename... A>
+SEASTAR_EXPORT template <typename... A>
 sstring
 format(const char* fmt, A&&... a) {
     fmt::memory_buffer out;

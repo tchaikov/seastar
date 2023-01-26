@@ -21,11 +21,14 @@
 
 #pragma once
 
-#include <seastar/util/concepts.hh>
-#include <seastar/util/std-compat.hh>
-
+#include <memory>
+#include <optional>
 #include <type_traits>
 #include <iostream>
+
+export module seastar:util.optimized_optional;
+
+#define SEASTAR_CONCEPT(x...) x
 
 namespace seastar {
 
@@ -45,7 +48,7 @@ concept OptimizableOptional =
 /// their data externally and expect pointer to this data to be always non-null.
 /// In such case there is no real need for another flag signifying whether
 /// the optional is engaged.
-template<typename T>
+export template<typename T>
 class optimized_optional {
     T _object;
 public:

@@ -18,17 +18,6 @@
 /*
  * Copyright 2019 ScyllaDB
  */
-#include "core/reactor_backend.hh"
-#include "core/thread_pool.hh"
-#include "core/syscall_result.hh"
-#include <seastar/core/internal/buffer_allocator.hh>
-#include <seastar/util/internal/iovec_utils.hh>
-#include <seastar/core/internal/uname.hh>
-#include <seastar/core/print.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/util/defer.hh>
-#include <seastar/util/read_first_line.hh>
-
 #include <chrono>
 #include <filesystem>
 #include <sys/poll.h>
@@ -42,6 +31,8 @@
 #ifdef HAVE_OSV
 #include <osv/newpoll.hh>
 #endif
+
+module seastar;
 
 namespace seastar {
 

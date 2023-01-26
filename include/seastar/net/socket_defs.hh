@@ -25,11 +25,13 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/ip.h>
-#include <seastar/net/byteorder.hh>
-#include <seastar/net/unix_address.hh>
 #include <cassert>
+#include <functional>
 
-namespace seastar {
+export module seastar:net.socket_defs;
+import :net.unix_address;
+
+export namespace seastar {
 
 namespace net {
 class inet_address;

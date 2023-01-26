@@ -19,8 +19,6 @@
  * Copyright (C) 2017 ScyllaDB
  */
 
-#include <seastar/core/linux-aio.hh>
-#include <seastar/core/print.hh>
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <atomic>
@@ -28,6 +26,8 @@
 #include <errno.h>
 #include <string.h>
 #include <valgrind/valgrind.h>
+
+module seastar;
 
 namespace seastar {
 

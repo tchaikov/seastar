@@ -21,10 +21,10 @@
 
 #pragma once
 
-#include <seastar/core/sstring.hh>
+export module seastar:core.fsqual;
 
 namespace seastar {
 
-bool filesystem_has_good_aio_support(sstring directory, bool verbose = false);
+export bool filesystem_has_good_aio_support(sstring directory, bool verbose = false);
 
 }

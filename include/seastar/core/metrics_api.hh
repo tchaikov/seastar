@@ -21,11 +21,16 @@
 
 #pragma once
 
-#include <seastar/core/metrics.hh>
 #include <unordered_map>
-#include <seastar/core/sharded.hh>
 #include <boost/functional/hash.hpp>
 
+export module seastar:core.metrics_api;
+import :core.future;
+import :core.metrics;
+import :core.metrics_registration;
+import :core.sharded;
+import :core.shared_ptr;
+import :core.sstring;
 /*!
  * \file metrics_api.hh
  * \brief header file for metric API layer (like prometheus or collectd)
@@ -414,7 +419,7 @@ std::unique_ptr<metric_groups_def> create_metric_groups();
 }
 
 /// Metrics configuration options.
-struct options : public program_options::option_group {
+SEASTAR_EXPORT struct options : public program_options::option_group {
     /// \brief The hostname used by the metrics.
     ///
     /// If not set, the local hostname will be used.
@@ -426,7 +431,7 @@ struct options : public program_options::option_group {
 /*!
  * \brief set the metrics configuration
  */
-future<> configure(const options& opts);
+SEASTAR_EXPORT future<> configure(const options& opts);
 
 /*!
  * \brief Perform relabeling and operation on metrics dynamically.

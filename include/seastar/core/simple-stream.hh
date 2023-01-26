@@ -20,10 +20,15 @@
  */
 
 #pragma once
-#include <seastar/core/sstring.hh>
-#include <seastar/util/variant_utils.hh>
 
-namespace seastar {
+#include <algorithm>
+#include <cstddef>
+#include <type_traits>
+#include <stdexcept>
+
+export module seastar:core.simple_stream;
+
+SEASTAR_EXPORT namespace seastar {
 
 class measuring_output_stream {
     size_t _size = 0;
@@ -621,14 +626,14 @@ inline memory_input_stream<Iterator> memory_output_stream<Iterator>::to_input_st
 
 template<typename Stream, typename StreamVisitor, typename = std::enable_if_t<Stream::has_with_stream::value>>
 [[gnu::always_inline]]
- static inline decltype(auto)
+ inline decltype(auto)
  with_serialized_stream(Stream& stream, StreamVisitor&& visitor) {
     return stream.with_stream(std::forward<StreamVisitor>(visitor));
 }
 
 template<typename Stream, typename StreamVisitor, typename = std::enable_if_t<!Stream::has_with_stream::value>, typename = void>
 [[gnu::always_inline]]
- static inline decltype(auto)
+ inline decltype(auto)
  with_serialized_stream(Stream& stream, StreamVisitor&& visitor) {
     return visitor(stream);
 }

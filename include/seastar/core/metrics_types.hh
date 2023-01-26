@@ -20,9 +20,15 @@
  */
 
 #pragma once
+
+#include <cstdint>
 #include <vector>
 
-namespace seastar {
+export module seastar:core.metrics_types;
+
+#define SEASTAR_CONCEPT(x...) x
+
+SEASTAR_EXPORT namespace seastar {
 namespace metrics {
 
 

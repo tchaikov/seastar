@@ -78,6 +78,11 @@ set_property (CACHE Seastar_API_LEVEL
   PROPERTY
   STRINGS 2 3 4 5 6)
 
+include (CMakeDependentOption)
+cmake_dependent_option (Seastar_CXX_MODULES
+  "Use C++20 modules" ON
+  "CMAKE_VERSION VERSION_GREATER_EQUAL 3.25" OFF)
+
 set (Seastar_SCHEDULING_GROUPS_COUNT
   "16"
   CACHE
@@ -284,7 +289,6 @@ option (Seastar_TESTING
   "Enable testing targets."
   ${Seastar_MASTER_PROJECT})
 
-include (CMakeDependentOption)
 cmake_dependent_option (Seastar_ENABLE_TESTS_ACCESSING_INTERNET
   "Enable tests accessing internet." ON
   "Seastar_TESTING" OFF)
@@ -449,295 +453,266 @@ seastar_generate_ragel (
   IN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/src/http/response_parser.rl
   OUT_FILE ${Seastar_GEN_BINARY_DIR}/include/seastar/http/response_parser.hh)
 
+add_library (seastar STATIC)
 if (Seastar_DPDK)
-  set (seastar_dpdk_obj seastar-dpdk.o)
+  target_sources (seastar
+    PRIVATE
+    seastar-dpdk.o)
 endif ()
-
-add_library (seastar STATIC
-  ${http_chunk_parsers_file}
-  ${http_request_parser_file}
-  ${seastar_dpdk_obj}
+target_sources (seastar
+  PRIVATE
   include/seastar/core/abort_source.hh
-  include/seastar/core/alien.hh
-  include/seastar/core/align.hh
-  include/seastar/core/aligned_buffer.hh
-  include/seastar/core/app-template.hh
-  include/seastar/core/array_map.hh
-  include/seastar/core/bitops.hh
-  include/seastar/core/bitset-iter.hh
-  include/seastar/core/byteorder.hh
-  include/seastar/core/cacheline.hh
-  include/seastar/core/checked_ptr.hh
-  include/seastar/core/chunked_fifo.hh
-  include/seastar/core/circular_buffer.hh
-  include/seastar/core/circular_buffer_fixed_capacity.hh
-  include/seastar/core/condition-variable.hh
-  include/seastar/core/deleter.hh
-  include/seastar/core/distributed.hh
-  include/seastar/core/do_with.hh
-  include/seastar/core/dpdk_rte.hh
-  include/seastar/core/enum.hh
-  include/seastar/core/exception_hacks.hh
-  include/seastar/core/execution_stage.hh
-  include/seastar/core/expiring_fifo.hh
-  include/seastar/core/fair_queue.hh
-  include/seastar/core/file.hh
-  include/seastar/core/file-types.hh
-  include/seastar/core/fsqual.hh
-  include/seastar/core/fstream.hh
-  include/seastar/core/function_traits.hh
-  include/seastar/core/future-util.hh
-  include/seastar/core/future.hh
-  include/seastar/core/gate.hh
-  include/seastar/core/iostream-impl.hh
-  include/seastar/core/iostream.hh
-  include/seastar/util/later.hh
-  include/seastar/core/layered_file.hh
-  include/seastar/core/linux-aio.hh
-  include/seastar/core/loop.hh
-  include/seastar/core/lowres_clock.hh
-  include/seastar/core/manual_clock.hh
-  include/seastar/core/map_reduce.hh
-  include/seastar/core/memory.hh
-  include/seastar/core/metrics.hh
-  include/seastar/core/metrics_api.hh
-  include/seastar/core/metrics_registration.hh
-  include/seastar/core/metrics_types.hh
-  include/seastar/core/pipe.hh
-  include/seastar/core/posix.hh
-  include/seastar/core/preempt.hh
-  include/seastar/core/prefetch.hh
-  include/seastar/core/print.hh
-  include/seastar/core/prometheus.hh
-  include/seastar/core/queue.hh
-  include/seastar/core/ragel.hh
-  include/seastar/core/reactor.hh
-  include/seastar/core/report_exception.hh
-  include/seastar/core/resource.hh
-  include/seastar/core/rwlock.hh
-  include/seastar/core/scattered_message.hh
-  include/seastar/core/scheduling.hh
-  include/seastar/core/scollectd.hh
-  include/seastar/core/scollectd_api.hh
-  include/seastar/core/seastar.hh
-  include/seastar/core/semaphore.hh
-  include/seastar/core/sharded.hh
-  include/seastar/core/shared_future.hh
-  include/seastar/core/shared_mutex.hh
-  include/seastar/core/shared_ptr.hh
-  include/seastar/core/shared_ptr_debug_helper.hh
-  include/seastar/core/shared_ptr_incomplete.hh
-  include/seastar/core/simple-stream.hh
-  include/seastar/core/slab.hh
-  include/seastar/core/sleep.hh
-  include/seastar/core/sstring.hh
-  include/seastar/core/stall_sampler.hh
-  include/seastar/core/stream.hh
-  include/seastar/core/systemwide_memory_barrier.hh
-  include/seastar/core/task.hh
-  include/seastar/core/temporary_buffer.hh
-  include/seastar/core/thread.hh
-  include/seastar/core/thread_cputime_clock.hh
-  include/seastar/core/thread_impl.hh
-  include/seastar/core/timed_out_error.hh
-  include/seastar/core/timer-set.hh
-  include/seastar/core/timer.hh
-  include/seastar/core/transfer.hh
-  include/seastar/core/unaligned.hh
-  include/seastar/core/units.hh
-  include/seastar/core/vector-data-sink.hh
-  include/seastar/core/weak_ptr.hh
-  include/seastar/core/when_all.hh
-  include/seastar/core/with_scheduling_group.hh
-  include/seastar/core/with_timeout.hh
-  include/seastar/http/api_docs.hh
-  include/seastar/http/common.hh
-  include/seastar/http/exception.hh
-  include/seastar/http/file_handler.hh
-  include/seastar/http/function_handlers.hh
-  include/seastar/http/handlers.hh
-  include/seastar/http/httpd.hh
-  include/seastar/http/json_path.hh
-  include/seastar/http/matcher.hh
-  include/seastar/http/matchrules.hh
-  include/seastar/http/mime_types.hh
-  include/seastar/http/reply.hh
-  include/seastar/http/request.hh
-  include/seastar/http/routes.hh
-  include/seastar/http/short_streams.hh
-  include/seastar/http/transformers.hh
-  include/seastar/http/client.hh
-  include/seastar/json/formatter.hh
-  include/seastar/json/json_elements.hh
-  include/seastar/net/api.hh
-  include/seastar/net/arp.hh
-  include/seastar/net/byteorder.hh
-  include/seastar/net/config.hh
-  include/seastar/net/const.hh
-  include/seastar/net/dhcp.hh
-  include/seastar/net/dns.hh
-  include/seastar/net/dpdk.hh
-  include/seastar/net/ethernet.hh
-  include/seastar/net/inet_address.hh
-  include/seastar/net/ip.hh
-  include/seastar/net/ip_checksum.hh
-  include/seastar/net/native-stack.hh
-  include/seastar/net/net.hh
-  include/seastar/net/packet-data-source.hh
-  include/seastar/net/packet-util.hh
-  include/seastar/net/packet.hh
-  include/seastar/net/posix-stack.hh
-  include/seastar/net/proxy.hh
-  include/seastar/net/socket_defs.hh
-  include/seastar/net/stack.hh
-  include/seastar/net/tcp-stack.hh
-  include/seastar/net/tcp.hh
-  include/seastar/net/tls.hh
-  include/seastar/net/toeplitz.hh
-  include/seastar/net/udp.hh
-  include/seastar/net/unix_address.hh
-  include/seastar/net/virtio-interface.hh
-  include/seastar/net/virtio.hh
-  include/seastar/rpc/lz4_compressor.hh
-  include/seastar/rpc/lz4_fragmented_compressor.hh
-  include/seastar/rpc/multi_algo_compressor_factory.hh
-  include/seastar/rpc/rpc.hh
-  include/seastar/rpc/rpc_impl.hh
-  include/seastar/rpc/rpc_types.hh
-  include/seastar/util/alloc_failure_injector.hh
-  include/seastar/util/backtrace.hh
-  include/seastar/util/concepts.hh
-  include/seastar/util/bool_class.hh
-  include/seastar/util/conversions.hh
-  include/seastar/util/defer.hh
-  include/seastar/util/eclipse.hh
-  include/seastar/util/function_input_iterator.hh
-  include/seastar/util/gcc6-concepts.hh
-  include/seastar/util/indirect.hh
-  include/seastar/util/is_smart_ptr.hh
-  include/seastar/util/lazy.hh
-  include/seastar/util/log-cli.hh
-  include/seastar/util/log-impl.hh
-  include/seastar/util/log.hh
-  include/seastar/util/noncopyable_function.hh
-  include/seastar/util/optimized_optional.hh
-  include/seastar/util/print_safe.hh
-  include/seastar/util/process.hh
-  include/seastar/util/program-options.hh
-  include/seastar/util/read_first_line.hh
-  include/seastar/util/reference_wrapper.hh
-  include/seastar/util/spinlock.hh
-  include/seastar/util/std-compat.hh
-  include/seastar/util/transform_iterator.hh
-  include/seastar/util/tuple_utils.hh
-  include/seastar/util/variant_utils.hh
-  include/seastar/util/closeable.hh
-  include/seastar/util/source_location-compat.hh
-  include/seastar/util/short_streams.hh
-  include/seastar/websocket/server.hh
-  src/core/alien.cc
-  src/core/file.cc
-  src/core/fair_queue.cc
-  src/core/reactor_backend.cc
-  src/core/thread_pool.cc
-  src/core/app-template.cc
-  src/core/dpdk_rte.cc
-  src/core/exception_hacks.cc
-  src/core/execution_stage.cc
-  src/core/file-impl.hh
-  src/core/fsnotify.cc
-  src/core/fsqual.cc
-  src/core/fstream.cc
-  src/core/future.cc
-  src/core/future-util.cc
-  src/core/linux-aio.cc
-  src/core/memory.cc
-  src/core/metrics.cc
-  src/core/on_internal_error.cc
-  src/core/posix.cc
-  src/core/prometheus.cc
-  src/core/program_options.cc
-  src/core/reactor.cc
-  src/core/resource.cc
-  src/core/sharded.cc
-  src/core/scollectd.cc
-  src/core/scollectd-impl.hh
-  src/core/systemwide_memory_barrier.cc
-  src/core/smp.cc
-  src/core/sstring.cc
-  src/core/thread.cc
-  src/core/uname.cc
-  src/core/vla.hh
-  src/core/io_queue.cc
-  src/core/semaphore.cc
-  src/core/condition-variable.cc
-  src/http/api_docs.cc
-  src/http/common.cc
-  src/http/file_handler.cc
-  src/http/httpd.cc
-  src/http/json_path.cc
-  src/http/matcher.cc
-  src/http/mime_types.cc
-  src/http/reply.cc
-  src/http/routes.cc
-  src/http/transformers.cc
-  src/http/url.cc
-  src/http/client.cc
-  src/http/request.cc
-  src/json/formatter.cc
-  src/json/json_elements.cc
-  src/net/arp.cc
-  src/net/config.cc
-  src/net/dhcp.cc
-  src/net/dns.cc
-  src/net/dpdk.cc
-  src/net/ethernet.cc
-  src/net/inet_address.cc
-  src/net/ip.cc
-  src/net/ip_checksum.cc
-  src/net/native-stack-impl.hh
-  src/net/native-stack.cc
-  src/net/net.cc
-  src/net/packet.cc
-  src/net/posix-stack.cc
-  src/net/proxy.cc
-  src/net/socket_address.cc
-  src/net/stack.cc
-  src/net/tcp.cc
-  src/net/tls.cc
-  src/net/udp.cc
-  src/net/unix_address.cc
-  src/net/virtio.cc
-  src/rpc/lz4_compressor.cc
-  src/rpc/lz4_fragmented_compressor.cc
-  src/rpc/rpc.cc
-  src/util/alloc_failure_injector.cc
-  src/util/backtrace.cc
-  src/util/conversions.cc
-  src/util/exceptions.cc
-  src/util/file.cc
-  src/util/log.cc
-  src/util/process.cc
-  src/util/program-options.cc
-  src/util/read_first_line.cc
-  src/util/tmp_file.cc
-  src/util/short_streams.cc
-  src/websocket/server.cc
+  # include/seastar/core/alien.hh
+  # include/seastar/core/align.hh
+  # include/seastar/core/aligned_buffer.hh
+  # include/seastar/core/app-template.hh
+  # include/seastar/core/array_map.hh
+  # include/seastar/core/bitops.hh
+  # include/seastar/core/bitset-iter.hh
+  # include/seastar/core/byteorder.hh
+  # include/seastar/core/cacheline.hh
+  # include/seastar/core/checked_ptr.hh
+  # include/seastar/core/chunked_fifo.hh
+  # include/seastar/core/circular_buffer.hh
+  # include/seastar/core/circular_buffer_fixed_capacity.hh
+  # include/seastar/core/condition-variable.hh
+  # include/seastar/core/deleter.hh
+  # include/seastar/core/distributed.hh
+  # include/seastar/core/do_with.hh
+  # include/seastar/core/dpdk_rte.hh
+  # include/seastar/core/enum.hh
+  # include/seastar/core/exception_hacks.hh
+  # include/seastar/core/execution_stage.hh
+  # include/seastar/core/expiring_fifo.hh
+  # include/seastar/core/fair_queue.hh
+  # include/seastar/core/file.hh
+  # include/seastar/core/file-types.hh
+  # include/seastar/core/fsqual.hh
+  # include/seastar/core/fstream.hh
+  # include/seastar/core/function_traits.hh
+  # include/seastar/core/future-util.hh
+  # include/seastar/core/future.hh
+  # include/seastar/core/gate.hh
+  # include/seastar/core/iostream-impl.hh
+  # include/seastar/core/iostream.hh
+  # include/seastar/core/layered_file.hh
+  # include/seastar/core/linux-aio.hh
+  # include/seastar/core/loop.hh
+  # include/seastar/core/lowres_clock.hh
+  # include/seastar/core/manual_clock.hh
+  # include/seastar/core/map_reduce.hh
+  # include/seastar/core/memory.hh
+  # include/seastar/core/metrics.hh
+  # include/seastar/core/metrics_api.hh
+  # include/seastar/core/metrics_registration.hh
+  # include/seastar/core/metrics_types.hh
+  # include/seastar/core/pipe.hh
+  # include/seastar/core/posix.hh
+  # include/seastar/core/preempt.hh
+  # include/seastar/core/prefetch.hh
+  # include/seastar/core/print.hh
+  # include/seastar/core/prometheus.hh
+  # include/seastar/core/queue.hh
+  # include/seastar/core/ragel.hh
+  # include/seastar/core/reactor.hh
+  # include/seastar/core/report_exception.hh
+  # include/seastar/core/resource.hh
+  # include/seastar/core/rwlock.hh
+  # include/seastar/core/scattered_message.hh
+  # include/seastar/core/scheduling.hh
+  # include/seastar/core/scollectd.hh
+  # include/seastar/core/scollectd_api.hh
+  # include/seastar/core/seastar.hh
+  # include/seastar/core/semaphore.hh
+  # include/seastar/core/sharded.hh
+  # include/seastar/core/shared_future.hh
+  # include/seastar/core/shared_mutex.hh
+  # include/seastar/core/shared_ptr.hh
+  # include/seastar/core/shared_ptr_debug_helper.hh
+  # include/seastar/core/shared_ptr_incomplete.hh
+  # include/seastar/core/simple-stream.hh
+  # include/seastar/core/slab.hh
+  # include/seastar/core/sleep.hh
+  # include/seastar/core/sstring.hh
+  # include/seastar/core/stall_sampler.hh
+  # include/seastar/core/stream.hh
+  # include/seastar/core/systemwide_memory_barrier.hh
+  # include/seastar/core/task.hh
+  # include/seastar/core/temporary_buffer.hh
+  # include/seastar/core/thread.hh
+  # include/seastar/core/thread_cputime_clock.hh
+  # include/seastar/core/thread_impl.hh
+  # include/seastar/core/timed_out_error.hh
+  # include/seastar/core/timer-set.hh
+  # include/seastar/core/timer.hh
+  # include/seastar/core/transfer.hh
+  # include/seastar/core/unaligned.hh
+  # include/seastar/core/units.hh
+  # include/seastar/core/vector-data-sink.hh
+  # include/seastar/core/weak_ptr.hh
+  # include/seastar/core/when_all.hh
+  # include/seastar/core/with_scheduling_group.hh
+  # include/seastar/core/with_timeout.hh
+  # include/seastar/http/api_docs.hh
+  # include/seastar/http/common.hh
+  # include/seastar/http/exception.hh
+  # include/seastar/http/file_handler.hh
+  # include/seastar/http/function_handlers.hh
+  # include/seastar/http/handlers.hh
+  # include/seastar/http/httpd.hh
+  # include/seastar/http/json_path.hh
+  # include/seastar/http/matcher.hh
+  # include/seastar/http/matchrules.hh
+  # include/seastar/http/mime_types.hh
+  # include/seastar/http/reply.hh
+  # include/seastar/http/request.hh
+  # include/seastar/http/routes.hh
+  # include/seastar/http/short_streams.hh
+  # include/seastar/http/transformers.hh
+  # include/seastar/http/client.hh
+  # include/seastar/json/formatter.hh
+  # include/seastar/json/json_elements.hh
+  # include/seastar/net/api.hh
+  # include/seastar/net/arp.hh
+  # include/seastar/net/byteorder.hh
+  # include/seastar/net/config.hh
+  # include/seastar/net/const.hh
+  # include/seastar/net/dhcp.hh
+  # include/seastar/net/dns.hh
+  # include/seastar/net/dpdk.hh
+  # include/seastar/net/ethernet.hh
+  # include/seastar/net/inet_address.hh
+  # include/seastar/net/ip.hh
+  # include/seastar/net/ip_checksum.hh
+  # include/seastar/net/native-stack.hh
+  # include/seastar/net/net.hh
+  # include/seastar/net/packet-data-source.hh
+  # include/seastar/net/packet-util.hh
+  # include/seastar/net/packet.hh
+  # include/seastar/net/posix-stack.hh
+  # include/seastar/net/proxy.hh
+  # include/seastar/net/socket_defs.hh
+  # include/seastar/net/stack.hh
+  # include/seastar/net/tcp-stack.hh
+  # include/seastar/net/tcp.hh
+  # include/seastar/net/tls.hh
+  # include/seastar/net/toeplitz.hh
+  # include/seastar/net/udp.hh
+  # include/seastar/net/unix_address.hh
+  # include/seastar/net/virtio-interface.hh
+  # include/seastar/net/virtio.hh
+  # include/seastar/rpc/lz4_compressor.hh
+  # include/seastar/rpc/lz4_fragmented_compressor.hh
+  # include/seastar/rpc/multi_algo_compressor_factory.hh
+  # include/seastar/rpc/rpc.hh
+  # include/seastar/rpc/rpc_impl.hh
+  # include/seastar/rpc/rpc_types.hh
+  # include/seastar/util/alloc_failure_injector.hh
+  # include/seastar/util/backtrace.hh
+  # include/seastar/util/concepts.hh
+  # include/seastar/util/bool_class.hh
+  # include/seastar/util/conversions.hh
+  # include/seastar/util/defer.hh
+  # include/seastar/util/eclipse.hh
+  # include/seastar/util/function_input_iterator.hh
+  # include/seastar/util/gcc6-concepts.hh
+  # include/seastar/util/indirect.hh
+  # include/seastar/util/is_smart_ptr.hh
+  # include/seastar/util/later.hh
+  # include/seastar/util/lazy.hh
+  # include/seastar/util/log-cli.hh
+  # include/seastar/util/log-impl.hh
+  # include/seastar/util/log.hh
+  # include/seastar/util/noncopyable_function.hh
+  # include/seastar/util/optimized_optional.hh
+  # include/seastar/util/print_safe.hh
+  # include/seastar/util/process.hh
+  # include/seastar/util/program-options.hh
+  # include/seastar/util/read_first_line.hh
+  # include/seastar/util/reference_wrapper.hh
+  # include/seastar/util/spinlock.hh
+  # include/seastar/util/std-compat.hh
+  # include/seastar/util/transform_iterator.hh
+  # include/seastar/util/tuple_utils.hh
+  # include/seastar/util/variant_utils.hh
+  # include/seastar/util/closeable.hh
+  # include/seastar/util/source_location-compat.hh
+  # include/seastar/util/short_streams.hh
+  # include/seastar/websocket/server.hh
+  # src/http/api_docs.cc
+  # src/http/common.cc
+  # src/http/file_handler.cc
+  # src/http/httpd.cc
+  # src/http/json_path.cc
+  # src/http/matcher.cc
+  # src/http/mime_types.cc
+  # src/http/reply.cc
+  # src/http/routes.cc
+  # src/http/transformers.cc
+  # src/http/url.cc
+  # src/http/client.cc
+  # src/http/request.cc
+  # src/json/formatter.cc
+  # src/json/json_elements.cc
+  # src/net/arp.cc
+  # src/net/config.cc
+  # src/net/dhcp.cc
+  # src/net/dns.cc
+  # src/net/dpdk.cc
+  # src/net/ethernet.cc
+  # src/net/inet_address.cc
+  # src/net/ip.cc
+  # src/net/ip_checksum.cc
+  # src/net/native-stack-impl.hh
+  # src/net/native-stack.cc
+  # src/net/net.cc
+  # src/net/packet.cc
+  # src/net/posix-stack.cc
+  # src/net/proxy.cc
+  # src/net/socket_address.cc
+  # src/net/stack.cc
+  # src/net/tcp.cc
+  # src/net/tls.cc
+  # src/net/udp.cc
+  # src/net/unix_address.cc
+  # src/net/virtio.cc
+  # src/rpc/lz4_compressor.cc
+  # src/rpc/lz4_fragmented_compressor.cc
+  # src/rpc/rpc.cc
+  # src/util/alloc_failure_injector.cc
+  # src/util/backtrace.cc
+  # src/util/conversions.cc
+  # src/util/exceptions.cc
+  # src/util/file.cc
+  # src/util/log.cc
+  # src/util/process.cc
+  # src/util/program-options.cc
+  # src/util/read_first_line.cc
+  # src/util/tmp_file.cc
+  # src/util/short_streams.cc
+  # src/websocket/server.cc
   )
-
+set_target_properties(seastar PROPERTIES
+  LINKER_LANGUAGE CXX)
 add_library (Seastar::seastar ALIAS seastar)
 
-add_dependencies (seastar
+add_library (seastar_common INTERFACE)
+export (
+  TARGETS
+    seastar_common
+  NAMESPACE Seastar::
+  APPEND FILE "${CMAKE_BINARY_DIR}/modules/SeastarModules.cmake")
+
+add_dependencies (seastar_common
   seastar_http_chunk_parsers
   seastar_http_request_parser
   seastar_http_response_parser)
 
-target_include_directories (seastar
-  PUBLIC
+target_include_directories (seastar_common
+  INTERFACE
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${Seastar_GEN_BINARY_DIR}/include>
-  PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 set (Seastar_PRIVATE_CXX_FLAGS
@@ -754,8 +729,8 @@ if (Seastar_COMPRESS_DEBUG)
   list (APPEND Seastar_PRIVATE_CXX_FLAGS -gz)
 endif()
 
-target_link_libraries (seastar
-  PUBLIC
+target_link_libraries (seastar_common
+  INTERFACE
     Boost::boost
     Boost::program_options
     Boost::thread
@@ -764,7 +739,6 @@ target_link_libraries (seastar
     fmt::fmt
     lz4::lz4
     SourceLocation::source_location
-  PRIVATE
     ${CMAKE_DL_LIBS}
     GnuTLS::gnutls
     StdAtomic::atomic
@@ -782,10 +756,23 @@ if ((Seastar_SANITIZE STREQUAL "ON") OR
     message (FATAL_ERROR "Sanitizers not found!")
   endif ()
   set (Seastar_Sanitizers_OPTIONS ${Sanitizers_COMPILER_OPTIONS})
-  target_link_libraries (seastar
-    PUBLIC
+  target_link_libraries (seastar_common
+    INTERFACE
       Sanitizers::address
       Sanitizers::undefined_behavior)
+endif ()
+
+if (Seastar_CXX_MODULES)
+  set (CMAKE_EXPERIMENTAL_CXX_MODULE_DYNDEP 1)
+  set (CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API  "2182bf5c-ef0d-489a-91da-49dbc3090d2a")
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    include (clang_modules)
+  elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    include (gcc_modules)
+  else ()
+    message (FATAL_ERROR "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
+  endif()
+  add_subdirectory (modules)
 endif ()
 
 # We only need valgrind to find uninitialized memory uses, so disable
@@ -805,16 +792,16 @@ include (CTest)
 # We disable _FORTIFY_SOURCE because it generates false positives with longjmp() (src/core/thread.cc)
 #
 
-target_compile_options (seastar
-  PUBLIC
+target_compile_options (seastar_common
+  INTERFACE
     -U_FORTIFY_SOURCE)
 
-target_compile_definitions(seastar
-  PUBLIC
+target_compile_definitions(seastar_common
+  INTERFACE
   SEASTAR_API_LEVEL=${Seastar_API_LEVEL})
 
-target_compile_features(seastar
-  PUBLIC
+target_compile_features(seastar_common
+  INTERFACE
     cxx_std_${CMAKE_CXX_STANDARD})
 
 function (seastar_supports_flag flag var)
@@ -825,8 +812,8 @@ endfunction ()
 
 seastar_supports_flag ("-Wno-maybe-uninitialized -Werror" MaybeUninitialized_FOUND)
 if (MaybeUninitialized_FOUND)
-  target_compile_options (seastar
-    PUBLIC
+  target_compile_options (seastar_common
+    INTERFACE
       # With std::experimental::optional it is easy to hit
       # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88897.  We disable
       # -Wmaybe-uninitialized in here since otherwise we would have to
@@ -835,32 +822,33 @@ if (MaybeUninitialized_FOUND)
 endif ()
 
 if (Seastar_SSTRING)
-  target_compile_options (seastar PUBLIC -DSEASTAR_SSTRING)
+  target_compile_options (seastar_common
+    INTERFACE -DSEASTAR_SSTRING)
 endif ()
 
 if (LinuxMembarrier_FOUND)
   list (APPEND Seastar_PRIVATE_COMPILE_DEFINITIONS SEASTAR_HAS_MEMBARRIER)
 
-  target_link_libraries (seastar
-    PRIVATE LinuxMembarrier::membarrier)
+  target_link_libraries (seastar_common
+    INTERFACE LinuxMembarrier::membarrier)
 endif ()
 
 set (Seastar_ALLOC_FAILURE_INJECTION_MODES "Dev")
 if ((Seastar_ALLOC_FAILURE_INJECTION IN_LIST True_STRING_VALUES) OR
     ((Seastar_ALLOC_FAILURE_INJECTION STREQUAL "DEFAULT") AND
      (CMAKE_BUILD_TYPE IN_LIST Seastar_ALLOC_FAILURE_INJECTION_MODES)))
-  target_compile_definitions (seastar
-    PUBLIC SEASTAR_ENABLE_ALLOC_FAILURE_INJECTION)
+  target_compile_definitions (seastar_common
+    INTERFACE SEASTAR_ENABLE_ALLOC_FAILURE_INJECTION)
 endif ()
 
 if (Seastar_TASK_BACKTRACE)
-  target_compile_definitions (seastar
-    PUBLIC SEASTAR_TASK_BACKTRACE)
+  target_compile_definitions (seastar_common
+    INTERFACE SEASTAR_TASK_BACKTRACE)
 endif ()
 
 if (Seastar_DEBUG_ALLOCATIONS)
-  target_compile_definitions (seastar
-    PRIVATE SEASTAR_DEBUG_ALLOCATIONS)
+  target_compile_definitions (seastar_common
+    INTERFACE SEASTAR_DEBUG_ALLOCATIONS)
 endif ()
 
 if (Sanitizers_FIBER_SUPPORT)
@@ -868,12 +856,12 @@ if (Sanitizers_FIBER_SUPPORT)
 endif ()
 
 if (Seastar_ALLOC_PAGE_SIZE)
-  target_compile_definitions (seastar
-    PUBLIC SEASTAR_OVERRIDE_ALLOCATOR_PAGE_SIZE=${Seastar_ALLOC_PAGE_SIZE})
+  target_compile_definitions (seastar_common
+    INTERFACE SEASTAR_OVERRIDE_ALLOCATOR_PAGE_SIZE=${Seastar_ALLOC_PAGE_SIZE})
 endif ()
 
-target_compile_definitions (seastar
-  PUBLIC SEASTAR_SCHEDULING_GROUPS_COUNT=${Seastar_SCHEDULING_GROUPS_COUNT})
+target_compile_definitions (seastar_common
+  INTERFACE SEASTAR_SCHEDULING_GROUPS_COUNT=${Seastar_SCHEDULING_GROUPS_COUNT})
 
 if (Seastar_CXX_FLAGS)
   list (APPEND Seastar_PRIVATE_CXX_FLAGS ${Seastar_CXX_FLAGS})
@@ -886,8 +874,10 @@ endif ()
 # with them and some client code without.
 if (Seastar_SPLIT_DWARF AND (NOT (CMAKE_BUILD_TYPE STREQUAL "Dev")))
   set (Seastar_SPLIT_DWARF_FLAG "-Wl,--gdb-index")
-  target_link_libraries (seastar PUBLIC ${Seastar_SPLIT_DWARF_FLAG})
-  target_compile_options (seastar PUBLIC "-gsplit-dwarf")
+  target_link_libraries (seastar_common
+    INTERFACE ${Seastar_SPLIT_DWARF_FLAG})
+  target_compile_options (seastar_common
+    INTERFACE "-gsplit-dwarf")
 endif ()
 
 if (Seastar_HEAP_PROFILING)
@@ -922,11 +912,11 @@ if (Seastar_DPDK)
     message (FATAL_ERROR "Unrecognized DPDK machine identifier: ${Seastar_DPDK_MACHINE}")
   endif ()
 
-  target_compile_options (seastar
-    PUBLIC -march=${Seastar_ARCH})
+  target_compile_options (seastar_common
+    INTERFACE -march=${Seastar_ARCH})
 
-  target_compile_definitions (seastar
-    PUBLIC SEASTAR_HAVE_DPDK)
+  target_compile_definitions (seastar_common
+    INTERFACE SEASTAR_HAVE_DPDK)
 
   # No pmd driver code will be pulled in without "--whole-archive". To
   # avoid exposing that to seastar users, combine dpdk into a single
@@ -937,22 +927,22 @@ if (Seastar_DPDK)
   )
 
   # This just provides the include path to cmake
-  target_link_libraries (seastar
-    PUBLIC dpdk::dpdk)
+  target_link_libraries (seastar_common
+    INTERFACE dpdk::dpdk)
 endif ()
 
 if (Seastar_HWLOC)
   list (APPEND Seastar_PRIVATE_COMPILE_DEFINITIONS SEASTAR_HAVE_HWLOC)
 
-  target_link_libraries (seastar
-    PRIVATE hwloc::hwloc)
+  target_link_libraries (seastar_common
+    INTERFACE hwloc::hwloc)
 endif ()
 
 set_option_if_package_is_found (Seastar_IO_URING LibUring)
 if (Seastar_IO_URING)
   list (APPEND Seastar_PRIVATE_COMPILE_DEFINITIONS SEASTAR_HAVE_URING)
-  target_link_libraries (seastar
-    PRIVATE URING::uring)
+  target_link_libraries (seastar_common
+    INTERFACE URING::uring)
 endif ()
 
 if (Seastar_LD_FLAGS)
@@ -963,8 +953,8 @@ endif ()
 if (Seastar_NUMA)
   list (APPEND Seastar_PRIVATE_COMPILE_DEFINITIONS SEASTAR_HAVE_NUMA)
 
-  target_link_libraries (seastar
-    PRIVATE numactl::numactl)
+  target_link_libraries (seastar_common
+    INTERFACE numactl::numactl)
 endif ()
 
 if (lz4_HAVE_COMPRESS_DEFAULT)
@@ -974,23 +964,23 @@ endif ()
 seastar_supports_flag ("-Werror=unused-result" ErrorUnused_FOUND)
 if (ErrorUnused_FOUND)
   if (Seastar_UNUSED_RESULT_ERROR)
-    target_compile_options (seastar
-      PUBLIC -Werror=unused-result)
+    target_compile_options (seastar_common
+      INTERFACE -Werror=unused-result)
   else()
-    target_compile_options (seastar
-      PUBLIC -Wno-error=unused-result)
+    target_compile_options (seastar_common
+      INTERFACE -Wno-error=unused-result)
   endif ()
 endif ()
 
 seastar_supports_flag ("-Wno-error=#warnings" ErrorWarnings_FOUND)
 if (ErrorWarnings_FOUND)
-  target_compile_options (seastar
-      PUBLIC "-Wno-error=#warnings")
+  target_compile_options (seastar_common
+      INTERFACE "-Wno-error=#warnings")
 endif ()
 
 if ((CMAKE_BUILD_TYPE STREQUAL "Debug") OR (CMAKE_BUILD_TYPE STREQUAL "Sanitize"))
-  target_compile_definitions (seastar
-    PUBLIC
+  target_compile_definitions (seastar_common
+    INTERFACE
       SEASTAR_DEBUG
       SEASTAR_DEFAULT_ALLOCATOR
       SEASTAR_SHUFFLE_TASK_QUEUE)
@@ -1000,8 +990,8 @@ set (Seastar_DEBUG_SHARED_PTR_MODES "Debug" "Sanitize")
 if (Seastar_DEBUG_SHARED_PTR IN_LIST True_STRING_VALUES OR
     ((Seastar_DEBUG_SHARED_PTR IN_LIST Default_STRING_VALUES) AND
      (CMAKE_BUILD_TYPE IN_LIST Seastar_DEBUG_SHARED_PTR_MODES)))
-  target_compile_definitions (seastar
-    PUBLIC
+  target_compile_definitions (seastar_common
+    INTERFACE
       SEASTAR_DEBUG_SHARED_PTR)
 endif ()
 
@@ -1013,31 +1003,31 @@ if ((Seastar_STACK_GUARDS STREQUAL "ON") OR
   # otherwise clang can soft-fail (return 0 but emit a warning) instead.
   seastar_supports_flag ("-fstack-clash-protection -Werror" StackClashProtection_FOUND)
   if (StackClashProtection_FOUND)
-    target_compile_options (seastar
-      PUBLIC
+    target_compile_options (seastar_common
+      INTERFACE
       -fstack-clash-protection)
   endif ()
-  target_compile_definitions (seastar
-    PRIVATE
+  target_compile_definitions (seastar_common
+    INTERFACE
       SEASTAR_THREAD_STACK_GUARDS)
 endif ()
 
 if ((CMAKE_BUILD_TYPE STREQUAL "Dev") OR (CMAKE_BUILD_TYPE STREQUAL "Debug"))
-  target_compile_definitions (seastar
-    PUBLIC
+  target_compile_definitions (seastar_common
+    INTERFACE
       SEASTAR_TYPE_ERASE_MORE)
 endif ()
 
-target_compile_definitions (seastar
-  PRIVATE ${Seastar_PRIVATE_COMPILE_DEFINITIONS})
+target_compile_definitions (seastar_common
+  INTERFACE ${Seastar_PRIVATE_COMPILE_DEFINITIONS})
 
-target_compile_options (seastar
-  PRIVATE ${Seastar_PRIVATE_CXX_FLAGS})
+target_compile_options (seastar_common
+  INTERFACE ${Seastar_PRIVATE_CXX_FLAGS})
 
-set_target_properties (seastar
+set_target_properties (seastar_common
   PROPERTIES
     CXX_STANDARD ${CMAKE_CXX_STANDARD}
-    CXX_EXTENSIONS ON)
+    CXX_EXTENSIONS OFF)
 
 add_library (seastar_private INTERFACE)
 
@@ -1234,7 +1224,6 @@ if (Seastar_INSTALL)
     EXPORT seastar-export
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
   install (
     EXPORT seastar-export
     FILE SeastarTargets.cmake

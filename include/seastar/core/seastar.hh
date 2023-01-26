@@ -47,15 +47,20 @@
 /// View the [Seastar compatibility statement](./md_compatibility.html) for
 /// information about library evolution.
 
-#include <seastar/core/sstring.hh>
-#include <seastar/core/future.hh>
-#include <seastar/core/file-types.hh>
-#include <seastar/core/posix.hh>
-#include <seastar/util/bool_class.hh>
-#include <seastar/util/std-compat.hh>
 #include "./internal/api-level.hh"
+#include <cstdint>
+#include <filesystem>
+#include <optional>
+#include <string_view>
 
-namespace seastar {
+export module seastar:core.seastar;
+import :core.file_types;
+import :core.future;
+import :core.posix;
+import :net.socket_defs;
+import :util.bool_class;
+
+SEASTAR_EXPORT namespace seastar {
 
 // iostream.hh
 template <class CharType> class input_stream;
@@ -64,7 +69,6 @@ template <class CharType> class output_stream;
 class server_socket;
 class socket;
 class connected_socket;
-class socket_address;
 struct listen_options;
 enum class transport;
 

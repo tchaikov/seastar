@@ -24,8 +24,10 @@
 
 #include <string>
 #include <initializer_list>
-#include <seastar/util/std-compat.hh>
 #include <iosfwd>
+#include <optional>
+
+export module seastar:core.internal.uname;
 
 namespace seastar {
 

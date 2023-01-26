@@ -21,14 +21,13 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
-
 #ifndef SEASTAR_COROUTINES_ENABLED
 #error Coroutines support disabled.
 #endif
 
-#include <seastar/coroutine/exception.hh>
 #include <coroutine>
+
+export module seastar:core.coroutine;
 
 namespace seastar {
 
@@ -205,12 +204,12 @@ public:
 
 } // seastar::internal
 
-template<typename... T>
+SEASTAR_EXPORT template<typename... T>
 auto operator co_await(future<T...> f) noexcept {
     return internal::awaiter<true, T...>(std::move(f));
 }
 
-namespace coroutine {
+SEASTAR_EXPORT namespace coroutine {
 /// Wrapper for a future which turns off checking for preemption
 /// when awaiting it in a coroutine.
 /// If constructed from a future, co_await-ing it will bypass
@@ -265,7 +264,7 @@ public:
 /// Wait for a future without a preemption check
 ///
 /// \param f a \c future<> wrapped with \c without_preemption_check
-template<typename... T>
+SEASTAR_EXPORT template<typename... T>
 auto operator co_await(coroutine::without_preemption_check<T...> f) noexcept {
     return internal::awaiter<false, T...>(std::move(f));
 }
@@ -275,7 +274,7 @@ auto operator co_await(coroutine::without_preemption_check<T...> f) noexcept {
 
 namespace std {
 
-template<typename... T, typename... Args>
+SEASTAR_EXPORT template<typename... T, typename... Args>
 class coroutine_traits<seastar::future<T...>, Args...> : public seastar::internal::coroutine_traits_base<T...> {
 };
 

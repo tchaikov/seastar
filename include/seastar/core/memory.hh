@@ -21,11 +21,16 @@
 
 #pragma once
 
-#include <seastar/core/resource.hh>
-#include <seastar/core/bitops.hh>
 #include <new>
+#include <cstdint>
 #include <functional>
+#include <optional>
+#include <string>
 #include <vector>
+
+export module seastar:core.memory;
+import :core.bitops;
+import :core.resource;
 
 namespace seastar {
 
@@ -220,13 +225,13 @@ void set_reclaim_hook(
 
 /// \endcond
 
-class statistics;
+export class statistics;
 
 /// Capture a snapshot of memory allocation statistics for this lcore.
-statistics stats();
+SEASTAR_EXPORT statistics stats();
 
 /// Memory allocation statistics.
-class statistics {
+SEASTAR_EXPORT class statistics {
     uint64_t _mallocs;
     uint64_t _frees;
     uint64_t _cross_cpu_frees;
@@ -281,40 +286,40 @@ public:
     friend statistics stats();
 };
 
-struct memory_layout {
+SEASTAR_EXPORT struct memory_layout {
     uintptr_t start;
     uintptr_t end;
 };
 
 // Discover virtual address range used by the allocator on current shard.
 // Supported only when seastar allocator is enabled.
-memory::memory_layout get_memory_layout();
+SEASTAR_EXPORT memory::memory_layout get_memory_layout();
 
 /// Returns the size of free memory in bytes.
-size_t free_memory();
+SEASTAR_EXPORT size_t free_memory();
 
 /// Returns the value of free memory low water mark in bytes.
 /// When free memory is below this value, reclaimers are invoked until it goes above again.
-size_t min_free_memory();
+SEASTAR_EXPORT size_t min_free_memory();
 
 /// Sets the value of free memory low water mark in memory::page_size units.
-void set_min_free_pages(size_t pages);
+SEASTAR_EXPORT void set_min_free_pages(size_t pages);
 
 /// Enable the large allocation warning threshold.
 ///
 /// Warn when allocation above a given threshold are performed.
 ///
 /// \param threshold size (in bytes) above which an allocation will be logged
-void set_large_allocation_warning_threshold(size_t threshold);
+SEASTAR_EXPORT void set_large_allocation_warning_threshold(size_t threshold);
 
 /// Gets the current large allocation warning threshold.
-size_t get_large_allocation_warning_threshold();
+SEASTAR_EXPORT size_t get_large_allocation_warning_threshold();
 
 /// Disable large allocation warnings.
-void disable_large_allocation_warning();
+SEASTAR_EXPORT void disable_large_allocation_warning();
 
 /// Set a different large allocation warning threshold for a scope.
-class scoped_large_allocation_warning_threshold {
+SEASTAR_EXPORT class scoped_large_allocation_warning_threshold {
     size_t _old_threshold;
 public:
     explicit scoped_large_allocation_warning_threshold(size_t threshold)
@@ -333,7 +338,7 @@ public:
 };
 
 /// Disable large allocation warnings for a scope.
-class scoped_large_allocation_warning_disable {
+SEASTAR_EXPORT class scoped_large_allocation_warning_disable {
     size_t _old_threshold;
 public:
     scoped_large_allocation_warning_disable()
@@ -363,13 +368,13 @@ public:
 /// This script can generate either textual representation of the data,
 /// or a zoomable flame graph ([flame graph generation instructions](https://github.com/scylladb/scylla/wiki/Seastar-heap-profiler),
 /// [example flame graph](https://user-images.githubusercontent.com/1389273/72920437-f0cf8a80-3d51-11ea-92f0-f3dbeb698871.png)).
-void set_heap_profiling_enabled(bool);
+SEASTAR_EXPORT void set_heap_profiling_enabled(bool);
 
 /// Enable heap profiling for the duration of the scope.
 ///
 /// For more information about heap profiling see
 /// \ref set_heap_profiling_enabled().
-class scoped_heap_profiling {
+SEASTAR_EXPORT class scoped_heap_profiling {
 public:
     scoped_heap_profiling() noexcept;
     ~scoped_heap_profiling();

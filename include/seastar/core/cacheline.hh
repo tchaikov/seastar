@@ -23,10 +23,12 @@
 
 #include <cstddef>
 
-namespace seastar {
+export module seastar:core.cacheline;
+
+export namespace seastar {
 
 // Platform-dependent cache line size for alignment and padding purposes.
-static constexpr size_t cache_line_size =
+ constexpr size_t cache_line_size =
 #if defined(__x86_64__) || defined(__i386__)
     64;
 #elif defined(__s390x__) || defined(__zarch__)

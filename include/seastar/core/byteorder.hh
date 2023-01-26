@@ -24,8 +24,9 @@
 #include <algorithm>
 #include <boost/endian/conversion.hpp>
 #include <seastar/core/unaligned.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 template <typename T>
 inline T cpu_to_le(T x) noexcept {

@@ -1,3 +1,5 @@
+module;
+
 /*
  * This file is open source software, licensed to you under the terms
  * of the Apache License, Version 2.0 (the "License").  See the NOTICE file
@@ -18,22 +20,16 @@
 /*
  * Copyright (C) 2014 Cloudius Systems, Ltd.
  */
+#define SEASTAR_MODULE(x)
+#define SEASTAR_EXPORT
+#define SEASTAR_EXPORT_MODULE(x)
 
-#include <seastar/core/app-template.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/core/alien.hh>
-#include <seastar/core/scollectd.hh>
-#include <seastar/core/metrics_api.hh>
-#include <seastar/core/print.hh>
-#include <seastar/util/log.hh>
-#include <seastar/util/log-cli.hh>
-#include <seastar/net/native-stack.hh>
 #include <boost/program_options.hpp>
 #include <boost/make_shared.hpp>
 #include <fstream>
 #include <cstdlib>
 
-#include "program_options.hh"
+SEASTAR_MODULE(seastar);
 
 namespace seastar {
 

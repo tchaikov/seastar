@@ -19,9 +19,9 @@
  * Copyright (C) 2018 ScyllaDB
  */
 
-#include <seastar/core/sharded.hh>
-#include <seastar/core/loop.hh>
-#include <boost/iterator/counting_iterator.hpp>
+#include <boost/range/irange.hpp>
+
+module seastar;
 
 namespace seastar {
 

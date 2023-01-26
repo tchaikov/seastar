@@ -25,6 +25,8 @@
 #include <utility>
 #include <stddef.h>
 
+export module seastar:util.tuple_utils;
+
 namespace seastar {
 
 /// \cond internal

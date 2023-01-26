@@ -28,9 +28,6 @@
 #include <chrono>
 #include <functional>
 #include <memory>
-#include <seastar/core/posix.hh>
-#include <seastar/core/metrics_registration.hh>
-#include <seastar/core/scheduling.hh>
 #include <linux/perf_event.h>
 
 namespace seastar {

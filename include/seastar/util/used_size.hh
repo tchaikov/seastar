@@ -24,6 +24,8 @@
 #include <stddef.h>
 #include <type_traits>
 
+export module seastar:util.used_size;
+
 namespace seastar {
 namespace internal {
 // Empty types have a size of 1, but that byte is not actually

@@ -30,12 +30,16 @@
 #include <vector>
 #include <tuple>
 #include <utility>
-#include <seastar/core/future.hh>
-#include <seastar/core/shared_ptr.hh>
+
+export module seastar:core.when_any;
+import :core.future;
+import :core.shared_ptr;
+
+#define SEASTAR_CONCEPT(x...) x
 
 namespace seastar {
 
-template <class Sequence>
+SEASTAR_EXPORT template <class Sequence>
 struct when_any_result {
     std::size_t index;
     Sequence futures;
@@ -70,7 +74,7 @@ public:
 /// \param end an \c InputIterator designating the end of the range of futures
 /// \return a \c when_any_result of all the futures in the input; when
 ///         ready, at least one of the contained futures (the one indicated by index) will be ready.
-template <class FutureIterator>
+SEASTAR_EXPORT template <class FutureIterator>
 SEASTAR_CONCEPT( requires requires (FutureIterator i) { { *i++ }; requires is_future<std::remove_reference_t<decltype(*i)>>::value; } )
 auto when_any(FutureIterator begin, FutureIterator end) noexcept
   -> future<when_any_result<std::vector<std::decay_t<typename std::iterator_traits<FutureIterator>::value_type>>>>
@@ -142,7 +146,7 @@ when_any_impl(std::index_sequence<I...>, Futures&&... futs) noexcept
 /// \return a \c when_any_result containing a tuple of all futures
 ///  and and index; when ready, at least one of the contained futures
 ///  (the one indicated by index) will be ready.
-template <class... FutOrFuncs>
+SEASTAR_EXPORT template <class... FutOrFuncs>
 auto when_any(FutOrFuncs&&... fut_or_funcs) noexcept
 {
     return internal::when_any_impl(std::make_index_sequence<sizeof...(FutOrFuncs)>{},

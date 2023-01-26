@@ -57,9 +57,8 @@
 #include <assert.h>
 #include <vector>
 #include <cstddef>
-#include <seastar/core/exception_hacks.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/util/backtrace.hh>
+
+module seastar;
 
 namespace seastar {
 using dl_iterate_fn = int (*) (int (*callback) (struct dl_phdr_info *info, size_t size, void *data), void *data);

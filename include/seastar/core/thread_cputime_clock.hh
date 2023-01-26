@@ -24,10 +24,11 @@
 #include <chrono>
 #include <time.h>
 #include <cassert>
+#include <seastar/util/modules.hh>
 
 namespace seastar {
 
-class thread_cputime_clock {
+SEASTAR_EXPORT class thread_cputime_clock {
 public:
     using rep = int64_t;
     using period = std::chrono::nanoseconds::period;

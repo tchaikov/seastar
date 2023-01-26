@@ -21,12 +21,14 @@
 
 #pragma once
 
-#include <seastar/core/linux-aio.hh>
+#include <sys/types.h>
 #include <exception>
+
+export module seastar:core.internal.io_desc;
 
 namespace seastar {
 
-class kernel_completion {
+export class kernel_completion {
 protected:
     ~kernel_completion() = default;
 public:

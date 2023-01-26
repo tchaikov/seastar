@@ -21,8 +21,6 @@
 
 #pragma once
 
-#include <iterator>
-
 /// \addtogroup logging
 /// @{
 
@@ -39,7 +37,7 @@ namespace internal {
 /// allocated by itself.
 /// To accommodate the most widely used way of formatting messages -- fmt --,
 /// it provides an output iterator interface for writing into it.
-class log_buf {
+export class log_buf {
     char* _begin;
     char* _end;
     char* _current;

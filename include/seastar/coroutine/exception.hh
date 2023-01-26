@@ -21,9 +21,10 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
 #include <coroutine>
 #include <exception>
+
+export module seastar:coroutine.exception;
 
 namespace seastar {
 

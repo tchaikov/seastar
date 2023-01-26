@@ -19,9 +19,7 @@
  * Copyright (C) 2022 Scylladb, Ltd.
  */
 
-#include <seastar/http/request.hh>
-#include <seastar/http/url.hh>
-#include <seastar/http/common.hh>
+module seastar;
 
 namespace seastar {
 namespace http {

@@ -24,8 +24,6 @@
 #include <cassert>
 #include <cstdlib>
 #include <string>
-#include <seastar/util/std-compat.hh>
-#include <seastar/util/spinlock.hh>
 #include <vector>
 #include <set>
 #include <sched.h>
@@ -35,20 +33,23 @@
 #include <hwloc.h>
 #endif
 
+export module seastar:core.resource;
+import :util.spinlock;
+
 namespace seastar {
 
-cpu_set_t cpuid_to_cpuset(unsigned cpuid);
+SEASTAR_EXPORT cpu_set_t cpuid_to_cpuset(unsigned cpuid);
 class io_queue;
 class io_group;
 
 namespace resource {
 
-using std::optional;
+SEASTAR_EXPORT using std::optional;
 
-using cpuset = std::set<unsigned>;
+SEASTAR_EXPORT using cpuset = std::set<unsigned>;
 
 /// \cond internal
-std::optional<cpuset> parse_cpuset(std::string value);
+export std::optional<cpuset> parse_cpuset(std::string value);
 /// \endcond
 
 namespace hwloc::internal {
@@ -84,7 +85,7 @@ struct topology_holder {};
 
 } // namespace hwloc::internal
 
-struct configuration {
+SEASTAR_EXPORT struct configuration {
     optional<size_t> total_memory;
     optional<size_t> reserve_memory;  // if total_memory not specified
     size_t reserve_additional_memory;
@@ -96,13 +97,13 @@ struct configuration {
     hwloc::internal::topology_holder topology;
 };
 
-struct memory {
+SEASTAR_EXPORT struct memory {
     size_t bytes;
     unsigned nodeid;
 
 };
 
-struct io_queue_topology {
+SEASTAR_EXPORT struct io_queue_topology {
     std::vector<std::unique_ptr<io_queue>> queues;
     std::vector<unsigned> shard_to_group;
     std::vector<std::shared_ptr<io_group>> groups;
@@ -115,20 +116,20 @@ struct io_queue_topology {
     ~io_queue_topology();
 };
 
-struct cpu {
+SEASTAR_EXPORT struct cpu {
     unsigned cpu_id;
     std::vector<memory> mem;
 };
 
-struct resources {
+SEASTAR_EXPORT struct resources {
     std::vector<cpu> cpus;
     std::unordered_map<dev_t, io_queue_topology> ioq_topology;
 };
 
-resources allocate(configuration& c);
-unsigned nr_processing_units(configuration& c);
+SEASTAR_EXPORT resources allocate(configuration& c);
+SEASTAR_EXPORT unsigned nr_processing_units(configuration& c);
 
-std::optional<resource::cpuset> parse_cpuset(std::string value);
+SEASTAR_EXPORT std::optional<resource::cpuset> parse_cpuset(std::string value);
 
 }
 }

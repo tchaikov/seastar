@@ -19,30 +19,45 @@
  * Copyright 2019 ScyllaDB
  */
 
-#define __user /* empty */  // for xfs includes, below
+#include <boost/lockfree/spsc_queue.hpp>
 
+#include <algorithm>
+#include <deque>
+#include <atomic>
+#include <filesystem>
+#include <functional>
+#include <memory>
+#include <vector>
+#include <optional>
+
+#include <sys/ioctl.h>
 #include <sys/syscall.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <linux/types.h> // for xfs, below
 #include <linux/fs.h> // BLKBSZGET
 #include <linux/major.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 #include <fcntl.h>
+#define __user /* empty */  // for xfs includes, below
 #include <xfs/linux.h>
 #define min min    /* prevent xfs.h from defining min() as a macro */
 #include <xfs/xfs.h>
 #undef min
-#include <seastar/core/internal/read_state.hh>
-#include <seastar/core/internal/uname.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/core/file.hh>
-#include <seastar/core/report_exception.hh>
-#include <seastar/core/linux-aio.hh>
-#include <seastar/util/later.hh>
-#include <seastar/util/internal/magic.hh>
-#include <seastar/util/internal/iovec_utils.hh>
-#include <seastar/core/io_queue.hh>
+
+module seastar;
+import :core.file_types;
+import :core.internal.pollable_fd;
+import :core.internal.uname;
+import :core.io_priority_class;
+import :core.io_queue;
+import :core.posix;
+import :core.report_exception;
+import :core.semaphore;
+import :core.sstring;
+import :core.stream;
+import :core.temporary_buffer;
+
 #include "core/file-impl.hh"
 #include "core/syscall_result.hh"
 #include "core/thread_pool.hh"

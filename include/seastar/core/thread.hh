@@ -22,18 +22,18 @@
 
 #pragma once
 
-#include <seastar/core/thread_impl.hh>
-#include <seastar/core/future.hh>
-#include <seastar/core/do_with.hh>
-#include <seastar/core/timer.hh>
-#include <seastar/core/scheduling.hh>
 #include <memory>
 #include <setjmp.h>
 #include <type_traits>
 #include <chrono>
-#include <seastar/util/std-compat.hh>
 #include <ucontext.h>
 #include <boost/intrusive/list.hpp>
+
+export module seastar:core.thread;
+import :core.scheduling;
+import :core.thread_impl;
+import :core.task;
+import :core.future;
 
 /// \defgroup thread-module Seastar threads
 ///
@@ -66,7 +66,7 @@
 /// the thread to terminate and yield a result.
 
 /// Seastar API namespace
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// \addtogroup thread-module
 /// @{

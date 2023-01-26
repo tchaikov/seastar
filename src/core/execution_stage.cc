@@ -19,10 +19,7 @@
  * Copyright (C) 2018 ScyllaDB Ltd.
  */
 
-#include <seastar/core/execution_stage.hh>
-#include <seastar/core/print.hh>
-#include <seastar/core/make_task.hh>
-#include <seastar/util/defer.hh>
+module seastar;
 
 namespace seastar {
 
