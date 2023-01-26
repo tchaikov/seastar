@@ -21,7 +21,9 @@
 
 #pragma once
 
-namespace seastar {
+#include <seastar/util/modules.hh>
+
+SEASTAR_EXPORT namespace seastar {
 
 /// Determines whether seastar should throw or abort when operation made by
 /// seastar fails because the target file descriptor is not valid. This is

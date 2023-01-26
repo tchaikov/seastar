@@ -47,6 +47,7 @@
 #include <ratio>
 #include <atomic>
 #include <stack>
+#include <seastar/util/modules.hh>
 #include <seastar/util/std-compat.hh>
 #include <boost/next_prior.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
@@ -94,7 +95,7 @@
 
 struct _Unwind_Exception;
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 using shard_id = unsigned;
 
@@ -177,7 +178,7 @@ public:
     virtual void set_exception(std::exception_ptr eptr) noexcept = 0;
 };
 
-class reactor {
+SEASTAR_EXPORT class reactor {
 private:
     struct task_queue;
     using task_queue_list = circular_buffer_fixed_capacity<task_queue*, 1 << log2ceil(max_scheduling_groups())>;
@@ -713,15 +714,15 @@ internal::make_pollfn(Func&& func) {
 extern __thread reactor* local_engine;
 extern __thread size_t task_quota;
 
-inline reactor& engine() {
+SEASTAR_EXPORT inline reactor& engine() {
     return *local_engine;
 }
 
-inline bool engine_is_ready() {
+SEASTAR_EXPORT inline bool engine_is_ready() {
     return local_engine != nullptr;
 }
 
-inline int hrtimer_signal() {
+SEASTAR_EXPORT inline int hrtimer_signal() {
     // We don't want to use SIGALRM, because the boost unit test library
     // also plays with it.
     return SIGRTMIN;

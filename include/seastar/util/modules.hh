@@ -16,18 +16,13 @@
  * under the License.
  */
 /*
- * Copyright (C) 2015 Cloudius Systems, Ltd.
+ * Copyright (C) 2023 ScyllaDB
  */
 
 #pragma once
 
-#include <seastar/core/sharded.hh>
-#include <seastar/util/modules.hh>
-
-SEASTAR_EXPORT namespace seastar {
-
-
-template <typename Service>
-using distributed = sharded<Service>;
-
-}
+#if defined(__cpp_modules) && defined(SEASTAR_CXX_MODULES)
+#define SEASTAR_EXPORT export
+#else
+#define SEASTAR_EXPORT
+#endif

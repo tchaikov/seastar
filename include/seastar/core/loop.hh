@@ -29,9 +29,10 @@
 #include <vector>
 
 #include <seastar/core/future.hh>
+#include <seastar/core/semaphore.hh>
 #include <seastar/core/task.hh>
 #include <seastar/util/bool_class.hh>
-#include <seastar/core/semaphore.hh>
+#include <seastar/util/modules.hh>
 
 namespace seastar {
 
@@ -42,8 +43,8 @@ namespace seastar {
 // the actual function invocation. It is represented by a function which
 // returns a future which resolves when the action is done.
 
-struct stop_iteration_tag { };
-using stop_iteration = bool_class<stop_iteration_tag>;
+SEASTAR_EXPORT struct stop_iteration_tag { };
+SEASTAR_EXPORT using stop_iteration = bool_class<stop_iteration_tag>;
 
 namespace internal {
 
@@ -109,7 +110,7 @@ future<> repeat(AsyncAction& action) noexcept = delete;
 ///               If \c action is an r-value it can be moved in the middle of iteration.
 /// \return a ready future if we stopped successfully, or a failed future if
 ///         a call to to \c action failed.
-template<typename AsyncAction>
+SEASTAR_EXPORT template<typename AsyncAction>
 SEASTAR_CONCEPT( requires seastar::InvokeReturns<AsyncAction, stop_iteration> || seastar::InvokeReturns<AsyncAction, future<stop_iteration>> )
 inline
 future<> repeat(AsyncAction&& action) noexcept {
@@ -222,7 +223,7 @@ public:
 ///               in the middle of iteration.
 /// \return a ready future if we stopped successfully, or a failed future if
 ///         a call to to \c action failed.  The \c optional's value is returned.
-template<typename AsyncAction>
+SEASTAR_EXPORT template<typename AsyncAction>
 SEASTAR_CONCEPT( requires requires (AsyncAction aa) {
     bool(futurize_invoke(aa).get0());
     futurize_invoke(aa).get0().value();
@@ -327,7 +328,7 @@ public:
 ///               future fails, or \c stop_cond returns \c true or fails.
 /// \return a ready future if we stopped successfully, or a failed future if
 ///         a call to to \c action or a call to \c stop_cond failed.
-template<typename AsyncAction, typename StopCondition>
+SEASTAR_EXPORT template<typename AsyncAction, typename StopCondition>
 SEASTAR_CONCEPT( requires seastar::InvokeReturns<StopCondition, bool> && seastar::InvokeReturns<AsyncAction, future<>> )
 inline
 future<> do_until(StopCondition stop_cond, AsyncAction action) noexcept {
@@ -363,7 +364,7 @@ future<> do_until(StopCondition stop_cond, AsyncAction action) noexcept {
 /// \param action a callable taking no arguments, returning a \c future<>
 ///        that becomes ready when you wish it to be called again.
 /// \return a future<> that will resolve to the first failure of \c action
-template<typename AsyncAction>
+SEASTAR_EXPORT template<typename AsyncAction>
 SEASTAR_CONCEPT( requires seastar::InvokeReturns<AsyncAction, future<>> )
 inline
 future<> keep_doing(AsyncAction action) noexcept {
@@ -448,7 +449,7 @@ future<> do_for_each_impl(Iterator begin, Iterator end, AsyncAction action) {
 ///               when it is acceptable to process the next item.
 /// \return a ready future on success, or the first failed future if
 ///         \c action failed.
-template<typename Iterator, typename AsyncAction>
+SEASTAR_EXPORT template<typename Iterator, typename AsyncAction>
 SEASTAR_CONCEPT( requires requires (Iterator i, AsyncAction aa) {
     { futurize_invoke(aa, *i) } -> std::same_as<future<>>;
 } )
@@ -472,7 +473,7 @@ future<> do_for_each(Iterator begin, Iterator end, AsyncAction action) noexcept 
 ///               when it is acceptable to process the next item.
 /// \return a ready future on success, or the first failed future if
 ///         \c action failed.
-template<typename Container, typename AsyncAction>
+SEASTAR_EXPORT template<typename Container, typename AsyncAction>
 SEASTAR_CONCEPT( requires requires (Container c, AsyncAction aa) {
     { futurize_invoke(aa, *std::begin(c)) } -> std::same_as<future<>>;
     std::end(c);
@@ -552,7 +553,7 @@ public:
 /// \note parallel_for_each() schedules all invocations of \c func on the
 ///       current shard. If you want to run a function on all shards in parallel,
 ///       have a look at \ref smp::invoke_on_all() instead.
-template <typename Iterator, typename Sentinel, typename Func>
+SEASTAR_EXPORT template <typename Iterator, typename Sentinel, typename Func>
 SEASTAR_CONCEPT( requires (requires (Func f, Iterator i) { { f(*i) } -> std::same_as<future<>>; { i++ }; } && (std::same_as<Sentinel, Iterator> || std::sentinel_for<Sentinel, Iterator>)))
 // We use a conjunction with std::same_as<Sentinel, Iterator> because std::sentinel_for requires Sentinel to be semiregular,
 // which implies that it requires Sentinel to be default-constructible, which is unnecessarily strict in below's context and could
@@ -625,7 +626,7 @@ parallel_for_each_impl(Range&& range, Func&& func) {
 
 } // namespace internal
 
-template <typename Range, typename Func>
+SEASTAR_EXPORT template <typename Range, typename Func>
 SEASTAR_CONCEPT( requires requires (Func f, Range r) {
     { f(*std::begin(r)) } -> std::same_as<future<>>;
     std::end(r);
@@ -658,7 +659,7 @@ parallel_for_each(Range&& range, Func&& func) noexcept {
 /// \note max_concurrent_for_each() schedules all invocations of \c func on the
 ///       current shard. If you want to run a function on all shards in parallel,
 ///       have a look at \ref smp::invoke_on_all() instead.
-template <typename Iterator, typename Sentinel, typename Func>
+SEASTAR_EXPORT template <typename Iterator, typename Sentinel, typename Func>
 SEASTAR_CONCEPT( requires (requires (Func f, Iterator i) { { f(*i) } -> std::same_as<future<>>; { ++i }; } && (std::same_as<Sentinel, Iterator> || std::sentinel_for<Sentinel, Iterator>) ) )
 // We use a conjunction with std::same_as<Sentinel, Iterator> because std::sentinel_for requires Sentinel to be semiregular,
 // which implies that it requires Sentinel to be default-constructible, which is unnecessarily strict in below's context and could
@@ -739,7 +740,7 @@ max_concurrent_for_each(Iterator begin, Sentinel end, size_t max_concurrent, Fun
 /// \note max_concurrent_for_each() schedules all invocations of \c func on the
 ///       current shard. If you want to run a function on all shards in parallel,
 ///       have a look at \ref smp::invoke_on_all() instead.
-template <typename Range, typename Func>
+SEASTAR_EXPORT template <typename Range, typename Func>
 SEASTAR_CONCEPT( requires requires (Func f, Range r) {
     { f(*std::begin(r)) } -> std::same_as<future<>>;
     std::end(r);

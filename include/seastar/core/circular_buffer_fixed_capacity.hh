@@ -32,11 +32,12 @@
 #include <cstddef>
 #include <iterator>
 #include <utility>
+#include <seastar/util/modules.hh>
 
 
 /// \file
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// A fixed-capacity container (like boost::static_vector) that can insert
 /// and remove at both ends (like std::deque). Does not allocate.

@@ -29,8 +29,9 @@
 #include <seastar/core/timer.hh>
 #include <seastar/core/lowres_clock.hh>
 #include <seastar/core/timed_out_error.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 template<typename T>
 struct dummy_expiry {

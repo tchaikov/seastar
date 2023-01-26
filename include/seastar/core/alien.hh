@@ -33,6 +33,7 @@
 #include <seastar/core/cacheline.hh>
 #include <seastar/core/sstring.hh>
 #include <seastar/core/metrics_registration.hh>
+#include <seastar/util/modules.hh>
 
 /// \file
 
@@ -43,7 +44,7 @@ class reactor;
 /// \brief Integration with non-seastar applications.
 namespace alien {
 
-class message_queue {
+SEASTAR_EXPORT class message_queue {
     static constexpr size_t batch_size = 128;
     static constexpr size_t prefetch_cnt = 2;
     struct work_item;
@@ -112,7 +113,7 @@ struct qs_deleter {
 /// system, there is just one instance, but for in-process clustering testing
 /// there may be more than one. Function such as run_on() direct messages to
 /// and (instance, shard) tuple.
-class instance {
+SEASTAR_EXPORT class instance {
     using qs = std::unique_ptr<message_queue[], internal::qs_deleter>;
 public:
     static qs create_qs(const std::vector<reactor*>& reactors);
@@ -139,7 +140,7 @@ extern instance* default_instance;
 ///          message queue managed by the shard executing the alien thread which is
 ///          interested to the return value. Please use \c submit_to() instead, if
 ///          \c func throws.
-template <typename Func>
+SEASTAR_EXPORT template <typename Func>
 void run_on(instance& instance, unsigned shard, Func func) {
     instance._qs[shard].submit(std::move(func));
 }
@@ -197,7 +198,7 @@ template <typename Func> using return_type_t = typename return_type_of<Func>::ty
 ///          the caller must guarantee that it will survive the call.
 /// \return whatever \c func returns, as a \c std::future<>
 /// \note the caller must keep the returned future alive until \c func returns
-template<typename Func, typename T = internal::return_type_t<Func>>
+SEASTAR_EXPORT template<typename Func, typename T = internal::return_type_t<Func>>
 std::future<T> submit_to(instance& instance, unsigned shard, Func func) {
     std::promise<T> pr;
     auto fut = pr.get_future();

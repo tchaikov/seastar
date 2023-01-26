@@ -23,8 +23,9 @@
 
 #include <seastar/core/future.hh>
 #include <seastar/core/chunked_fifo.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// \addtogroup fiber-module
 /// @{

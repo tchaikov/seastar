@@ -24,6 +24,7 @@
 #include <seastar/util/noncopyable_function.hh>
 #include <seastar/util/optimized_optional.hh>
 #include <seastar/util/std-compat.hh>
+#include <seastar/util/modules.hh>
 
 #include <boost/intrusive/list.hpp>
 
@@ -31,7 +32,7 @@
 
 namespace bi = boost::intrusive;
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// \addtogroup fiber-module
 /// @{

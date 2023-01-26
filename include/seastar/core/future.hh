@@ -35,6 +35,7 @@
 #include <seastar/util/concepts.hh>
 #include <seastar/util/noncopyable_function.hh>
 #include <seastar/util/backtrace.hh>
+#include <seastar/util/modules.hh>
 #include <seastar/util/std-compat.hh>
 
 #if __cplusplus > 201703L
@@ -43,7 +44,7 @@
 
 namespace seastar {
 
-struct nested_exception : public std::exception {
+SEASTAR_EXPORT struct nested_exception : public std::exception {
     std::exception_ptr inner;
     std::exception_ptr outer;
     nested_exception(std::exception_ptr inner, std::exception_ptr outer) noexcept;
@@ -165,7 +166,7 @@ struct future_state_base;
 /// is useful when it is determined that no I/O needs to be performed
 /// to perform a computation (for example, because the data is cached
 /// in some buffer).
-template <typename... T, typename... A>
+SEASTAR_EXPORT template <typename... T, typename... A>
 future<T...> make_ready_future(A&&... value) noexcept;
 
 /// \brief Creates a \ref future in an available, failed state.
@@ -174,20 +175,20 @@ future<T...> make_ready_future(A&&... value) noexcept;
 /// state.  This is useful when no I/O needs to be performed to perform
 /// a computation (for example, because the connection is closed and
 /// we cannot read from it).
-template <typename... T>
+SEASTAR_EXPORT template <typename... T>
 future<T...> make_exception_future(std::exception_ptr&& value) noexcept;
 
-template <typename... T>
+SEASTAR_EXPORT template <typename... T>
 future<T...> make_exception_future(const std::exception_ptr& ex) noexcept {
     return make_exception_future<T...>(std::exception_ptr(ex));
 }
 
-template <typename... T>
+SEASTAR_EXPORT template <typename... T>
 future<T...> make_exception_future(std::exception_ptr& ex) noexcept {
     return make_exception_future<T...>(static_cast<const std::exception_ptr&>(ex));
 }
 
-template <typename... T>
+SEASTAR_EXPORT template <typename... T>
 future<T...> make_exception_future(const std::exception_ptr&& ex) noexcept {
     // as ex is const, we cannot move it, but can copy it.
     return make_exception_future<T...>(std::exception_ptr(ex));
@@ -210,7 +211,7 @@ void with_allow_abandoned_failed_futures(unsigned count, noncopyable_function<vo
 /// continuation is destroyed before setting any value or exception, an
 /// exception of `broken_promise` type is propagated to that abandoned
 /// continuation.
-struct broken_promise : std::logic_error {
+SEASTAR_EXPORT struct broken_promise : std::logic_error {
     broken_promise();
 };
 
@@ -219,10 +220,10 @@ struct broken_promise : std::logic_error {
 /// This is equivalent to
 /// make_exception_future(std::current_exception()), but expands to
 /// less code.
-template <typename... T>
+SEASTAR_EXPORT template <typename... T>
 future<T...> current_exception_as_future() noexcept;
 
-extern template
+SEASTAR_EXPORT extern template
 future<> current_exception_as_future() noexcept;
 
 namespace internal {
@@ -741,6 +742,7 @@ struct continuation_base_from_future<future<T...>> {
 template <typename Future>
 using continuation_base_from_future_t = typename continuation_base_from_future<Future>::type;
 
+SEASTAR_EXPORT
 #if SEASTAR_API_LEVEL < 6
 template <typename Promise, typename... T>
 #else
@@ -1093,24 +1095,24 @@ struct futurize;
 
 SEASTAR_CONCEPT(
 
-template <typename T>
+SEASTAR_EXPORT template <typename T>
 concept Future = is_future<T>::value;
 
-template <typename Func, typename... T>
+SEASTAR_EXPORT template <typename Func, typename... T>
 concept CanInvoke = std::invocable<Func, T...>;
 
 // Deprecated alias
 template <typename Func, typename... T>
 concept CanApply = CanInvoke<Func, T...>;
 
-template <typename Func, typename... T>
+SEASTAR_EXPORT template <typename Func, typename... T>
 concept CanApplyTuple
     = sizeof...(T) == 1
         && requires (Func func, std::tuple<T...> wrapped_val) {
         { std::apply(func, std::get<0>(std::move(wrapped_val))) };
     };
 
-template <typename Func, typename Return, typename... T>
+SEASTAR_EXPORT template <typename Func, typename Return, typename... T>
 concept InvokeReturns = requires (Func f, T... args) {
     { f(std::forward<T>(args)...) } -> std::same_as<Return>;
 };
@@ -1119,7 +1121,7 @@ concept InvokeReturns = requires (Func f, T... args) {
 template <typename Func, typename Return, typename... T>
 concept ApplyReturns = InvokeReturns<Func, Return, T...>;
 
-template <typename Func, typename... T>
+SEASTAR_EXPORT template <typename Func, typename... T>
 concept InvokeReturnsAnyFuture = Future<std::invoke_result_t<Func, T...>>;
 
 // Deprecated alias
@@ -1136,10 +1138,10 @@ using futurize_t = typename futurize<T>::type;
 
 /// @}
 
-template<typename Func, typename... Args>
+SEASTAR_EXPORT template<typename Func, typename... Args>
 auto futurize_invoke(Func&& func, Args&&... args) noexcept;
 
-template<typename Func, typename... Args>
+SEASTAR_EXPORT template<typename Func, typename... Args>
 auto futurize_apply(Func&& func, std::tuple<Args...>&& args) noexcept;
 
 /// \addtogroup future-module
@@ -1283,17 +1285,17 @@ concept CanInvokeWhenAllSucceed = requires {
 };
 )
 
-template <typename Func, typename... T>
+SEASTAR_EXPORT template <typename Func, typename... T>
 struct result_of_apply {
     // no "type" member if not a function call signature or not a tuple
 };
 
-template <typename Func, typename... T>
+SEASTAR_EXPORT template <typename Func, typename... T>
 struct result_of_apply<Func, std::tuple<T...>> : std::invoke_result<Func, T...> {
     // Let std::invoke_result_t determine the result if the input is a tuple
 };
 
-template <typename Func, typename... T>
+SEASTAR_EXPORT template <typename Func, typename... T>
 using result_of_apply_t = typename result_of_apply<Func, T...>::type;
 
 }
@@ -1345,7 +1347,7 @@ task* continuation_base_with_promise<Promise, T SEASTAR_ELLIPSIS>::waiting_task(
 ///           failure, an exception).
 ///           A list with two or more types is deprecated; use
 ///           \c future<std::tuple<T...>> instead.
-template <typename SEASTAR_ELLIPSIS T>
+SEASTAR_EXPORT template <typename SEASTAR_ELLIPSIS T>
 class SEASTAR_NODISCARD future : private internal::future_base {
     using future_state = seastar::future_state<internal::future_stored_type_t<T SEASTAR_ELLIPSIS>>;
     future_state _state;
@@ -1964,7 +1966,7 @@ template <>
 struct futurize_base<future<>> : public futurize_base<void> {};
 }
 
-template <typename T>
+SEASTAR_EXPORT template <typename T>
 struct futurize : public internal::futurize_base<T> {
     using base = internal::futurize_base<T>;
     using type = typename base::type;
@@ -2055,13 +2057,13 @@ void promise<T SEASTAR_ELLIPSIS>::move_it(promise&& x) noexcept {
     }
 }
 
-template <typename... T, typename... A>
+SEASTAR_EXPORT template <typename... T, typename... A>
 inline
 future<T...> make_ready_future(A&&... value) noexcept {
     return future<T...>(ready_future_marker(), std::forward<A>(value)...);
 }
 
-template <typename... T>
+SEASTAR_EXPORT template <typename... T>
 inline
 future<T...> make_exception_future(std::exception_ptr&& ex) noexcept {
     return future<T...>(exception_future_marker(), std::move(ex));
@@ -2073,12 +2075,12 @@ future<T...> internal::make_exception_future(future_state_base&& state) noexcept
     return future<T...>(exception_future_marker(), std::move(state));
 }
 
-template <typename... T>
+SEASTAR_EXPORT template <typename... T>
 future<T...> current_exception_as_future() noexcept {
     return future<T...>(future_state_base::current_exception_future_marker());
 }
 
-void log_exception_trace() noexcept;
+SEASTAR_EXPORT void log_exception_trace() noexcept;
 
 /// \brief Creates a \ref future in an available, failed state.
 ///
@@ -2086,14 +2088,14 @@ void log_exception_trace() noexcept;
 /// state.  This no I/O needs to be performed to perform a computation
 /// (for example, because the connection is closed and we cannot read
 /// from it).
-template <typename... T, typename Exception>
+SEASTAR_EXPORT template <typename... T, typename Exception>
 inline
 future<T...> make_exception_future(Exception&& ex) noexcept {
     log_exception_trace();
     return make_exception_future<T...>(std::make_exception_ptr(std::forward<Exception>(ex)));
 }
 
-template <typename... T, typename Exception>
+SEASTAR_EXPORT template <typename... T, typename Exception>
 future<T...> make_exception_future_with_backtrace(Exception&& ex) noexcept {
     return make_exception_future<T...>(make_backtraced_exception_ptr<Exception>(std::forward<Exception>(ex)));
 }
@@ -2172,7 +2174,7 @@ internal::futurize_base<void>::make_exception_future(Arg&& arg) noexcept {
     return make_exception_future<>(std::forward<Arg>(arg));
 }
 
-template<typename Func, typename... Args>
+SEASTAR_EXPORT template<typename Func, typename... Args>
 auto futurize_invoke(Func&& func, Args&&... args) noexcept {
     using futurator = futurize<std::invoke_result_t<Func, Args&&...>>;
     return futurator::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
@@ -2184,7 +2186,7 @@ auto futurize_apply(Func&& func, Args&&... args) noexcept {
     return futurize_invoke(std::forward<Func>(func), std::forward<Args>(args)...);
 }
 
-template<typename Func, typename... Args>
+SEASTAR_EXPORT template<typename Func, typename... Args>
 auto futurize_apply(Func&& func, std::tuple<Args...>&& args) noexcept {
     using futurator = futurize<std::invoke_result_t<Func, Args&&...>>;
     return futurator::apply(std::forward<Func>(func), std::move(args));

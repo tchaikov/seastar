@@ -21,6 +21,7 @@
 #pragma once
 
 #include <boost/program_options.hpp>
+#include <chrono>
 #include <functional>
 #include <seastar/core/future.hh>
 #include <seastar/core/smp.hh>
@@ -30,9 +31,9 @@
 #include <seastar/core/metrics_api.hh>
 #include <seastar/core/scollectd.hh>
 #include <seastar/util/log-cli.hh>
-#include <chrono>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 namespace alien {
 

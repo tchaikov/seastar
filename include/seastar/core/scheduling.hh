@@ -26,12 +26,13 @@
 #include <seastar/core/sstring.hh>
 #include <seastar/core/function_traits.hh>
 #include <seastar/util/concepts.hh>
+#include <seastar/util/modules.hh>
 
 /// \file
 
 namespace seastar {
 
-constexpr unsigned max_scheduling_groups() { return SEASTAR_SCHEDULING_GROUPS_COUNT; }
+SEASTAR_EXPORT constexpr unsigned max_scheduling_groups() { return SEASTAR_SCHEDULING_GROUPS_COUNT; }
 
 #if SEASTAR_API_LEVEL < 6
 #define SEASTAR_ELLIPSIS ...
@@ -47,7 +48,7 @@ class reactor;
 class scheduling_group;
 class scheduling_group_key;
 
-using sched_clock = std::chrono::steady_clock;
+SEASTAR_EXPORT using sched_clock = std::chrono::steady_clock;
 
 namespace internal {
 
@@ -73,7 +74,7 @@ T* scheduling_group_get_specific_ptr(scheduling_group sg, scheduling_group_key k
 /// \param shares number of shares of the CPU time allotted to the group;
 ///              Use numbers in the 1-1000 range (but can go above).
 /// \return a scheduling group that can be used on any shard
-future<scheduling_group> create_scheduling_group(sstring name, float shares) noexcept;
+SEASTAR_EXPORT future<scheduling_group> create_scheduling_group(sstring name, float shares) noexcept;
 
 /// Destroys a scheduling group.
 ///
@@ -84,7 +85,7 @@ future<scheduling_group> create_scheduling_group(sstring name, float shares) noe
 ///
 /// \param sg The scheduling group to be destroyed
 /// \return a future that is ready when the scheduling group has been torn down
-future<> destroy_scheduling_group(scheduling_group sg) noexcept;
+SEASTAR_EXPORT future<> destroy_scheduling_group(scheduling_group sg) noexcept;
 
 /// Rename scheduling group.
 ///
@@ -96,7 +97,7 @@ future<> destroy_scheduling_group(scheduling_group sg) noexcept;
 /// \param sg The scheduling group to be renamed
 /// \param new_name The new name for the scheduling group.
 /// \return a future that is ready when the scheduling group has been renamed
-future<> rename_scheduling_group(scheduling_group sg, sstring new_name) noexcept;
+SEASTAR_EXPORT future<> rename_scheduling_group(scheduling_group sg, sstring new_name) noexcept;
 
 
 /**
@@ -112,7 +113,7 @@ future<> rename_scheduling_group(scheduling_group sg, sstring new_name) noexcept
  * with @ref make_scheduling_group_key_config and only the change it.
  *
  */
-struct scheduling_group_key_config {
+SEASTAR_EXPORT struct scheduling_group_key_config {
     /**
      * Constructs a default configuration
      */
@@ -150,7 +151,7 @@ struct scheduling_group_key_config {
  *
  * @note this object can be copied accross shards and scheduling groups.
  */
-class scheduling_group_key {
+SEASTAR_EXPORT class scheduling_group_key {
 public:
     /// The only user allowed operation on a key is copying.
     scheduling_group_key(const scheduling_group_key&) noexcept = default;
@@ -212,7 +213,7 @@ void apply_constructor(void* pre_alocated_mem, Tuple args, std::index_sequence<I
  * @param args - The parameters for the constructor.
  * @return a fully initialized \ref scheduling_group_key_config object.
  */
-template <typename T, typename... ConstructorArgs>
+SEASTAR_EXPORT template <typename T, typename... ConstructorArgs>
 scheduling_group_key_config
 make_scheduling_group_key_config(ConstructorArgs... args) {
     scheduling_group_key_config sgkc(typeid(T));
@@ -234,7 +235,7 @@ make_scheduling_group_key_config(ConstructorArgs... args) {
  * \ref make_scheduling_group_key_config )
  * @return A future containing \ref scheduling_group_key for the newly created specific value.
  */
-future<scheduling_group_key> scheduling_group_key_create(scheduling_group_key_config cfg) noexcept;
+SEASTAR_EXPORT future<scheduling_group_key> scheduling_group_key_create(scheduling_group_key_config cfg) noexcept;
 
 /**
  * Returnes a reference to the given scheduling group specific value
@@ -243,7 +244,7 @@ future<scheduling_group_key> scheduling_group_key_create(scheduling_group_key_co
  * @param key - the key of the value to retrieve.
  * @return A reference to the scheduling specific value.
  */
-template<typename T>
+SEASTAR_EXPORT template<typename T>
 T& scheduling_group_get_specific(scheduling_group sg, scheduling_group_key key);
 
 
@@ -251,7 +252,7 @@ T& scheduling_group_get_specific(scheduling_group sg, scheduling_group_key key);
 ///
 /// A `scheduling_group` is a tag that can be used to mark a function call.
 /// Executions of such tagged calls are accounted as a group.
-class scheduling_group {
+SEASTAR_EXPORT class scheduling_group {
     unsigned _id;
 private:
     explicit scheduling_group(unsigned id) noexcept : _id(id) {}
@@ -337,19 +338,19 @@ current_scheduling_group_ptr() noexcept {
 /// \endcond
 
 /// Returns the current scheduling group
-inline
+SEASTAR_EXPORT inline
 scheduling_group
 current_scheduling_group() noexcept {
     return *internal::current_scheduling_group_ptr();
 }
 
-inline
+SEASTAR_EXPORT inline
 scheduling_group
 default_scheduling_group() noexcept {
     return scheduling_group();
 }
 
-inline
+SEASTAR_EXPORT inline
 bool
 scheduling_group::active() const noexcept {
     return *this == current_scheduling_group();

@@ -21,8 +21,9 @@
 
 #pragma once
 #include <vector>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 namespace metrics {
 
 

@@ -23,11 +23,12 @@
 
 #include <seastar/core/sstring.hh>
 #include <seastar/core/future.hh>
+#include <seastar/util/modules.hh>
 
 #include <array>
 #include <mutex>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 class io_queue;
 using io_priority_class_id = unsigned;

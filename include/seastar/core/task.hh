@@ -24,8 +24,9 @@
 #include <memory>
 #include <seastar/core/scheduling.hh>
 #include <seastar/util/backtrace.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 class task {
 protected:

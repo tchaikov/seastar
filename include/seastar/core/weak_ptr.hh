@@ -21,9 +21,10 @@
 
 #pragma once
 
+#include <seastar/util/modules.hh>
 #include <boost/intrusive/list.hpp>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// A non-owning reference to an object.
 ///

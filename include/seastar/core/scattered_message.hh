@@ -27,11 +27,12 @@
 #include <seastar/core/sstring.hh>
 #include <memory>
 #include <vector>
+#include <seastar/util/modules.hh>
 #include <seastar/util/std-compat.hh>
 
 namespace seastar {
 
-template <typename CharType>
+SEASTAR_EXPORT template <typename CharType>
 class scattered_message {
 private:
     using fragment = net::fragment;

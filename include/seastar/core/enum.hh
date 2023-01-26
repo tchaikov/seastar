@@ -30,8 +30,9 @@
 #include <type_traits>
 #include <functional>
 #include <cstddef>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 template <typename T>
 class enum_hash {

@@ -21,9 +21,11 @@
 
 #pragma once
 
+#include <seastar/util/modules.hh>
+
 #include <tuple>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 template<typename T>
 struct function_traits;

@@ -24,8 +24,9 @@
 #include <boost/container/small_vector.hpp>
 #include <seastar/core/internal/io_intent.hh>
 #include <seastar/core/io_priority_class.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// \example file_demo.cc
 /// A handle confirming the caller's intent to do the IO

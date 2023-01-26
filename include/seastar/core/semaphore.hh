@@ -30,6 +30,7 @@
 #include <seastar/core/abortable_fifo.hh>
 #include <seastar/core/timed_out_error.hh>
 #include <seastar/core/abort_on_expiry.hh>
+#include <seastar/util/modules.hh>
 
 namespace seastar {
 
@@ -53,7 +54,9 @@ public:
     constexpr static bool value = check<T>(nullptr);
 };
 }
+}
 
+SEASTAR_EXPORT namespace seastar {
 /// \addtogroup fiber-module
 /// @{
 

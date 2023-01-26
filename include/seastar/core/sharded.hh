@@ -29,6 +29,7 @@
 #include <seastar/core/do_with.hh>
 #include <seastar/util/concepts.hh>
 #include <seastar/util/log.hh>
+#include <seastar/util/modules.hh>
 #include <boost/iterator/counting_iterator.hpp>
 #include <functional>
 #if __has_include(<concepts>)
@@ -108,7 +109,7 @@ class sharded;
 /// returning. It is still service's own responsibility to track its references
 /// in asynchronous code by calling shared_from_this() and keeping returned smart
 /// pointer as long as object is in use.
-template<typename T>
+SEASTAR_EXPORT template<typename T>
 class async_sharded_service : public enable_shared_from_this<T> {
 protected:
     std::function<void()> _delete_cb;
@@ -127,7 +128,7 @@ protected:
 /// If a service class inherits from this, it will gain a \code container()
 /// \endcode method that provides access to the \ref sharded object, with which
 /// it can call its peers.
-template <typename Service>
+SEASTAR_EXPORT template <typename Service>
 class peering_sharded_service {
     sharded<Service>* _container = nullptr;
 private:
@@ -144,7 +145,7 @@ public:
 
 
 /// Exception thrown when a \ref sharded object does not exist
-class no_sharded_instance_exception : public std::exception {
+SEASTAR_EXPORT class no_sharded_instance_exception : public std::exception {
     sstring _msg;
 public:
     no_sharded_instance_exception() : _msg("sharded instance does not exist") {}
@@ -164,7 +165,7 @@ public:
 /// \tparam Service a class to be instantiated on each core.  Must expose
 ///         a \c stop() method that returns a \c future<>, to be called when
 ///         the service is stopped.
-template <typename Service>
+SEASTAR_EXPORT template <typename Service>
 class sharded {
     struct entry {
         shared_ptr<Service> service;
@@ -525,7 +526,7 @@ private:
 /// on the shard. It is evaluated on the shard, just before being
 /// passed to the local instance. It is useful when passing
 /// parameters to sharded::start().
-template <typename Func, typename... Params>
+SEASTAR_EXPORT template <typename Func, typename... Params>
 class sharded_parameter {
     Func _func;
     std::tuple<Params...> _params;
@@ -834,7 +835,7 @@ inline bool sharded<Service>::local_is_initialized() const noexcept {
 ///
 /// \c foreign_ptr<> is a move-only object; it cannot be copied.
 ///
-template <typename PtrType>
+SEASTAR_EXPORT template <typename PtrType>
 SEASTAR_CONCEPT( requires (!std::is_pointer<PtrType>::value) )
 class foreign_ptr {
 private:
@@ -953,14 +954,14 @@ public:
 /// Wraps a raw or smart pointer object in a \ref foreign_ptr<>.
 ///
 /// \relates foreign_ptr
-template <typename T>
+SEASTAR_EXPORT template <typename T>
 foreign_ptr<T> make_foreign(T ptr) {
     return foreign_ptr<T>(std::move(ptr));
 }
 
 /// @}
 
-template<typename T>
+SEASTAR_EXPORT template<typename T>
 struct is_smart_ptr<foreign_ptr<T>> : std::true_type {};
 
 }

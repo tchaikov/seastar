@@ -22,8 +22,9 @@
 #pragma once
 
 #include <seastar/core/file.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// \addtogroup fileio-module
 /// @{

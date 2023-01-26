@@ -6,8 +6,9 @@
 
 #include <seastar/core/scollectd.hh>
 #include <seastar/core/metrics_api.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 namespace scollectd {
 

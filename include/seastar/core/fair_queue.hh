@@ -27,6 +27,7 @@
 #include <seastar/core/circular_buffer.hh>
 #include <seastar/core/metrics_registration.hh>
 #include <seastar/util/shared_token_bucket.hh>
+#include <seastar/util/modules.hh>
 #include <functional>
 #include <queue>
 #include <chrono>
@@ -35,7 +36,7 @@
 
 namespace bi = boost::intrusive;
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// \brief describes a request that passes through the \ref fair_queue.
 ///
@@ -416,5 +417,5 @@ public:
 }
 
 #if FMT_VERSION >= 90000
-template <> struct fmt::formatter<seastar::fair_queue_ticket> : fmt::ostream_formatter {};
+SEASTAR_EXPORT template <> struct fmt::formatter<seastar::fair_queue_ticket> : fmt::ostream_formatter {};
 #endif

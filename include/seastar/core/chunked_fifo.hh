@@ -23,8 +23,9 @@
 
 #include <memory>
 #include <algorithm>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 // An unbounded FIFO queue of objects of type T.
 //
