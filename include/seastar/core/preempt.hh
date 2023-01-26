@@ -20,6 +20,8 @@
  */
 
 #pragma once
+
+#include <seastar/util/modules.hh>
 #include <atomic>
 
 namespace seastar {
@@ -44,7 +46,7 @@ void set_need_preempt_var(const preemption_monitor* pm);
 
 }
 
-inline bool need_preempt() noexcept {
+SEASTAR_EXPORT inline bool need_preempt() noexcept {
 #ifndef SEASTAR_DEBUG
     // prevent compiler from eliminating loads in a loop
     std::atomic_signal_fence(std::memory_order_seq_cst);

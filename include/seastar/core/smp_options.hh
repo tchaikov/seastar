@@ -22,10 +22,11 @@
 #pragma once
 
 #include <seastar/util/program-options.hh>
+#include <seastar/util/modules.hh>
 
 /// \file
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 enum class memory_allocator {
     /// Seastar's own allocator, optimized for its shard-per core design.

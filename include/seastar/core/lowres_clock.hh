@@ -23,13 +23,14 @@
 
 #include <seastar/core/cacheline.hh>
 #include <seastar/core/timer.hh>
+#include <seastar/util/modules.hh>
 
 #include <cstdint>
 
 #include <atomic>
 #include <chrono>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 //
 // Forward declarations.

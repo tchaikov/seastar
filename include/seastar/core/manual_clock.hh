@@ -22,11 +22,12 @@
 #pragma once
 
 #include <seastar/core/timer.hh>
+#include <seastar/util/modules.hh>
 
 #include <atomic>
 #include <chrono>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 class manual_clock {
 public:

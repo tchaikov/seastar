@@ -46,9 +46,10 @@
 #include <sys/uio.h>
 
 #include <seastar/net/socket_defs.hh>
+#include <seastar/util/modules.hh>
 #include <seastar/util/std-compat.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// \file
 /// \defgroup posix-support POSIX Support

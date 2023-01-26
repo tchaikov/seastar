@@ -28,8 +28,9 @@
 #   include <seastar/core/coroutine.hh>
 #endif
 #include <seastar/core/loop.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// \addtogroup fiber-module
 /// @{

@@ -22,8 +22,9 @@
 #pragma once
 
 #include <seastar/core/metrics.hh>
-#include <unordered_map>
+#include <seastar/util/modules.hh>
 #include <seastar/core/sharded.hh>
+#include <unordered_map>
 #include <boost/functional/hash.hpp>
 /*!
  * \file metrics_api.hh
@@ -382,7 +383,7 @@ std::unique_ptr<metric_groups_def> create_metric_groups();
 }
 
 /// Metrics configuration options.
-struct options : public program_options::option_group {
+SEASTAR_EXPORT struct options : public program_options::option_group {
     /// \brief The hostname used by the metrics.
     ///
     /// If not set, the local hostname will be used.
@@ -394,7 +395,7 @@ struct options : public program_options::option_group {
 /*!
  * \brief set the metrics configuration
  */
-future<> configure(const options& opts);
+SEASTAR_EXPORT future<> configure(const options& opts);
 
 }
 }

@@ -19,6 +19,7 @@
 #include <array>
 #include <boost/intrusive/list.hpp>
 #include <seastar/core/bitset-iter.hh>
+#include <seastar/util/modules.hh>
 
 namespace seastar {
 
@@ -33,7 +34,7 @@ namespace seastar {
  * get_timeout() which returns Timer::time_point which denotes
  * timer's expiration.
  */
-template<typename Timer, boost::intrusive::list_member_hook<> Timer::*link>
+SEASTAR_EXPORT template<typename Timer, boost::intrusive::list_member_hook<> Timer::*link>
 class timer_set {
 public:
     using time_point = typename Timer::time_point;

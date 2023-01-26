@@ -23,6 +23,7 @@
 
 #include <seastar/core/deleter.hh>
 #include <seastar/util/eclipse.hh>
+#include <seastar/util/modules.hh>
 #include <seastar/util/std-compat.hh>
 #include <malloc.h>
 #include <algorithm>
@@ -59,7 +60,7 @@ namespace seastar {
 ///
 /// \tparam CharType underlying character type (must be a variant of \c char).
 template <typename CharType>
-class temporary_buffer {
+SEASTAR_EXPORT class temporary_buffer {
     static_assert(sizeof(CharType) == 1, "must buffer stream of bytes");
     CharType* _buffer;
     size_t _size;

@@ -24,7 +24,9 @@
 #include <cstdint>
 #include <cstdlib>
 
-namespace seastar {
+#include <seastar/util/modules.hh>
+
+SEASTAR_EXPORT namespace seastar {
 
 template <typename T>
 inline constexpr

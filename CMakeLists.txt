@@ -78,6 +78,11 @@ set_property (CACHE Seastar_API_LEVEL
   PROPERTY
   STRINGS 2 3 4 5 6)
 
+include (CMakeDependentOption)
+cmake_dependent_option (Seastar_CXX_MODULES
+  "Use C++20 modules" ON
+  "CMAKE_VERSION VERSION_GREATER_EQUAL 3.25" OFF)
+
 set (Seastar_SCHEDULING_GROUPS_COUNT
   "16"
   CACHE
@@ -284,7 +289,6 @@ option (Seastar_TESTING
   "Enable testing targets."
   ${Seastar_MASTER_PROJECT})
 
-include (CMakeDependentOption)
 cmake_dependent_option (Seastar_ENABLE_TESTS_ACCESSING_INTERNET
   "Enable tests accessing internet." ON
   "Seastar_TESTING" OFF)
@@ -449,14 +453,14 @@ seastar_generate_ragel (
   IN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/src/http/response_parser.rl
   OUT_FILE ${Seastar_GEN_BINARY_DIR}/include/seastar/http/response_parser.hh)
 
+add_library (seastar STATIC)
 if (Seastar_DPDK)
-  set (seastar_dpdk_obj seastar-dpdk.o)
+  target_sources (seastar
+    PRIVATE
+    seastar-dpdk.o)
 endif ()
-
-add_library (seastar STATIC
-  ${http_chunk_parsers_file}
-  ${http_request_parser_file}
-  ${seastar_dpdk_obj}
+target_sources (seastar
+  PRIVATE
   include/seastar/core/abort_source.hh
   include/seastar/core/alien.hh
   include/seastar/core/align.hh
@@ -491,7 +495,6 @@ add_library (seastar STATIC
   include/seastar/core/gate.hh
   include/seastar/core/iostream-impl.hh
   include/seastar/core/iostream.hh
-  include/seastar/util/later.hh
   include/seastar/core/layered_file.hh
   include/seastar/core/linux-aio.hh
   include/seastar/core/loop.hh
@@ -615,6 +618,7 @@ add_library (seastar STATIC
   include/seastar/util/gcc6-concepts.hh
   include/seastar/util/indirect.hh
   include/seastar/util/is_smart_ptr.hh
+  include/seastar/util/later.hh
   include/seastar/util/lazy.hh
   include/seastar/util/log-cli.hh
   include/seastar/util/log-impl.hh
@@ -786,6 +790,19 @@ if ((Seastar_SANITIZE STREQUAL "ON") OR
     PUBLIC
       Sanitizers::address
       Sanitizers::undefined_behavior)
+endif ()
+
+if (Seastar_CXX_MODULES)
+  set (CMAKE_EXPERIMENTAL_CXX_MODULE_DYNDEP 1)
+  set (CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API  "2182bf5c-ef0d-489a-91da-49dbc3090d2a")
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    include (clang_modules)
+  elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    include (gcc_modules)
+  else ()
+    message (FATAL_ERROR "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
+  endif()
+  add_subdirectory (modules)
 endif ()
 
 # We only need valgrind to find uninitialized memory uses, so disable
@@ -1038,7 +1055,7 @@ target_compile_options (seastar
 set_target_properties (seastar
   PROPERTIES
     CXX_STANDARD ${CMAKE_CXX_STANDARD}
-    CXX_EXTENSIONS ON)
+    CXX_EXTENSIONS OFF)
 
 add_library (seastar_private INTERFACE)
 
@@ -1235,7 +1252,6 @@ if (Seastar_INSTALL)
     EXPORT seastar-export
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
   install (
     EXPORT seastar-export
     FILE SeastarTargets.cmake

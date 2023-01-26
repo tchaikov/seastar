@@ -36,10 +36,11 @@
 #include <type_traits>
 #include <fmt/ostream.h>
 #include <seastar/util/concepts.hh>
+#include <seastar/util/modules.hh>
 #include <seastar/util/std-compat.hh>
 #include <seastar/core/temporary_buffer.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 template <typename char_type, typename Size, Size max_size, bool NulTerminate = true>
 class basic_sstring;
@@ -690,14 +691,14 @@ struct hash<seastar::basic_sstring<char_type, size_type, max_size, NulTerminate>
 
 namespace seastar {
 
-template <typename T>
+SEASTAR_EXPORT template <typename T>
 static inline
 void copy_str_to(char*& dst, const T& s) {
     std::string_view v(s);
     dst = std::copy(v.begin(), v.end(), dst);
 }
 
-template <typename String = sstring, typename... Args>
+SEASTAR_EXPORT template <typename String = sstring, typename... Args>
 static String make_sstring(Args&&... args)
 {
     String ret = uninitialized_string<String>((str_len(args) + ...));
@@ -731,7 +732,7 @@ string_type to_sstring(const temporary_buffer<char>& buf) {
 }
 }
 
-template <typename string_type = sstring, typename T>
+SEASTAR_EXPORT template <typename string_type = sstring, typename T>
 string_type to_sstring(T value) {
     return internal::to_sstring<string_type>(value);
 }
@@ -774,7 +775,7 @@ std::ostream& operator<<(std::ostream& os, const std::unordered_map<Key, T, Hash
 
 #if FMT_VERSION >= 90000
 
-template <typename char_type, typename Size, Size max_size, bool NulTerminate>
+SEASTAR_EXPORT template <typename char_type, typename Size, Size max_size, bool NulTerminate>
 struct fmt::formatter<seastar::basic_sstring<char_type, Size, max_size, NulTerminate>> : fmt::ostream_formatter {};
 
 #endif

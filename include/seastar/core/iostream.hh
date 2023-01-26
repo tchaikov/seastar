@@ -40,10 +40,11 @@
 #include <seastar/core/temporary_buffer.hh>
 #include <seastar/core/scattered_message.hh>
 #include <seastar/util/std-compat.hh>
+#include <seastar/util/modules.hh>
 
 namespace bi = boost::intrusive;
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 namespace net { class packet; }
 

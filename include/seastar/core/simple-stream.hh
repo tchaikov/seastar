@@ -22,8 +22,9 @@
 #pragma once
 #include <seastar/core/sstring.hh>
 #include <seastar/util/variant_utils.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 class measuring_output_stream {
     size_t _size = 0;

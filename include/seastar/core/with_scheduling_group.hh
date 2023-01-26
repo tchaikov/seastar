@@ -24,6 +24,7 @@
 
 #include <seastar/core/future.hh>
 #include <seastar/core/make_task.hh>
+#include <seastar/util/modules.hh>
 
 namespace seastar {
 
@@ -55,7 +56,7 @@ schedule_in_group(scheduling_group sg, Func func) noexcept {
 /// \param func function to run; must be movable or copyable
 /// \param args arguments to the function; may be copied or moved, so use \c std::ref()
 ///             to force passing references
-template <typename Func, typename... Args>
+SEASTAR_EXPORT template <typename Func, typename... Args>
 SEASTAR_CONCEPT( requires std::is_nothrow_move_constructible_v<Func> )
 inline
 auto

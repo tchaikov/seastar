@@ -23,9 +23,10 @@
 
 #include <seastar/http/httpd.hh>
 #include <seastar/core/metrics.hh>
+#include <seastar/util/modules.hh>
 #include <seastar/util/std-compat.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 namespace prometheus {
 

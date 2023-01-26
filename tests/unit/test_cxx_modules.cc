@@ -16,18 +16,16 @@
  * under the License.
  */
 /*
- * Copyright (C) 2015 Cloudius Systems, Ltd.
+ * Copyright (C) 2023 ScyllaDB Ltd.
  */
 
-#pragma once
+import seastar;
 
-#include <seastar/core/sharded.hh>
-#include <seastar/util/modules.hh>
-
-SEASTAR_EXPORT namespace seastar {
-
-
-template <typename Service>
-using distributed = sharded<Service>;
-
+int main(int argc, char* argv[]) {
+  // return foo();
+  return seastar::is_abort_on_ebadf_enabled();
+  // seastar::app_template app;
+  // app.run(argc, argv, [] () -> seastar::future<> {
+  //     return seastar::make_ready_future();
+  // });
 }

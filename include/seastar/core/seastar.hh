@@ -52,10 +52,11 @@
 #include <seastar/core/file-types.hh>
 #include <seastar/core/posix.hh>
 #include <seastar/util/bool_class.hh>
+#include <seastar/util/modules.hh>
 #include <seastar/util/std-compat.hh>
 #include "./internal/api-level.hh"
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 // iostream.hh
 template <class CharType> class input_stream;

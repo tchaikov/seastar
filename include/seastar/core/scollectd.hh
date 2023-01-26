@@ -37,11 +37,12 @@
 #include <seastar/core/shared_ptr.hh>
 #include <seastar/core/sstring.hh>
 #include <seastar/util/log.hh>
+#include <seastar/util/modules.hh>
 #include <seastar/util/program-options.hh>
 
 #include <seastar/core/metrics_api.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /**
  * Implementation of rudimentary collectd data gathering.

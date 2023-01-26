@@ -27,10 +27,11 @@
 #include <algorithm>
 #include <memory>
 #include <cassert>
+#include <seastar/util/modules.hh>
 #include <seastar/util/std-compat.hh>
 #include <seastar/core/future.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 // Support classes for Ragel parsers
 

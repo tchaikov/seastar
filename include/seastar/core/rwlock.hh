@@ -22,8 +22,9 @@
 #pragma once
 
 #include <seastar/core/semaphore.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// \cond internal
 // lock / unlock semantics for rwlock, so it can be used with with_lock()

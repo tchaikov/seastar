@@ -22,8 +22,9 @@
 #pragma once
 
 #include <cstddef>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 static constexpr size_t KB = 1 << 10;
 static constexpr size_t MB = 1 << 20;

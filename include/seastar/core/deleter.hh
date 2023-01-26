@@ -25,8 +25,9 @@
 #include <cstdlib>
 #include <assert.h>
 #include <type_traits>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 /// \addtogroup memory-module
 /// @{

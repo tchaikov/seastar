@@ -32,8 +32,9 @@
 #include <seastar/core/metrics.hh>
 #include <seastar/core/align.hh>
 #include <seastar/core/memory.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 static constexpr uint16_t SLAB_MAGIC_NUMBER = 0x51AB; // meant to be 'SLAB' :-)
 

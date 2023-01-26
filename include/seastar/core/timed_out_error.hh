@@ -23,8 +23,9 @@
 #pragma once
 
 #include <exception>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 class timed_out_error : public std::exception {
 public:
