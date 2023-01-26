@@ -21,10 +21,9 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
-#include <seastar/core/queue.hh>
+#include <seastar/util/modules.hh>
 
-#include <seastar/util/std-compat.hh>
+export module seastar:core.pipe;
 
 /// \defgroup fiber-module Fibers
 ///
@@ -63,14 +62,14 @@ namespace seastar {
 /// \addtogroup fiber-module
 /// @{
 
-class broken_pipe_exception : public std::exception {
+SEASTAR_EXPORT class broken_pipe_exception : public std::exception {
 public:
     virtual const char* what() const noexcept {
         return "Broken pipe";
     }
 };
 
-class unread_overflow_exception : public std::exception {
+SEASTAR_EXPORT class unread_overflow_exception : public std::exception {
 public:
     virtual const char* what() const noexcept {
         return "pipe_reader::unread() overflow";
@@ -130,7 +129,7 @@ class pipe;
 /// The read side of a pipe, which allows only reading from the pipe.
 /// A pipe_reader object cannot be created separately, but only as part of a
 /// reader/writer pair through \ref seastar::pipe.
-template <typename T>
+SEASTAR_EXPORT template <typename T>
 class pipe_reader {
 private:
     internal::pipe_buffer<T> *_bufp;
@@ -191,7 +190,7 @@ public:
 /// The write side of a pipe, which allows only writing to the pipe.
 /// A pipe_writer object cannot be created separately, but only as part of a
 /// reader/writer pair through \ref seastar::pipe.
-template <typename T>
+SEASTAR_EXPORT template <typename T>
 class pipe_writer {
 private:
     internal::pipe_buffer<T> *_bufp;
@@ -253,7 +252,7 @@ public:
 /// often convenient to wrap each end in a shared pointer, so it can be
 /// copied (e.g., used in an std::function which needs to be copyable) or
 /// easily captured into multiple continuations.
-template <typename T>
+SEASTAR_EXPORT template <typename T>
 class pipe {
 public:
     pipe_reader<T> reader;

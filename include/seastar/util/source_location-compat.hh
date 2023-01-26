@@ -22,6 +22,8 @@
 
 #pragma once
 
+export module seastar:util.source_location_compat;
+
 namespace seastar::internal {
 
 class source_location {

@@ -19,14 +19,18 @@
  * Copyright (C) 2019 Scylla DB Ltd
  */
 
+#pragma once
+
 #include <boost/range/adaptor/filtered.hpp>
-#include <seastar/core/scheduling.hh>
-#include <seastar/core/map_reduce.hh>
 #include <array>
 #include <typeindex>
 #include <vector>
+#include <seastar/util/concepts.hh>
 
-#pragma once
+export module seastar:core.scheduling_specific;
+import :core.function_traits;
+import :core.future;
+import :core.scheduling;
 
 namespace seastar {
 
@@ -95,7 +99,7 @@ T* scheduling_group_get_specific_ptr(scheduling_group sg, scheduling_group_key k
  * @note The parameter T has to be given since there is no way to deduce it.
  *       May throw std::invalid_argument if sg does not exist or is uninitialized.
  */
-template<typename T>
+SEASTAR_EXPORT template<typename T>
 T& scheduling_group_get_specific(scheduling_group sg, scheduling_group_key key) {
     T* p = internal::scheduling_group_get_specific_ptr<T>(sg, std::move(key));
     if (!p) {
@@ -111,7 +115,7 @@ T& scheduling_group_get_specific(scheduling_group sg, scheduling_group_key key) 
  *
  * @note The parameter T has to be given since there is no way to deduce it.
  */
-template<typename T>
+SEASTAR_EXPORT template<typename T>
 T& scheduling_group_get_specific(scheduling_group_key key) noexcept {
     // Unlike internal::scheduling_group_get_specific_ptr, this can
     // return a reference to an element whose queue_is_initialized is
@@ -137,10 +141,10 @@ T& scheduling_group_get_specific(scheduling_group_key key) noexcept {
  * but then there is a danger when the Mapper accepts a parameter type T where SpecificValType is convertible to
  * SpecificValType.
  */
-template<typename SpecificValType, typename Mapper, typename Reducer, typename Initial>
-SEASTAR_CONCEPT( requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer, Initial initial) {
+SEASTAR_EXPORT template<typename SpecificValType, typename Mapper, typename Reducer, typename Initial>
+requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer, Initial initial) {
     {reducer(initial, mapper(specific_val))} -> std::convertible_to<Initial>;
-})
+}
 future<typename function_traits<Reducer>::return_type>
 map_reduce_scheduling_group_specific(Mapper mapper, Reducer reducer,
         Initial initial_val, scheduling_group_key key) {
@@ -171,10 +175,10 @@ map_reduce_scheduling_group_specific(Mapper mapper, Reducer reducer,
  * but then there is a danger when the Reducer accepts a parameter type T where SpecificValType is convertible to
  * SpecificValType.
  */
-template<typename SpecificValType, typename Reducer, typename Initial>
-SEASTAR_CONCEPT( requires requires(SpecificValType specific_val, Reducer reducer, Initial initial) {
+SEASTAR_EXPORT template<typename SpecificValType, typename Reducer, typename Initial>
+requires requires(SpecificValType specific_val, Reducer reducer, Initial initial) {
     {reducer(initial, specific_val)} -> std::convertible_to<Initial>;
-})
+}
 future<typename function_traits<Reducer>::return_type>
 reduce_scheduling_group_specific(Reducer reducer, Initial initial_val, scheduling_group_key key) {
     using per_scheduling_group = internal::scheduling_group_specific_thread_local_data::per_scheduling_group;

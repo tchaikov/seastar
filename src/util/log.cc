@@ -28,14 +28,6 @@
 #include <fmt/time.h>
 #endif
 
-#include <seastar/util/log.hh>
-#include <seastar/core/smp.hh>
-#include <seastar/util/log-cli.hh>
-
-#include <seastar/core/array_map.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/core/future.hh>
-#include <seastar/core/print.hh>
 
 #include <boost/any.hpp>
 #include <boost/lexical_cast.hpp>
@@ -52,7 +44,7 @@
 #include <chrono>
 #include <algorithm>
 
-#include "core/program_options.hh"
+module seastar;
 
 using namespace std::chrono_literals;
 

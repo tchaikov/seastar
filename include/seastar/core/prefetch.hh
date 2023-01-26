@@ -21,13 +21,17 @@
 
 #pragma once
 
+#include <algorithm>
 #include <atomic>
 #include <boost/mpl/range_c.hpp>
 #include <boost/mpl/for_each.hpp>
-#include <seastar/core/align.hh>
-#include <seastar/core/cacheline.hh>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+export module seastar:core.prefetch;
+import :core.align;
+import :core.cacheline;
+
+export namespace seastar {
 
 template <size_t N, int RW, int LOC>
 struct prefetcher;

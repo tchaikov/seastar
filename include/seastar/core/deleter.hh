@@ -23,10 +23,13 @@
 
 #include <memory>
 #include <cstdlib>
-#include <assert.h>
+#include <cassert>
 #include <type_traits>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+export module seastar:core.deleter;
+
+SEASTAR_EXPORT namespace seastar {
 
 /// \addtogroup memory-module
 /// @{

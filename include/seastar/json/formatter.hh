@@ -27,9 +27,6 @@
 #include <map>
 #include <time.h>
 #include <sstream>
-#include <seastar/core/loop.hh>
-#include <seastar/core/sstring.hh>
-#include <seastar/core/iostream.hh>
 
 namespace seastar {
 

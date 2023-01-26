@@ -22,14 +22,17 @@
 #pragma once
 
 #include <boost/intrusive/list.hpp>
+#include <functional>
+#include <chrono>
+#include <exception>
 
-#include <seastar/core/timer.hh>
-#ifdef SEASTAR_COROUTINES_ENABLED
-#   include <seastar/core/coroutine.hh>
-#endif
-#include <seastar/core/loop.hh>
+export module seastar:core.condition_variable;
+import :core.future;
+import :core.timer;
 
-namespace seastar {
+#define SEASTAR_CONCEPT(x...) x
+
+SEASTAR_EXPORT namespace seastar {
 
 /// \addtogroup fiber-module
 /// @{

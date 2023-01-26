@@ -52,19 +52,13 @@
 // Spans have a size that is a power-of-two and are naturally aligned (aka buddy
 // allocator)
 
-#include <seastar/core/cacheline.hh>
-#include <seastar/core/memory.hh>
-#include <seastar/core/print.hh>
-#include <seastar/util/alloc_failure_injector.hh>
-#include <seastar/util/memory_diagnostics.hh>
-#include <seastar/util/std-compat.hh>
-#include <seastar/util/log.hh>
-#include <seastar/core/aligned_buffer.hh>
 #include <unordered_set>
 #include <iostream>
 #include <thread>
 
 #include <dlfcn.h>
+
+module seastar;
 
 namespace seastar {
 

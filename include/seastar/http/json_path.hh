@@ -24,10 +24,6 @@
 #include <vector>
 #include <unordered_map>
 #include <tuple>
-#include <seastar/http/common.hh>
-#include <seastar/core/sstring.hh>
-#include <seastar/http/routes.hh>
-#include <seastar/http/function_handlers.hh>
 
 namespace seastar {
 

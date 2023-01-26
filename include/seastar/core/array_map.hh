@@ -22,8 +22,9 @@
 #pragma once
 
 #include <array>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+SEASTAR_EXPORT namespace seastar {
 
 // unordered_map implemented as a simple array
 

@@ -21,16 +21,9 @@
 
 #pragma once
 
-#include <seastar/core/smp.hh>
-#include <seastar/core/deleter.hh>
-#include <seastar/core/queue.hh>
-#include <seastar/core/stream.hh>
-#include <seastar/core/metrics_registration.hh>
-#include <seastar/net/toeplitz.hh>
-#include <seastar/net/ethernet.hh>
-#include <seastar/net/packet.hh>
-#include <seastar/net/const.hh>
 #include <unordered_map>
+
+export module seastar:net.net;
 
 namespace seastar {
 

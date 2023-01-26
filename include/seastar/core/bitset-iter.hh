@@ -16,11 +16,15 @@
 #include <bitset>
 #include <limits>
 
-namespace seastar {
+#include <seastar/util/modules.hh>
+
+export module seastar:core.bitset_iter;
+
+SEASTAR_EXPORT namespace seastar {
 
 namespace bitsets {
 
-static constexpr int ulong_bits = std::numeric_limits<unsigned long>::digits;
+constexpr int ulong_bits = std::numeric_limits<unsigned long>::digits;
 
 /**
  * Returns the number of leading zeros in value's binary representation.
@@ -32,7 +36,7 @@ static constexpr int ulong_bits = std::numeric_limits<unsigned long>::digits;
  * which is returned when value == 1.
  */
 template<typename T>
-inline size_t count_leading_zeros(T value) noexcept;
+size_t count_leading_zeros(T value) noexcept;
 
 /**
  * Returns the number of trailing zeros in value's binary representation.
@@ -43,7 +47,7 @@ inline size_t count_leading_zeros(T value) noexcept;
  * The highest value that can be returned is std::numeric_limits<T>::digits - 1.
  */
 template<typename T>
-static inline size_t count_trailing_zeros(T value) noexcept;
+size_t count_trailing_zeros(T value) noexcept;
 
 template<>
 inline size_t count_leading_zeros<unsigned long>(unsigned long value) noexcept
@@ -102,7 +106,7 @@ size_t count_trailing_zeros<long long>(long long value) noexcept
  * Result is undefined if bitset.any() == false.
  */
 template<size_t N>
-static inline size_t get_first_set(const std::bitset<N>& bitset) noexcept
+inline size_t get_first_set(const std::bitset<N>& bitset) noexcept
 {
     static_assert(N <= ulong_bits, "bitset too large");
     return count_trailing_zeros(bitset.to_ulong());
@@ -113,7 +117,7 @@ static inline size_t get_first_set(const std::bitset<N>& bitset) noexcept
  * Result is undefined if bitset.any() == false.
  */
 template<size_t N>
-static inline size_t get_last_set(const std::bitset<N>& bitset) noexcept
+inline size_t get_last_set(const std::bitset<N>& bitset) noexcept
 {
     static_assert(N <= ulong_bits, "bitset too large");
     return ulong_bits - 1 - count_leading_zeros(bitset.to_ulong());
@@ -202,7 +206,7 @@ private:
 };
 
 template<size_t N>
-static inline set_range<N> for_each_set(std::bitset<N> bitset, int offset = 0) noexcept
+inline set_range<N> for_each_set(std::bitset<N> bitset, int offset = 0) noexcept
 {
     return set_range<N>(bitset, offset);
 }

@@ -21,12 +21,17 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
-#include <seastar/core/chunked_fifo.hh>
 #include <cassert>
 #include <utility>
 
-namespace seastar {
+export module seastar:core.shared_mutex;
+import :core.chunked_fifo;
+import :core.future;
+
+#define SEASTAR_CONCEPT(x...) x
+#define SEASTAR_NO_CONCEPT(x...)
+
+SEASTAR_EXPORT namespace seastar {
 
 /// \addtogroup fiber-module
 /// @{

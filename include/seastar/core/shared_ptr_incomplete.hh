@@ -21,8 +21,7 @@
 
 #pragma once
 
-#include <seastar/core/shared_ptr.hh>
-
+module seastar:core.shared_ptr;
 
 /// \file
 /// \brief Include this header files when using \c lw_shared_ptr<some_incomplete_type>, at the point

@@ -21,7 +21,6 @@
 
 #pragma once
 
-#include <seastar/core/aligned_buffer.hh>
 #include <memory>
 #include <new>
 #include <assert.h>

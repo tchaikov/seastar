@@ -21,7 +21,9 @@
 
 #pragma once
 
-namespace seastar {
+export module seastar:core.internal.poll;
+
+export namespace seastar {
 
 struct pollfn {
     virtual ~pollfn() {}

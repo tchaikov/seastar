@@ -21,7 +21,10 @@
 
 #pragma once
 
+#include <memory>
 #include <seastar/util/std-compat.hh>
+
+export module seastar:util.variant_utils;
 
 namespace seastar {
 

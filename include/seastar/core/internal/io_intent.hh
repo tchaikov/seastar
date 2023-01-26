@@ -27,6 +27,8 @@
 
 namespace bi = boost::intrusive;
 
+export module seastar:core.internal.io_intent;
+
 namespace seastar {
 
 class io_intent;

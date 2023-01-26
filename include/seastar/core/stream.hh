@@ -21,12 +21,15 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
 #include <exception>
 #include <functional>
 #include <cassert>
 
-namespace seastar {
+export module seastar:core.stream;
+import :core.future;
+import :util.noncopyable_function;
+
+SEASTAR_EXPORT namespace seastar {
 
 // A stream/subscription pair is similar to a promise/future pair,
 // but apply to a sequence of values instead of a single value.

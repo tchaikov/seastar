@@ -21,9 +21,12 @@
 
 #pragma once
 
-#include <seastar/core/ragel.hh>
-#include <seastar/core/sstring.hh>
 #include <unordered_map>
+
+export module seastar:http.chunk_parser;
+
+import :core.ragel;
+import :core.sstring;
 
 namespace seastar {
 

@@ -19,14 +19,6 @@
  * Copyright 2015 Cloudius Systems
  */
 
-#include <seastar/core/sstring.hh>
-#include <seastar/core/app-template.hh>
-#include <seastar/core/circular_buffer.hh>
-#include <seastar/core/distributed.hh>
-#include <seastar/core/queue.hh>
-#include <seastar/core/when_all.hh>
-#include <seastar/core/metrics.hh>
-#include <seastar/core/print.hh>
 #include <iostream>
 #include <algorithm>
 #include <unordered_map>
@@ -35,11 +27,8 @@
 #include <limits>
 #include <cctype>
 #include <vector>
-#include <seastar/http/httpd.hh>
-#include <seastar/http/internal/content_source.hh>
-#include <seastar/http/reply.hh>
-#include <seastar/util/short_streams.hh>
-#include <seastar/util/log.hh>
+
+module seastar;
 
 using namespace std::chrono_literals;
 

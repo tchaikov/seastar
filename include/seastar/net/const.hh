@@ -23,7 +23,9 @@
 
 #include <cstdint>
 
-namespace seastar {
+export module seastar:net.consts;
+
+export namespace seastar {
 
 namespace net {
 

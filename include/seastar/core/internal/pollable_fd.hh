@@ -21,15 +21,22 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
-#include <seastar/core/posix.hh>
-#include <seastar/core/internal/io_desc.hh>
-#include <seastar/util/bool_class.hh>
+#include <sys/uio.h>
+#include <cstdint>
+#include <vector>
+#include <tuple>
 #include <boost/intrusive_ptr.hpp>
 #include <cstdint>
 #include <vector>
 #include <tuple>
 #include <sys/uio.h>
+
+export module seastar:core.internal.pollable_fd;
+import :core.future;
+import :core.posix;
+import :core.temporary_buffer;
+import :net.socket_defs;
+import :util.bool_class;
 
 namespace seastar {
 

@@ -27,10 +27,10 @@
 #include <variant>
 #include <boost/container/static_vector.hpp>
 
-#include <seastar/core/sstring.hh>
-#include <seastar/core/print.hh>
-#include <seastar/core/scheduling.hh>
-#include <seastar/core/shared_ptr.hh>
+export module seastar:util.backtrace;
+import :core.sstring;
+import :core.shared_ptr;
+import :core.scheduling;
 
 namespace seastar {
 

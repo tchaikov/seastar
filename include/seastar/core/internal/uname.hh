@@ -27,6 +27,8 @@
 #include <seastar/util/std-compat.hh>
 #include <iosfwd>
 
+export module seastar:core.internal.uname;
+
 namespace seastar {
 
 namespace internal {

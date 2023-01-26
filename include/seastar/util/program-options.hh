@@ -21,18 +21,16 @@
 
 #pragma once
 
-#include <seastar/core/sstring.hh>
-#include <seastar/core/print.hh>
-
-#include <fmt/format.h>
-
 #include <boost/any.hpp>
 #include <boost/intrusive/list.hpp>
-
+#include <fmt/format.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include <set>
+
+export module seastar:util.program_options;
+import :core.sstring;
 
 /// \defgroup program-options Program Options
 ///

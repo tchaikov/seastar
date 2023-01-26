@@ -24,8 +24,11 @@
 
 #include <iterator>
 
-#include <seastar/core/future.hh>
-#include <seastar/core/shared_ptr.hh>
+export module seastar:core.map_reduce;
+import :core.future;
+import :core.shared_ptr;
+
+#define SEASTAR_CONCEPT(x...) x
 
 namespace seastar {
 
@@ -90,7 +93,7 @@ struct reducer_traits<T, Ptr, decltype(std::declval<T>().get(), void())> : publi
 ///       map-reduces across all shards.
 
 // TODO: specialize for non-deferring reducer
-template <typename Iterator, typename Mapper, typename Reducer>
+SEASTAR_EXPORT template <typename Iterator, typename Mapper, typename Reducer>
 SEASTAR_CONCEPT( requires requires (Iterator i, Mapper mapper, Reducer reduce) {
      *i++;
      { i != i } -> std::convertible_to<bool>;
@@ -165,7 +168,7 @@ map_reduce(Iterator begin, Iterator end, Mapper&& mapper, Reducer&& r)
 ///       map_reduce() with \ref smp::submit_to().
 ///       Sharded services have their own \ref sharded::map_reduce() which
 ///       map-reduces across all shards.
-template <typename Iterator, typename Mapper, typename Initial, typename Reduce>
+SEASTAR_EXPORT template <typename Iterator, typename Mapper, typename Initial, typename Reduce>
 SEASTAR_CONCEPT( requires requires (Iterator i, Mapper mapper, Initial initial, Reduce reduce) {
      *i++;
      { i != i} -> std::convertible_to<bool>;
@@ -243,7 +246,7 @@ map_reduce(Iterator begin, Iterator end, Mapper&& mapper, Initial initial, Reduc
 ///       map_reduce() with \ref smp::submit_to().
 ///       Sharded services have their own \ref sharded::map_reduce() which
 ///       map-reduces across all shards.
-template <typename Range, typename Mapper, typename Initial, typename Reduce>
+SEASTAR_EXPORT template <typename Range, typename Mapper, typename Initial, typename Reduce>
 SEASTAR_CONCEPT( requires requires (Range range, Mapper mapper, Initial initial, Reduce reduce) {
      std::begin(range);
      std::end(range);
@@ -260,7 +263,7 @@ map_reduce(Range&& range, Mapper&& mapper, Initial initial, Reduce reduce) {
 
 /// Implements @Reducer concept. Calculates the result by
 /// adding elements to the accumulator.
-template <typename Result, typename Addend = Result>
+SEASTAR_EXPORT template <typename Result, typename Addend = Result>
 class adder {
 private:
     Result _result;

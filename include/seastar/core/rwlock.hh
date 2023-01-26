@@ -21,10 +21,16 @@
 
 #pragma once
 
-#include <seastar/core/semaphore.hh>
 #include <cstddef>
 
-namespace seastar {
+export module seastar:core.rwlock;
+import :core.abort_source;
+import :core.future;
+import :core.lowres_clock;
+import :core.semaphore;
+import :core.timer;
+
+SEASTAR_EXPORT namespace seastar {
 
 /// \cond internal
 // lock / unlock semantics for rwlock, so it can be used with with_lock()

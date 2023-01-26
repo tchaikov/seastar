@@ -19,17 +19,12 @@
  * Copyright (C) 2015 Cloudius Systems, Ltd.
  */
 
-#include <seastar/core/fstream.hh>
-#include <seastar/core/align.hh>
-#include <seastar/core/circular_buffer.hh>
-#include <seastar/core/semaphore.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/core/when_all.hh>
-#include <seastar/core/io_intent.hh>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <malloc.h>
 #include <string.h>
+
+module seastar;
 
 namespace seastar {
 

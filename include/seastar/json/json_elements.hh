@@ -25,11 +25,6 @@
 #include <vector>
 #include <time.h>
 #include <sstream>
-#include <seastar/core/do_with.hh>
-#include <seastar/core/loop.hh>
-#include <seastar/json/formatter.hh>
-#include <seastar/core/sstring.hh>
-#include <seastar/core/iostream.hh>
 
 namespace seastar {
 

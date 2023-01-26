@@ -23,12 +23,12 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/ip.h>
-#include <seastar/net/byteorder.hh>
-#include <seastar/net/unix_address.hh>
-#include <array>
 #include <cassert>
 #include <functional>
 #include <iosfwd>
+
+export module seastar:net.socket_defs;
+import :net.unix_address;
 
 namespace seastar {
 
@@ -100,7 +100,7 @@ public:
 
 std::ostream& operator<<(std::ostream&, const socket_address&);
 
-enum class transport {
+export enum class transport {
     TCP = IPPROTO_TCP,
     SCTP = IPPROTO_SCTP
 };

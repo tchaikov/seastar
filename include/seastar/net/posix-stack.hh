@@ -21,12 +21,7 @@
 
 #pragma once
 
-#include <seastar/core/sharded.hh>
-#include <seastar/core/internal/pollable_fd.hh>
-#include <seastar/net/stack.hh>
-#include <seastar/core/polymorphic_temporary_buffer.hh>
-#include <seastar/core/internal/buffer_allocator.hh>
-#include <seastar/util/program-options.hh>
+export module seastar:net.posix_stack
 
 namespace seastar {
 

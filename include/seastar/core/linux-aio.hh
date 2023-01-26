@@ -27,6 +27,8 @@
 #include <signal.h>
 #include <cstdint>
 
+export module seastar:core.linux_aio;
+
 namespace seastar {
 
 namespace internal {

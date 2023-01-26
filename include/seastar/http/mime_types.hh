@@ -10,7 +10,8 @@
 
 #pragma once
 
-#include <seastar/core/sstring.hh>
+export module seastar:http.mime_types;
+import :core.sstring;
 
 namespace seastar {
 

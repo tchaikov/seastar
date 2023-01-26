@@ -19,11 +19,10 @@
  * Copyright (C) 2014 Cloudius Systems, Ltd.
  */
 
-#include <seastar/core/posix.hh>
-#include <seastar/core/align.hh>
-#include <seastar/util/critical_alloc_section.hh>
 #include <sys/mman.h>
 #include <sys/inotify.h>
+
+module seastar;
 
 namespace seastar {
 

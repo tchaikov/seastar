@@ -23,6 +23,8 @@
 
 #include <ostream>
 
+export module seastar:util.bool_class;
+
 namespace seastar {
 
 /// \addtogroup utilities

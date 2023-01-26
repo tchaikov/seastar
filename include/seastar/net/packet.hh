@@ -21,20 +21,22 @@
 
 #pragma once
 
-#include <seastar/core/deleter.hh>
-#include <seastar/core/temporary_buffer.hh>
-#include <seastar/net/const.hh>
-#include <seastar/util/std-compat.hh>
-#include <algorithm>
-#include <cassert>
-#include <cstdint>
-#include <functional>
-#include <iosfwd>
-#include <memory>
 #include <optional>
+#include <memory>
+#include <cstdint>
+#include <vector>
+#include <cassert>
+#include <algorithm>
+#include <iosfwd>
+#include <functional>
 #include <vector>
 
-namespace seastar {
+export module seastar:net.packet;
+import :net.consts;
+import :core.deleter;
+import :core.temporary_buffer;
+
+export namespace seastar {
 
 namespace net {
 

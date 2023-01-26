@@ -21,12 +21,13 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
-#include <seastar/util/std-compat.hh>
 #include <cassert>
 #include <exception>
 #include <optional>
 #include <utility>
+
+export module seastar:core.gate;
+import :core.future;
 
 #ifdef SEASTAR_DEBUG
 #define SEASTAR_GATE_HOLDER_DEBUG
@@ -39,7 +40,7 @@ namespace seastar {
 
 /// Exception thrown when a \ref gate object has been closed
 /// by the \ref gate::close() method.
-class gate_closed_exception : public std::exception {
+SEASTAR_EXPORT class gate_closed_exception : public std::exception {
 public:
     virtual const char* what() const noexcept override {
         return "gate closed";
@@ -51,7 +52,7 @@ public:
 /// When stopping a service that serves asynchronous requests, we are faced with
 /// two problems: preventing new requests from coming in, and knowing when existing
 /// requests have completed.  The \c gate class provides a solution.
-class gate {
+SEASTAR_EXPORT class gate {
     size_t _count = 0;
     std::optional<promise<>> _stopped;
 
@@ -283,7 +284,7 @@ invoke_func_with_gate(gate& g, Func&& func) noexcept {
 /// \returns whatever \c func returns
 ///
 /// \relates gate
-template <typename Func>
+SEASTAR_EXPORT template <typename Func>
 inline
 auto
 with_gate(gate& g, Func&& func) {
@@ -302,7 +303,7 @@ with_gate(gate& g, Func&& func) {
 /// \returns whatever \c func returns.
 ///
 /// \relates gate
-template <typename Func>
+SEASTAR_EXPORT template <typename Func>
 inline
 auto
 try_with_gate(gate& g, Func&& func) noexcept {

@@ -20,13 +20,12 @@
  * Copyright (C) 2015 Cloudius Systems, Ltd.
  */
 
-#include <seastar/core/thread.hh>
-#include <seastar/core/posix.hh>
-#include <seastar/core/reactor.hh>
 #include <ucontext.h>
 #include <algorithm>
 
 #include <valgrind/valgrind.h>
+
+module seastar;
 
 /// \cond internal
 

@@ -24,8 +24,11 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <type_traits>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+export module seastar:core.file_types;
+
+SEASTAR_EXPORT namespace seastar {
 
 /// \addtogroup fileio-module
 /// @{

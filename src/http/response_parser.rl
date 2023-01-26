@@ -19,9 +19,13 @@
  * Copyright (C) 2015 Cloudius Systems, Ltd.
  */
 
-#include <seastar/core/ragel.hh>
 #include <memory>
 #include <unordered_map>
+
+export module seastar:http.response_parser;
+
+import :core.ragel;
+import :core.sstring;
 
 namespace seastar {
 

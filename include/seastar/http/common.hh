@@ -22,8 +22,10 @@
 #pragma once
 
 #include <unordered_map>
-#include <seastar/core/sstring.hh>
-#include <seastar/core/iostream.hh>
+
+export module seastar:http.common;
+import :core.iostream;
+import :core.sstring;
 
 namespace seastar {
 

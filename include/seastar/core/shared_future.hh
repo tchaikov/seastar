@@ -22,12 +22,20 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
-#include <seastar/core/abortable_fifo.hh>
-#include <seastar/core/abort_on_expiry.hh>
-#include <seastar/core/timed_out_error.hh>
+#include <exception>
+#include <optional>
+#include <tuple>
 
-namespace seastar {
+export module seastar:core.shared_future;
+import :core.abort_on_expiry;
+import :core.abort_source;
+import :core.abortable_fifo;
+import :core.future;
+import :core.lowres_clock;
+import :core.shared_ptr;
+import :core.timed_out_error;
+
+export namespace seastar {
 
 /// \addtogroup future-module
 /// @{

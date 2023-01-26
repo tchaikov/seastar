@@ -21,21 +21,22 @@
 
 #pragma once
 
+#include <chrono>
 #include <memory>
 #include <vector>
 #include <cstring>
-#include <seastar/core/future.hh>
-#include <seastar/net/byteorder.hh>
-#include <seastar/net/socket_defs.hh>
-#include <seastar/net/packet.hh>
-#include <seastar/core/internal/api-level.hh>
-#include <seastar/core/temporary_buffer.hh>
-#include <seastar/core/iostream.hh>
 #include <seastar/util/std-compat.hh>
-#include <seastar/util/program-options.hh>
 #include <sys/types.h>
 
-namespace seastar {
+export module seastar:net.api;
+import :core.future;
+import :core.iostream;
+import :core.shared_ptr;
+import :core.sstring;
+import :net.packet;
+import :net.socket_defs;
+
+export namespace seastar {
 
 inline
 bool is_ip_unspecified(const ipv4_addr& addr) noexcept {

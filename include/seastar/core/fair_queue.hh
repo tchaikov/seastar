@@ -22,11 +22,6 @@
 #pragma once
 
 #include <boost/intrusive/slist.hpp>
-#include <seastar/core/sstring.hh>
-#include <seastar/core/shared_ptr.hh>
-#include <seastar/core/circular_buffer.hh>
-#include <seastar/core/metrics_registration.hh>
-#include <seastar/util/shared_token_bucket.hh>
 #include <chrono>
 #include <cstdint>
 #include <functional>
@@ -36,7 +31,12 @@
 
 namespace bi = boost::intrusive;
 
-namespace seastar {
+export module seastar:core.fair_queue;
+import :util.shared_token_bucket;
+import :core.sstring;
+import :core.metrics;
+
+SEASTAR_EXPORT namespace seastar {
 
 /// \brief describes a request that passes through the \ref fair_queue.
 ///
@@ -417,5 +417,5 @@ public:
 }
 
 #if FMT_VERSION >= 90000
-template <> struct fmt::formatter<seastar::fair_queue_ticket> : fmt::ostream_formatter {};
+SEASTAR_EXPORT template <> struct fmt::formatter<seastar::fair_queue_ticket> : fmt::ostream_formatter {};
 #endif

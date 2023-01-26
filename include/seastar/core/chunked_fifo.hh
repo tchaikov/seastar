@@ -23,8 +23,11 @@
 
 #include <memory>
 #include <algorithm>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+export module seastar:core.chunked_fifo;
+
+SEASTAR_EXPORT namespace seastar {
 
 // An unbounded FIFO queue of objects of type T.
 //

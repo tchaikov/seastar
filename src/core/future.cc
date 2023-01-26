@@ -19,11 +19,7 @@
  * Copyright (C) 2020 ScyllaDB
  */
 
-#include <seastar/core/future.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/core/thread.hh>
-#include <seastar/core/report_exception.hh>
-#include <seastar/util/backtrace.hh>
+module seastar;
 
 namespace seastar {
 

@@ -21,7 +21,10 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
+
+export module seastar:util.indirect;
 
 namespace seastar {
 

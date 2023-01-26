@@ -21,11 +21,6 @@
 
 #pragma once
 
-#include <seastar/http/handlers.hh>
-#include <seastar/http/matcher.hh>
-#include <seastar/http/common.hh>
-
-#include <seastar/core/sstring.hh>
 #include <vector>
 
 namespace seastar {

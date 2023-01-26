@@ -21,16 +21,13 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
-#include <seastar/core/chunked_fifo.hh>
 #include <stdexcept>
 #include <exception>
 #include <memory>
-#include <seastar/core/timer.hh>
-#include <seastar/core/lowres_clock.hh>
-#include <seastar/core/timed_out_error.hh>
 
-namespace seastar {
+export module seastar:core.expiring_fifo;
+
+export namespace seastar {
 
 template<typename T>
 struct dummy_expiry {

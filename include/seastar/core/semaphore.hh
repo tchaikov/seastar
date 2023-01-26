@@ -21,18 +21,20 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
-#include <seastar/core/chunked_fifo.hh>
-#include <seastar/core/timer.hh>
-#include <seastar/core/abortable_fifo.hh>
-#include <seastar/core/timed_out_error.hh>
-#include <seastar/core/abort_on_expiry.hh>
 #include <cassert>
 #include <exception>
 #include <optional>
 #include <stdexcept>
-#include <stdexcept>
 #include <utility>
+
+export module seastar:core.semaphore;
+import :core.abort_on_expiry;
+import :core.abort_source;
+import :core.future;
+import :core.sstring;
+import :core.timed_out_error;
+import :core.timer;
+import :core.abortable_fifo;
 
 #ifdef SEASTAR_DEBUG
 #define SEASTAR_SEMAPHORE_DEBUG
@@ -60,7 +62,9 @@ public:
     constexpr static bool value = check<T>(nullptr);
 };
 }
+}
 
+SEASTAR_EXPORT namespace seastar {
 /// \addtogroup fiber-module
 /// @{
 

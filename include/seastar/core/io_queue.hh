@@ -21,19 +21,20 @@
 
 #pragma once
 
-#include <boost/container/small_vector.hpp>
-#include <seastar/core/sstring.hh>
-#include <seastar/core/fair_queue.hh>
-#include <seastar/core/metrics_registration.hh>
-#include <seastar/core/future.hh>
-#include <seastar/core/internal/io_request.hh>
-#include <seastar/util/spinlock.hh>
+#include <sys/uio.h>
 #include <chrono>
 #include <memory>
 #include <vector>
-#include <sys/uio.h>
+#include <boost/container/small_vector.hpp>
 
 struct io_queue_for_tests;
+
+export module seastar:core.io_queue;
+import :core.fair_queue;
+import :core.future;
+import :core.internal.io_request;
+import :core.sstring;
+import :util.spinlock;
 
 namespace seastar {
 
@@ -55,17 +56,17 @@ struct iocb;
 }
 }
 
-using shard_id = unsigned;
-using stream_id = unsigned;
+SEASTAR_EXPORT using shard_id = unsigned;
+SEASTAR_EXPORT using stream_id = unsigned;
 
 class io_desc_read_write;
 class queued_io_request;
-class io_group;
+export class io_group;
 
-using io_group_ptr = std::shared_ptr<io_group>;
-using iovec_keeper = std::vector<::iovec>;
+SEASTAR_EXPORT using io_group_ptr = std::shared_ptr<io_group>;
+SEASTAR_EXPORT using iovec_keeper = std::vector<::iovec>;
 
-class io_queue {
+SEASTAR_EXPORT class io_queue {
 public:
     class priority_class_data;
 
@@ -169,7 +170,7 @@ private:
     void register_stats(sstring name, priority_class_data& pc);
 };
 
-class io_group {
+SEASTAR_EXPORT class io_group {
 public:
     explicit io_group(io_queue::config io_cfg);
     ~io_group();

@@ -21,15 +21,15 @@
 
 #pragma once
 
-#include <seastar/core/sstring.hh>
-#include <seastar/core/future.hh>
-
 #include <array>
 #include <mutex>
 
-namespace seastar {
+export module seastar:core.io_priority_class;
+import :core.future;
+import :core.sstring;
 
-class io_queue;
+SEASTAR_EXPORT namespace seastar {
+
 using io_priority_class_id = unsigned;
 // We could very well just add the name to the io_priority_class. However, because that
 // structure is passed along all the time - and sometimes we can't help but copy it, better keep

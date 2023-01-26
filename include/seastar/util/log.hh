@@ -20,20 +20,20 @@
  */
 #pragma once
 
-#include <seastar/core/sstring.hh>
-#include <seastar/util/concepts.hh>
-#include <seastar/util/log-impl.hh>
-#include <seastar/core/lowres_clock.hh>
-#include <seastar/util/std-compat.hh>
-
 #include <unordered_map>
 #include <exception>
 #include <iosfwd>
 #include <atomic>
 #include <mutex>
+#include <source_location>
 #include <boost/lexical_cast.hpp>
 #include <fmt/format.h>
+#include <seastar/util/concepts.hh>
 
+export module seastar:util.log;
+import :core.sstring;
+import :util.log_impl;
+import :core.lowres_clock;
 
 /// \addtogroup logging
 /// @{
@@ -101,9 +101,9 @@ public:
         virtual internal::log_buf::inserter_iterator operator()(internal::log_buf::inserter_iterator) = 0;
     };
     template <typename Func>
-    SEASTAR_CONCEPT(requires requires (Func fn, internal::log_buf::inserter_iterator it) {
+    requires requires (Func fn, internal::log_buf::inserter_iterator it) {
         it = fn(it);
-    })
+    }
     class lambda_log_writer : public log_writer {
         Func _func;
     public:
@@ -117,23 +117,23 @@ public:
     struct format_info {
         /// implicitly construct format_info from a const char* format string.
         /// \param fmt - {fmt} style format string
-        format_info(const char* format, compat::source_location loc = compat::source_location::current()) noexcept
+        format_info(const char* format, std::source_location loc = std::source_location::current()) noexcept
             : format(format)
             , loc(loc)
         {}
         /// implicitly construct format_info from a std::string_view format string.
         /// \param fmt - {fmt} style format string_view
-        format_info(std::string_view format, compat::source_location loc = compat::source_location::current()) noexcept
+        format_info(std::string_view format, std::source_location loc = std::source_location::current()) noexcept
             : format(format)
             , loc(loc)
         {}
         /// implicitly construct format_info with no format string.
-        format_info(compat::source_location loc = compat::source_location::current()) noexcept
+        format_info(std::source_location loc = std::source_location::current()) noexcept
             : format()
             , loc(loc)
         {}
         std::string_view format;
-        compat::source_location loc;
+        std::source_location loc;
     };
 
 private:

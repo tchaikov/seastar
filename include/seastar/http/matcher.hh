@@ -21,10 +21,6 @@
 
 #pragma once
 
-#include <seastar/http/common.hh>
-
-#include <seastar/core/sstring.hh>
-
 namespace seastar {
 
 namespace httpd {

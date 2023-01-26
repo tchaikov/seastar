@@ -26,13 +26,7 @@
 #include <map>
 #include <type_traits>
 #include <variant>
-#include <seastar/core/sstring.hh>
-#include <seastar/core/shared_ptr.hh>
-#include <seastar/core/metrics_registration.hh>
 #include <boost/lexical_cast.hpp>
-#include <seastar/core/metrics_types.hh>
-#include <seastar/util/std-compat.hh>
-#include <seastar/util/bool_class.hh>
 
 /*! \file metrics.hh
  *  \brief header for metrics creation.
@@ -44,6 +38,12 @@
  *  Code that is under the impl namespace should not be used directly.
  *
  */
+
+export module seastar:core.metrics;
+import :core.sstring;
+import :util.bool_class;
+import :core.metrics_types;
+import :core.metrics_registration;
 
 namespace seastar {
 
@@ -94,7 +94,7 @@ namespace seastar {
 
 namespace metrics {
 
-class double_registration : public std::runtime_error {
+SEASTAR_EXPORT class double_registration : public std::runtime_error {
 public:
     double_registration(std::string what);
 };
@@ -105,10 +105,10 @@ public:
  * Instead use the make_counter, make_gauge
  *
  */
-using metric_type_def = sstring; /*!< Used to hold an inherit type (like bytes)*/
-using metric_name_type = sstring; /*!<  The metric name'*/
-using instance_id_type = sstring; /*!<  typically used for the shard id*/
-using skip_when_empty = bool_class<class skip_when_empty_tag>;
+SEASTAR_EXPORT using metric_type_def = sstring; /*!< Used to hold an inherit type (like bytes)*/
+SEASTAR_EXPORT using metric_name_type = sstring; /*!<  The metric name'*/
+SEASTAR_EXPORT using instance_id_type = sstring; /*!<  typically used for the shard id*/
+SEASTAR_EXPORT using skip_when_empty = bool_class<class skip_when_empty_tag>;
 
 /*!
  * \brief Human-readable description of a metric/group.
@@ -125,7 +125,7 @@ using skip_when_empty = bool_class<class skip_when_empty_tag>;
  * \endcode
  *
  */
-class description {
+SEASTAR_EXPORT class description {
 public:
     description(sstring s = sstring()) : _s(std::move(s))
     {}
@@ -153,7 +153,7 @@ private:
  *
  *
  */
-class label_instance {
+SEASTAR_EXPORT class label_instance {
     sstring _key;
     sstring _value;
 public:
@@ -208,7 +208,7 @@ public:
  *
  * where cpuid in this case is unsiged.
  */
-class label {
+SEASTAR_EXPORT class label {
     sstring key;
 public:
     using instance = label_instance;
@@ -419,9 +419,9 @@ metric_function make_function(T& val, data_type dt) {
 }
 }
 
-extern const bool metric_disabled;
+SEASTAR_EXPORT extern const bool metric_disabled;
 
-extern label shard_label;
+SEASTAR_EXPORT extern label shard_label;
 
 /*
  * The metrics definition are defined to be compatible with collectd metrics defintion.

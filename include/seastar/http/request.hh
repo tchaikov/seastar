@@ -30,14 +30,17 @@
 //
 #pragma once
 
-#include <seastar/core/iostream.hh>
-#include <seastar/core/sstring.hh>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <strings.h>
-#include <seastar/http/common.hh>
-#include <seastar/http/mime_types.hh>
-#include <seastar/core/iostream.hh>
+#include <unordered_map>
+
+export module seastar:http.request;
+import :core.sstring;
+import :core.iostream;
+import :http.common;
+import :http.mime_types;
 
 namespace seastar {
 

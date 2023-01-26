@@ -23,9 +23,11 @@
 
 #include <seastar/util/std-compat.hh>
 
+export module seastar:core.report_exception;
+
 namespace seastar {
 
-void report_exception(std::string_view message, std::exception_ptr) noexcept;
+export void report_exception(std::string_view message, std::exception_ptr) noexcept;
 
 }
 

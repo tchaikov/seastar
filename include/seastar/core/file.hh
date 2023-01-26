@@ -21,14 +21,11 @@
 
 #pragma once
 
-#include <seastar/core/do_with.hh>
-#include <seastar/core/stream.hh>
-#include <seastar/core/sstring.hh>
-#include <seastar/core/shared_ptr.hh>
-#include <seastar/core/align.hh>
-#include <seastar/core/io_priority_class.hh>
-#include <seastar/core/file-types.hh>
-#include <seastar/util/std-compat.hh>
+#include <chrono>
+#include <concepts>
+#include <cstdint>
+#include <functional>
+#include <optional>
 #include <system_error>
 #include <sys/statvfs.h>
 #include <sys/ioctl.h>
@@ -41,7 +38,19 @@
 #include <functional>
 #include <optional>
 
-namespace seastar {
+export module seastar:core.file;
+import :core.file_types;
+import :core.io_priority_class;
+import :core.shared_ptr;
+import :core.sstring;
+import :core.stream;
+import :core.temporary_buffer;
+
+#define SEASTAR_CONCEPT(x...) x
+
+struct stat;
+
+export namespace seastar {
 
 /// \addtogroup fileio-module
 /// @{

@@ -27,9 +27,6 @@
 #include <stdexcept>
 #include <vector>
 
-#include <seastar/core/future.hh>
-#include <seastar/core/sstring.hh>
-
 namespace seastar {
 namespace net {
 

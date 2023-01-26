@@ -21,19 +21,22 @@
 
 #pragma once
 
-#include <seastar/util/concepts.hh>
-#include <seastar/util/noncopyable_function.hh>
-#include <seastar/util/optimized_optional.hh>
 #include <seastar/util/std-compat.hh>
-#include <boost/intrusive/list.hpp>
+#include <seastar/util/modules.hh>
 
-#include <exception>
+#include <boost/intrusive/list.hpp>
 #include <optional>
+#include <exception>
+#include <concepts>
 #include <utility>
 
 namespace bi = boost::intrusive;
 
-namespace seastar {
+export module seastar:core.abort_source;
+import :util.noncopyable_function;
+import :util.optimized_optional;
+
+export namespace seastar {
 
 /// \addtogroup fiber-module
 /// @{
@@ -131,11 +134,10 @@ public:
     ///          the lifetime of the callback \c f, if \ref abort_requested() is \c false. Otherwise,
     ///          returns a disengaged \ref optimized_optional.
     template <typename Func>
-    SEASTAR_CONCEPT(requires
+    requires
             requires (Func f, const std::optional<std::exception_ptr>& opt_ex) { { f(opt_ex) } noexcept -> std::same_as<void>; }
         ||  requires (Func f) { { f() } noexcept -> std::same_as<void>; }
-    )
-    [[nodiscard]]
+        [[nodiscard]]
     optimized_optional<subscription> subscribe(Func&& f) {
         if (abort_requested()) {
             return { };

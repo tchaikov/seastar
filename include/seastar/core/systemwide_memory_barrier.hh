@@ -21,7 +21,9 @@
 
 #pragma once
 
-namespace seastar {
+#include <seastar/util/modules.hh>
+
+SEASTAR_EXPORT namespace seastar {
 
 /// \cond internal
 

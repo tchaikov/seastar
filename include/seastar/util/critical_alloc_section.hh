@@ -21,6 +21,8 @@
 
 #pragma once
 
+export module seastar:util.critical_alloc_section;
+
 namespace seastar {
 namespace memory {
 
@@ -54,7 +56,7 @@ extern __thread volatile int critical_alloc_section;
 ///   scopes when the memory diagnostics subsystem is configured to dump reports
 ///   for \ref alloc_failure_kind \ref alloc_failure_kind::critical or above.
 ///   See \ref set_dump_memory_diagnostics_on_alloc_failure_kind().
-class scoped_critical_alloc_section {
+export class scoped_critical_alloc_section {
 public:
     scoped_critical_alloc_section() {
         // we assume the critical_alloc_section is thread local
@@ -71,7 +73,7 @@ public:
 ///
 /// Will return true if there is at least one \ref scoped_critical_alloc_section
 /// alive in the current scope or the scope of any of the caller functions.
-inline bool is_critical_alloc_section() {
+export inline bool is_critical_alloc_section() {
     return bool(internal::critical_alloc_section);
 }
 
@@ -79,7 +81,7 @@ inline bool is_critical_alloc_section() {
 
 struct [[maybe_unused]] scoped_critical_alloc_section {};
 
-inline bool is_critical_alloc_section() {
+export inline bool is_critical_alloc_section() {
     return false;
 }
 

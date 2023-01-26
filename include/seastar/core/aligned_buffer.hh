@@ -19,9 +19,12 @@
  * Copyright (C) 2016 ScyllaDB.
  */
 #pragma once
+
 #include <stdlib.h>
 #include <memory>
 #include <stdexcept>
+
+#include <seastar/util/modules.hh>
 
 namespace seastar {
 
@@ -29,11 +32,11 @@ namespace internal {
 void* allocate_aligned_buffer_impl(size_t size, size_t align);
 }
 
-struct free_deleter {
+SEASTAR_EXPORT struct free_deleter {
     void operator()(void* p) { ::free(p); }
 };
 
-template <typename CharType>
+SEASTAR_EXPORT template <typename CharType>
 inline
 std::unique_ptr<CharType[], free_deleter> allocate_aligned_buffer(size_t size, size_t align) {
     static_assert(sizeof(CharType) == 1, "must allocate byte type");

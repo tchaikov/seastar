@@ -21,15 +21,15 @@
 
 #pragma once
 
-#include <seastar/core/cacheline.hh>
-#include <seastar/core/timer.hh>
-
 #include <cstdint>
 
 #include <atomic>
 #include <chrono>
 
-namespace seastar {
+export module seastar:core.lowres_clock;
+import :core.timer;
+
+SEASTAR_EXPORT namespace seastar {
 
 //
 // Forward declarations.

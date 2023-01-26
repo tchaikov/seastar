@@ -21,12 +21,12 @@
 
 #pragma once
 
-
-#include <seastar/util/std-compat.hh>
 #include <exception>
 #include <string_view>
 
-namespace seastar {
+export module seastar:core.on_internal_error;
+
+export namespace seastar {
 
 class logger;
 

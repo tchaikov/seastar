@@ -21,10 +21,14 @@
 
 #pragma once
 
-#include <seastar/core/ragel.hh>
 #include <memory>
 #include <unordered_map>
-#include <seastar/http/request.hh>
+
+export module seastar:http.request_parser;
+
+import :core.ragel;
+import :core.sstring;
+import :http.request;
 
 namespace seastar {
 

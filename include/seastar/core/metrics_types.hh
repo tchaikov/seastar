@@ -23,8 +23,11 @@
 
 #include <cstdint>
 #include <vector>
+#include <seastar/util/modules.hh>
 
-namespace seastar {
+export module seastar:core.metrics_types;
+
+SEASTAR_EXPORT namespace seastar {
 namespace metrics {
 
 

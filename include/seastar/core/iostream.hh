@@ -35,20 +35,28 @@
 
 #pragma once
 
-#include <boost/intrusive/slist.hpp>
-#include <seastar/core/future.hh>
-#include <seastar/core/temporary_buffer.hh>
-#include <seastar/core/scattered_message.hh>
-#include <seastar/util/std-compat.hh>
 #include <algorithm>
 #include <memory>
 #include <optional>
-#include <variant>
 #include <vector>
+#include <variant>
+#include <boost/intrusive/slist.hpp>
+
+#define SEASTAR_CONCEPT(x...) x
 
 namespace bi = boost::intrusive;
 
-namespace seastar {
+export module seastar:core.iostream;
+import :core.do_with;
+import :core.future;
+import :core.loop;
+import :core.scattered_message;
+import :core.sstring;
+import :core.temporary_buffer;
+import :net.packet;
+import :util.variant_utils;
+
+SEASTAR_EXPORT namespace seastar {
 
 namespace net { class packet; }
 
