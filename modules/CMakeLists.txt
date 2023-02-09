@@ -156,6 +156,7 @@ seastar_partition_interfaces (core
     shared_ptr_debug_helper.hh
     simple-stream.hh
     sleep.hh
+    smp1.hh
     smp.hh
     smp_options.hh
     sstring.hh
