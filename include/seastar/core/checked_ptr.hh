@@ -23,13 +23,17 @@
 
 /// \file
 /// \brief Contains a seastar::checked_ptr class implementation.
-
+#ifndef SEASTAR_MODULE
 #include <exception>
 #include <memory>
 #include <seastar/util/concepts.hh>
+#include <seastar/util/modules.hh>
+#endif
 
 /// \namespace seastar
 namespace seastar {
+
+SEASTAR_MODULE_EXPORT_BEGIN
 
 /// The exception thrown by a default_null_deref_action.
 class checked_ptr_is_null_exception : public std::exception {};
@@ -48,7 +52,7 @@ struct default_null_deref_action {
 
 /// \cond internal
 /// \namespace seastar::internal
-namespace internal {
+SEASTAR_BEGIN_INTERNAL_NAMESPACE
 
 /// \name seastar::checked_ptr::get() helpers
 /// Helper functions that simplify the seastar::checked_ptr::get() implementation.
@@ -75,7 +79,7 @@ inline T* checked_ptr_do_get(T* ptr) noexcept {
     return ptr;
 }
 /// @}
-}
+SEASTAR_END_INTERNAL_NAMESPACE
 /// \endcond
 
 /// \class seastar::checked_ptr
@@ -183,10 +187,13 @@ public:
     ///@}
 };
 
+SEASTAR_MODULE_EXPORT_END
+
 }
 
 namespace std {
 /// std::hash specialization for seastar::checked_ptr class
+SEASTAR_MODULE_EXPORT
 template<typename T>
 struct hash<seastar::checked_ptr<T>> {
     /// Get the hash value for the given seastar::checked_ptr object.

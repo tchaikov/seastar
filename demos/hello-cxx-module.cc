@@ -16,23 +16,18 @@
  * under the License.
  */
 /*
- * Copyright (C) 2020 ScyllaDB Ltd.
+ * Copyright (C) 2023 ScyllaDB Ltd.
  */
 
-#pragma once
+import seastar;
 
-#ifndef SEASTAR_MODULE
-#include <stddef.h>
-#include <type_traits>
-#endif
+using namespace seastar;
+logger applog("app");
 
-namespace seastar {
-namespace internal {
-// Empty types have a size of 1, but that byte is not actually
-// used. This helper is used to avoid accessing that byte.
-template<typename T>
-struct used_size {
-    static constexpr size_t value = std::is_empty<T>::value ? 0 : sizeof(T);
-};
-}
+int main(int argc, char** argv) {
+    seastar::app_template app;
+    app.run(argc, argv, [] () -> future<> {
+        applog.info("Hello world!");
+        return make_ready_future<>();
+    });
 }

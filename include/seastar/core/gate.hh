@@ -21,18 +21,23 @@
 
 #pragma once
 
+#ifndef SEASTAR_MODULE
 #include <seastar/core/future.hh>
 #include <seastar/util/std-compat.hh>
+#include <seastar/util/modules.hh>
 #include <cassert>
 #include <exception>
 #include <optional>
 #include <utility>
+#endif
 
 #ifdef SEASTAR_DEBUG
 #define SEASTAR_GATE_HOLDER_DEBUG
 #endif
 
 namespace seastar {
+
+SEASTAR_MODULE_EXPORT_BEGIN
 
 /// \addtogroup fiber-module
 /// @{
@@ -264,7 +269,7 @@ public:
     }
 };
 
-namespace internal {
+SEASTAR_BEGIN_INTERNAL_NAMESPACE
 
 template <typename Func>
 inline
@@ -273,7 +278,7 @@ invoke_func_with_gate(gate& g, Func&& func) noexcept {
     return futurize_invoke(std::forward<Func>(func)).finally([&g] { g.leave(); });
 }
 
-} // namespace intgernal
+SEASTAR_END_INTERNAL_NAMESPACE
 
 /// Executes the function \c func making sure the gate \c g is properly entered
 /// and later on, properly left.
@@ -313,5 +318,7 @@ try_with_gate(gate& g, Func&& func) noexcept {
     return internal::invoke_func_with_gate(g, std::forward<Func>(func));
 }
 /// @}
+
+SEASTAR_MODULE_EXPORT_END
 
 }

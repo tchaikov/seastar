@@ -20,11 +20,12 @@
  */
 #pragma once
 
+#ifndef SEASTAR_MODULE
 #include <functional>
 #include <unordered_set>
 #include <map>
-
 #include <boost/any.hpp>
+#endif
 
 #include <seastar/core/future.hh>
 #include <seastar/core/internal/api-level.hh>
@@ -32,6 +33,7 @@
 #include <seastar/core/shared_ptr.hh>
 #include <seastar/net/socket_defs.hh>
 #include <seastar/util/std-compat.hh>
+#include <seastar/util/modules.hh>
 #include <seastar/net/api.hh>
 
 namespace seastar {
@@ -53,6 +55,9 @@ class socket_address;
  *
  */
 namespace tls {
+
+SEASTAR_MODULE_EXPORT_BEGIN
+
     enum class x509_crt_format {
         DER,
         PEM,
@@ -354,6 +359,8 @@ namespace tls {
      * system_error exception will be thrown.
      */
     future<std::optional<session_dn>> get_dn_information(connected_socket& socket);
+
+SEASTAR_MODULE_EXPORT_END
 }
 }
 

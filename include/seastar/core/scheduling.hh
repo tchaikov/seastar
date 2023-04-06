@@ -21,17 +21,21 @@
 
 #pragma once
 
+#ifndef SEASTAR_MODULE
 #include <chrono>
 #include <functional>
 #include <typeindex>
+#endif
 #include <seastar/core/sstring.hh>
 #include <seastar/core/function_traits.hh>
 #include <seastar/util/concepts.hh>
+#include <seastar/util/modules.hh>
 
 /// \file
 
 namespace seastar {
 
+SEASTAR_MODULE_EXPORT_BEGIN
 constexpr unsigned max_scheduling_groups() { return SEASTAR_SCHEDULING_GROUPS_COUNT; }
 
 template <typename T = void>
@@ -44,7 +48,7 @@ class scheduling_group_key;
 
 using sched_clock = std::chrono::steady_clock;
 
-namespace internal {
+SEASTAR_BEGIN_INTERNAL_NAMESPACE
 
 // Returns an index between 0 and max_scheduling_groups()
 unsigned scheduling_group_index(scheduling_group sg) noexcept;
@@ -55,8 +59,7 @@ unsigned long scheduling_group_key_id(scheduling_group_key) noexcept;
 template<typename T>
 T* scheduling_group_get_specific_ptr(scheduling_group sg, scheduling_group_key key) noexcept;
 
-}
-
+SEASTAR_END_INTERNAL_NAMESPACE
 
 /// Creates a scheduling group with a specified number of shares.
 ///
@@ -169,7 +172,7 @@ private:
     friend unsigned long internal::scheduling_group_key_id(scheduling_group_key key) noexcept;
 };
 
-namespace internal {
+SEASTAR_BEGIN_INTERNAL_NAMESPACE
 
 inline unsigned long scheduling_group_key_id(scheduling_group_key key) noexcept {
     return key.id();
@@ -197,7 +200,7 @@ template<typename ConstructorType, typename Tuple, size_t...Idx>
 void apply_constructor(void* pre_alocated_mem, Tuple args, std::index_sequence<Idx...>) {
     new (pre_alocated_mem) ConstructorType(std::get<Idx>(args)...);
 }
-}
+SEASTAR_END_INTERNAL_NAMESPACE
 
 /**
  * A template function that builds a scheduling group specific value configuration.
@@ -308,7 +311,7 @@ public:
 };
 
 /// \cond internal
-namespace internal {
+SEASTAR_BEGIN_INTERNAL_NAMESPACE
 
 inline
 unsigned
@@ -334,7 +337,7 @@ current_scheduling_group_ptr() noexcept {
     return &sg;
 }
 #endif
-}
+SEASTAR_END_INTERNAL_NAMESPACE
 /// \endcond
 
 /// Returns the current scheduling group
@@ -350,6 +353,8 @@ default_scheduling_group() noexcept {
     return scheduling_group();
 }
 
+SEASTAR_MODULE_EXPORT_END
+
 inline
 bool
 scheduling_group::active() const noexcept {
@@ -360,6 +365,7 @@ scheduling_group::active() const noexcept {
 
 namespace std {
 
+SEASTAR_MODULE_EXPORT
 template <>
 struct hash<seastar::scheduling_group> {
     size_t operator()(seastar::scheduling_group sg) const noexcept {

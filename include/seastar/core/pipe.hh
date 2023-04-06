@@ -25,6 +25,7 @@
 #include <seastar/core/queue.hh>
 
 #include <seastar/util/std-compat.hh>
+#include <seastar/util/modules.hh>
 
 /// \defgroup fiber-module Fibers
 ///
@@ -60,6 +61,8 @@
 /// Seastar API namespace
 namespace seastar {
 
+SEASTAR_MODULE_EXPORT_BEGIN
+
 /// \addtogroup fiber-module
 /// @{
 
@@ -78,7 +81,7 @@ public:
 };
 
 /// \cond internal
-namespace internal {
+SEASTAR_BEGIN_INTERNAL_NAMESPACE
 template <typename T>
 class pipe_buffer {
 private:
@@ -119,7 +122,7 @@ public:
         return !_read_open;
     }
 };
-} // namespace internal
+SEASTAR_END_INTERNAL_NAMESPACE
 /// \endcond
 
 template <typename T>
@@ -263,6 +266,7 @@ private:
     pipe(internal::pipe_buffer<T> *bufp) noexcept : reader(bufp), writer(bufp) { }
 };
 
+SEASTAR_MODULE_EXPORT_END
 
 /// @}
 

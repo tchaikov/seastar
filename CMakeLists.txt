@@ -149,6 +149,11 @@ set (CMAKE_CXX_STANDARD
   STRING
   "C++ standard to build with.")
 
+include (CMakeDependentOption)
+cmake_dependent_option (Seastar_MODULE
+  "Build a C++20 module instead of a traditional library" OFF
+  "CMAKE_VERSION VERSION_GREATER_EQUAL 3.26;CMAKE_CXX_STANDARD GREATER_EQUAL 20" OFF)
+
 set (CMAKE_C_FLAGS_SANITIZE
   "-Os -g"
   CACHE
@@ -812,6 +817,21 @@ endif ()
 set( MEMORYCHECK_COMMAND_OPTIONS "--error-exitcode=1 --leak-check=no --trace-children=yes" )
 include (CTest)
 
+if (Seastar_MODULE)
+  set (CMAKE_EXPERIMENTAL_CXX_MODULE_DYNDEP 1)
+  set (CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API  "2182bf5c-ef0d-489a-91da-49dbc3090d2a")
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 16)
+      message (FATAL "C++20 module needs Clang++-16 or up")
+    endif ()
+    set (CMAKE_CXX_STANDARD_REQUIRED ON)
+    # C++ extension does work with C++ module support so far
+    set (CMAKE_CXX_EXTENSIONS OFF)
+  else ()
+    message (FATAL_ERROR "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
+  endif()
+  add_subdirectory (src)
+endif ()
 #
 # We want asserts enabled on all modes, but cmake defaults to passing
 # -DNDEBUG in some modes. We add -UNDEBUG to our private options to

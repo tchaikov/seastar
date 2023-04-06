@@ -21,15 +21,21 @@
 
 #pragma once
 
+#ifndef SEASTAR_MODULE
 #include <seastar/core/sstring.hh>
 #include <seastar/core/future.hh>
+#include <seastar/util/modules.hh>
 
 #include <array>
 #include <mutex>
+#endif
 
 namespace seastar {
 
 class io_queue;
+
+SEASTAR_MODULE_EXPORT_BEGIN
+
 using io_priority_class_id = unsigned;
 // We could very well just add the name to the io_priority_class. However, because that
 // structure is passed along all the time - and sometimes we can't help but copy it, better keep
@@ -95,5 +101,7 @@ private:
 };
 
 const io_priority_class& default_priority_class();
+
+SEASTAR_MODULE_EXPORT_END
 
 } // namespace seastar

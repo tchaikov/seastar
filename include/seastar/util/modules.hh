@@ -16,23 +16,15 @@
  * under the License.
  */
 /*
- * Copyright (C) 2020 ScyllaDB Ltd.
+ * Copyright (C) 2023 ScyllaDB
  */
 
 #pragma once
 
-#ifndef SEASTAR_MODULE
-#include <stddef.h>
-#include <type_traits>
+#ifndef SEASTAR_MODULE_EXPORT
+#  define SEASTAR_MODULE_EXPORT
+#  define SEASTAR_MODULE_EXPORT_BEGIN
+#  define SEASTAR_MODULE_EXPORT_END
+#  define SEASTAR_BEGIN_INTERNAL_NAMESPACE namespace internal {
+#  define SEASTAR_END_INTERNAL_NAMESPACE }
 #endif
-
-namespace seastar {
-namespace internal {
-// Empty types have a size of 1, but that byte is not actually
-// used. This helper is used to avoid accessing that byte.
-template<typename T>
-struct used_size {
-    static constexpr size_t value = std::is_empty<T>::value ? 0 : sizeof(T);
-};
-}
-}
