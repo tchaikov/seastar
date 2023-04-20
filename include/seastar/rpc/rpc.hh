@@ -203,7 +203,11 @@ class logger {
 
     // _seastar_logger will always be used first if it's available
     template <typename... Args>
+#if FMT_VERSION >= 80000
+    void log(log_level level, fmt::format_string<Args...> fmt, Args&&... args) const {
+#else
     void log(log_level level, const char* fmt, Args&&... args) const {
+#endif
         if (_seastar_logger) {
             _seastar_logger->log(level, fmt, std::forward<Args>(args)...);
         // If the log level is at least `info`, fall back to legacy logging without explicit level.

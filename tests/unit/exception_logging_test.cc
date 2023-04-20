@@ -177,6 +177,11 @@ BOOST_AUTO_TEST_CASE(unknown_object_thrown_test) {
 
 }
 
+// {fmt} v8.0 and up comes with compile-time format string checking, so any malformed
+// `logger.error(format_string, args)` can be identified at compile time, and a single
+// message passed to `logger.error(msg)` are not considered as a format string anymore
+// when compiled with {fmt} v8.0 and up. so this test is enabled only for {fmt} < 8.0
+#if FMT_VERSION < 80000
 BOOST_AUTO_TEST_CASE(format_error_test) {
     static seastar::logger l("format_error_test");
 
@@ -191,6 +196,7 @@ BOOST_AUTO_TEST_CASE(format_error_test) {
     BOOST_REQUIRE_NE(log_msg.str().find(__builtin_FUNCTION()), std::string::npos);
     BOOST_REQUIRE_NE(log_msg.str().find(fmt), std::string::npos);
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(throw_with_backtrace_exception_logging) {
     std::ostringstream log_msg;
