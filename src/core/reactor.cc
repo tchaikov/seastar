@@ -3792,7 +3792,7 @@ static program_options::selection_value<network_stack_factory> create_network_st
     }
 
     return program_options::selection_value<network_stack_factory>(zis, "network-stack", std::move(candidates), default_stack,
-            format("select network stack (valid values: {})", format_separated(net_stack_names.begin(), net_stack_names.end(), ", ")));
+            seastar::format("select network stack (valid values: {})", format_separated(net_stack_names.begin(), net_stack_names.end(), ", ")));
 }
 
 static program_options::selection_value<reactor_backend_selector>::candidates backend_selector_candidates() {
@@ -3840,7 +3840,7 @@ reactor_options::reactor_options(program_options::option_group* parent_group)
                  " The diagnostics will be written to the seastar_memory logger, with error level."
                  " Note that if the seastar_memory logger is set to debug or trace level, the diagnostics will be logged irrespective of this setting.")
     , reactor_backend(*this, "reactor-backend", backend_selector_candidates(), reactor_backend_selector::default_backend().name(),
-                format("Internal reactor implementation ({})", reactor_backend_selector::available()))
+                seastar::format("Internal reactor implementation ({})", reactor_backend_selector::available()))
     , aio_fsync(*this, "aio-fsync", kernel_supports_aio_fsync(),
                 "Use Linux aio for fsync() calls. This reduces latency; requires Linux 4.18 or later.")
     , max_networking_io_control_blocks(*this, "max-networking-io-control-blocks", 10000,

@@ -86,7 +86,7 @@ std::string exception_generator_str(uint32_t test_instance,int nesting_level) {
             ret << nested_exception_with_unknown_obj_str;
         } else {
             ret << nested_exception_with_runtime_err_str << " (" <<
-                    format(exception_level_fmt_str.c_str(), nesting_level) << ")";
+                    seastar::format(exception_level_fmt_str, nesting_level) << ")";
         }
         ret << ": ";
         test_instance >>= 1;
@@ -96,7 +96,7 @@ std::string exception_generator_str(uint32_t test_instance,int nesting_level) {
     if (test_instance & 1) {
         ret << unknown_obj_str;
     } else {
-        ret << runtime_err_str << " (" << format(exception_level_fmt_str.c_str(), nesting_level) << ")";
+        ret << runtime_err_str << " (" << seastar::format(exception_level_fmt_str, nesting_level) << ")";
     }
     return ret.str();
 }
