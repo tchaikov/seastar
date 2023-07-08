@@ -215,7 +215,13 @@ class logger {
         // Ignore less severe levels in order not to spam user's log with messages during transition,
         // i.e. when the user still only defines a level-less logger.
         } else if (_logger && level <= log_level::info) {
-            _logger(format(fmt, std::forward<Args>(args)...));
+            fmt::memory_buffer out;
+#if FMT_VERSION >= 80000
+            fmt::format_to(fmt::appender(out), fmt::runtime(fmt), std::forward<Args>(args)...);
+#else
+            fmt::format_to(out, fmt, std::forward<Args>(args)...);
+#endif
+            _logger(sstring{out.data(), out.size()});
         }
     }
 
