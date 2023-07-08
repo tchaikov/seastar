@@ -76,7 +76,7 @@ void exception_generator(uint32_t test_instance, int nesting_level) {
 std::string exception_generator_str(uint32_t test_instance,int nesting_level) {
     std::ostringstream ret;
     const std::string runtime_err_str = "std::runtime_error";
-    const std::string exception_level_fmt_str = "Exception Level {}";
+    static constexpr std::string_view exception_level_fmt_str = "Exception Level {}";
     const std::string unknown_obj_str = "unknown_obj";
     const std::string nested_exception_with_unknown_obj_str = "std::_Nested_exception<unknown_obj>";
     const std::string nested_exception_with_runtime_err_str = "std::_Nested_exception<std::runtime_error>";
