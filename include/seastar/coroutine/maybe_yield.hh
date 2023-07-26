@@ -24,6 +24,7 @@
 #include <concepts>
 #include <type_traits>
 #include <seastar/core/coroutine.hh>
+#include <seastar/core/reactor.hh>
 
 namespace seastar::coroutine {
 
@@ -50,6 +51,9 @@ struct maybe_yield_awaiter final : task {
     }
 
     virtual void run_and_dispose() noexcept override {
+        // maybe_yield_awaiter is on the stack and will be invalid when we resume,
+        // and let's restore the _current_task to that of the caller coroutine
+        engine()._current_task = main_coroutine_task;
         when_ready.resume();
         // No need to delete, this is allocated on the coroutine frame
     }

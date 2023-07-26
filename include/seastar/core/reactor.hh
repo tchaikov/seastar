@@ -136,6 +136,12 @@ class reactor_backend_selector;
 
 class reactor_backend;
 
+namespace coroutine::internal {
+
+struct maybe_yield_awaiter;
+
+}
+
 namespace internal {
 
 class reactor_stall_sampler;
@@ -429,6 +435,7 @@ private:
     friend class thread_pool;
     friend class thread_context;
     friend class internal::cpu_stall_detector;
+    friend struct coroutine::internal::maybe_yield_awaiter;
 
     uint64_t pending_task_count() const;
     void run_tasks(task_queue& tq);
