@@ -183,6 +183,11 @@ aio_storage_context::handle_aio_error(linux_abi::iocb* iocb, int ec) {
             // we will only remove it from _pending_io and try again.
             return 1;
         }
+        case ENOTSUP:
+            throw_system_error_on(true,
+                                  "could not submit io. this happens when accessing "
+                                  "filesystem not support asynchronous direct I/O");
+            abort();
         default:
             ++_r._io_stats.aio_errors;
             throw std::system_error(ec, std::system_category(), "io_submit");
