@@ -836,44 +836,6 @@ string_type to_sstring(T value) {
 }
 }
 
-namespace std {
-
-SEASTAR_MODULE_EXPORT
-template <typename T>
-inline
-std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {
-    bool first = true;
-    os << "{";
-    for (auto&& elem : v) {
-        if (!first) {
-            os << ", ";
-        } else {
-            first = false;
-        }
-        os << elem;
-    }
-    os << "}";
-    return os;
-}
-
-SEASTAR_MODULE_EXPORT
-template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const std::unordered_map<Key, T, Hash, KeyEqual, Allocator>& v) {
-    bool first = true;
-    os << "{";
-    for (auto&& elem : v) {
-        if (!first) {
-            os << ", ";
-        } else {
-            first = false;
-        }
-        os << "{" << elem.first << " -> " << elem.second << "}";
-    }
-    os << "}";
-    return os;
-}
-}
-
 #if FMT_VERSION >= 90000
 
 // Due to https://github.com/llvm/llvm-project/issues/68849, we inherit
