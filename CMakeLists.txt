@@ -1050,6 +1050,11 @@ if (ErrorWarnings_FOUND)
       PRIVATE "-Wno-error=#warnings")
 endif ()
 
+if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  target_compile_options (seastar
+      PUBLIC "-Wno-attributes=clang::")
+endif ()
+
 foreach (definition
     SEASTAR_DEBUG
     SEASTAR_DEFAULT_ALLOCATOR
