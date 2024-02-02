@@ -81,18 +81,23 @@ template <typename T>
 class enable_shared_from_this;
 
 template <typename T, typename... A>
+[[clang::return_typestate(unconsumed)]]
 lw_shared_ptr<T> make_lw_shared(A&&... a);
 
 template <typename T>
+[[clang::return_typestate(unconsumed)]]
 lw_shared_ptr<T> make_lw_shared(T&& a);
 
 template <typename T>
+[[clang::return_typestate(unconsumed)]]
 lw_shared_ptr<T> make_lw_shared(T& a);
 
 template <typename T, typename... A>
+[[clang::return_typestate(unconsumed)]]
 shared_ptr<T> make_shared(A&&... a);
 
 template <typename T>
+[[clang::return_typestate(unconsumed)]]
 shared_ptr<T> make_shared(T&& a);
 
 template <typename T, typename U>
@@ -305,11 +310,10 @@ public:
         }
     };
 
-    [[clang::return_typestate(unconsumed)]]
+    [[clang::return_typestate(consumed)]]
     lw_shared_ptr() noexcept = default;
-    [[clang::return_typestate(unconsumed)]]
+    [[clang::return_typestate(consumed)]]
     lw_shared_ptr(std::nullptr_t) noexcept : lw_shared_ptr() {}
-    [[clang::return_typestate(unconsumed)]]
     lw_shared_ptr(const lw_shared_ptr& x) noexcept : _p(x._p) {
         if (_p) {
 #pragma GCC diagnostic push
@@ -320,7 +324,6 @@ public:
 #pragma GCC diagnostic pop
         }
     }
-    [[clang::return_typestate(unconsumed)]]
     lw_shared_ptr(lw_shared_ptr&& x) noexcept  : _p(x._p) {
         x.invalidate();
     }
@@ -349,6 +352,7 @@ public:
         }
         return *this;
     }
+    [[clang::set_typestate(consumed)]]
     lw_shared_ptr& operator=(std::nullptr_t) noexcept {
         return *this = lw_shared_ptr();
     }
@@ -362,7 +366,6 @@ public:
     T& operator*() const noexcept { return *accessors<T>::to_value(_p); }
     [[clang::callable_when("unconsumed", "unknown")]]
     T* operator->() const noexcept { return accessors<T>::to_value(_p); }
-    [[clang::callable_when("unconsumed", "unknown")]]
     T* get() const noexcept {
         if (_p) {
             return accessors<T>::to_value(_p);
@@ -379,6 +382,8 @@ public:
     // Note that in case the raw pointer is extracted from the unique_ptr
     // using unique_ptr::release(), it must be still destroyed using
     // lw_shared_ptr::disposer or lw_shared_ptr::dispose().
+    [[clang::callable_when("unconsumed", "unknown")]]
+    [[clang::set_typestate(consumed)]]
     std::unique_ptr<T, disposer> release() noexcept {
         auto p = std::exchange(_p, nullptr);
         if (--p->_count) {
@@ -396,11 +401,11 @@ public:
         }
     }
 
-    [[clang::return_typestate(unconsumed)]]
     operator lw_shared_ptr<const T>() const noexcept {
         return lw_shared_ptr<const T>(_p);
     }
 
+    [[clang::test_typestate(unconsumed)]]
     explicit operator bool() const noexcept {
         return _p;
     }
@@ -551,11 +556,10 @@ private:
 public:
     using element_type = T;
 
-    [[clang::return_typestate(unconsumed)]]
+    [[clang::return_typestate(consumed)]]
     shared_ptr() noexcept = default;
-    [[clang::return_typestate(unconsumed)]]
+    [[clang::return_typestate(consumed)]]
     shared_ptr(std::nullptr_t) noexcept : shared_ptr() {}
-    [[clang::return_typestate(unconsumed)]]
     shared_ptr(const shared_ptr& x) noexcept
             : _b(x._b)
             , _p(x._p) {
@@ -563,14 +567,12 @@ public:
             ++_b->count;
         }
     }
-    [[clang::return_typestate(unconsumed)]]
     shared_ptr(shared_ptr&& x) noexcept
             : _b(x._b)
             , _p(x._p) {
         x.invalidate();
     }
     template <typename U, typename = std::enable_if_t<std::is_base_of_v<T, U>>>
-    [[clang::return_typestate(unconsumed)]]
     shared_ptr(const shared_ptr<U>& x) noexcept
             : _b(x._b)
             , _p(x._p) {
@@ -579,7 +581,6 @@ public:
         }
     }
     template <typename U, typename = std::enable_if_t<std::is_base_of_v<T, U>>>
-    [[clang::return_typestate(unconsumed)]]
     shared_ptr(shared_ptr<U>&& x) noexcept
             : _b(x._b)
             , _p(x._p) {
@@ -609,6 +610,7 @@ public:
         }
         return *this;
     }
+    [[clang::set_typestate(consumed)]]
     shared_ptr& operator=(std::nullptr_t) noexcept {
         return *this = shared_ptr();
     }
@@ -628,6 +630,7 @@ public:
         }
         return *this;
     }
+    [[clang::test_typestate(unconsumed)]]
     explicit operator bool() const noexcept {
         return _p;
     }
@@ -639,7 +642,6 @@ public:
     T* operator->() const noexcept {
         return _p;
     }
-    [[clang::callable_when("unconsumed", "unknown")]]
     T* get() const noexcept {
         return _p;
     }
@@ -764,35 +766,35 @@ SEASTAR_MODULE_EXPORT_BEGIN
 template <typename T, typename U>
 inline
 bool
-operator==(const shared_ptr<T>& x [[clang::param_typestate(unconsumed)]], const shared_ptr<U>& y [[clang::param_typestate(unconsumed)]]) {
+operator==(const shared_ptr<T>& x, const shared_ptr<U>& y) {
     return x.get() == y.get();
 }
 
 template <typename T>
 inline
 bool
-operator==(const shared_ptr<T>& x [[clang::param_typestate(unconsumed)]], std::nullptr_t) {
+operator==(const shared_ptr<T>& x, std::nullptr_t) {
     return x.get() == nullptr;
 }
 
 template <typename T>
 inline
 bool
-operator==(std::nullptr_t, const shared_ptr<T>& y [[clang::param_typestate(unconsumed)]]) {
+operator==(std::nullptr_t, const shared_ptr<T>& y) {
     return nullptr == y.get();
 }
 
 template <typename T>
 inline
 bool
-operator==(const lw_shared_ptr<T>& x [[clang::param_typestate(unconsumed)]], std::nullptr_t) {
+operator==(const lw_shared_ptr<T>& x, std::nullptr_t) {
     return x.get() == nullptr;
 }
 
 template <typename T>
 inline
 bool
-operator==(std::nullptr_t, const lw_shared_ptr<T>& y [[clang::param_typestate(unconsumed)]]) {
+operator==(std::nullptr_t, const lw_shared_ptr<T>& y) {
     return nullptr == y.get();
 }
 
