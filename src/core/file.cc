@@ -1151,7 +1151,7 @@ future<uint64_t> file::size() const noexcept {
 
 future<> file::close() noexcept {
     auto f = std::move(_file_impl);
-    return f->close().handle_exception([f = std::move(f)] (std::exception_ptr ex) {
+    return f->close().handle_exception([f = std::move(f)] (std::exception_ptr ex) { // NOLINT(bugprone-use-after-move)
         report_exception("Closing the file failed unexpectedly", std::move(ex));
     });
 }
