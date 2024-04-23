@@ -313,7 +313,7 @@ future<> client::set_maximum_connections(unsigned nr) {
 template <std::invocable<connection&> Fn>
 auto client::with_connection(Fn&& fn) {
     return get_connection().then([this, fn = std::move(fn)] (connection_ptr con) mutable {
-        return fn(*con).finally([this, con = std::move(con)] () mutable {
+        return fn(*con).finally([this, con = std::move(con)] () mutable { // NOLINT(bugprone-use-after-move)
             return put_connection(std::move(con));
         });
     });
