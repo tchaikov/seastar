@@ -29,6 +29,8 @@
 #include <seastar/core/seastar.hh>
 #include <seastar/core/reactor.hh>
 #include <seastar/http/api_docs.hh>
+#include <seastar/core/prometheus.hh>
+#include <seastar/core/sstring.hh>
 #include <seastar/core/thread.hh>
 #include <seastar/net/inet_address.hh>
 #include <seastar/util/defer.hh>
@@ -56,11 +58,42 @@ int main(int ac, char** av) {
     app_template app;
 
     app.add_options()("port", bpo::value<uint16_t>()->default_value(10000), "HTTP Server port");
+    app.add_options()("prometheus_port", bpo::value<uint16_t>()->default_value(9180), "Prometheus port. Set to zero in order to disable.");
+    app.add_options()("prometheus_address", bpo::value<sstring>()->default_value("0.0.0.0"), "Prometheus address");
+    app.add_options()("prometheus_prefix", bpo::value<sstring>()->default_value("rest_api"), "Prometheus metrics prefix");
 
     return app.run(ac, av, [&] {
         return seastar::async([&] {
             seastar_apps_lib::stop_signal stop_signal;
             auto&& config = app.configuration();
+
+            httpd::http_server_control prometheus_server;
+            bool prometheus_started = false;
+
+            auto stop_prometheus = defer([&] () noexcept {
+                if (prometheus_started) {
+                    prometheus_server.stop().get();
+                }
+            });
+
+            uint16_t prometheus_port = config["prometheus_port"].as<uint16_t>();
+            if (prometheus_port) {
+                prometheus_server.start("prometheus").get();
+
+                prometheus::config prometheus_config;
+                prometheus_config.prefix = config["prometheus_prefix"].as<sstring>();
+                prometheus::start(prometheus_server, prometheus_config).get();
+                prometheus_started = true;
+
+                const net::inet_address prometheus_addr(config["prometheus_address"].as<sstring>());
+                const socket_addr addr{prometheus_addr, prometheus_port};
+                prometheus_server.listen(addr).handle_exception([addr] (auto ep) {
+                    seastar::print(stderr, "Could not start exporter on {}: {}\n", addr, ep);
+                    return make_exception_future<>(ep);
+                }).get();
+
+            }
+
             uint16_t port = config["port"].as<uint16_t>();
             auto server = std::make_unique<http_server_control>();
             auto rb = make_shared<api_registry_builder>("apps/httpd/");
