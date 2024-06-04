@@ -5,6 +5,7 @@ import sys
 import re
 
 import addr2line
+from itertools import dropwhile
 from typing import Self, TextIO
 from collections.abc import Generator
 
@@ -355,12 +356,7 @@ def parse_stack_traces(input: TextIO, address_threshold: int) -> Generator[tuple
         #  (inlined by) seastar::reactor::block_notifier(int) at ./build/release/seastar/./seastar/src/core/reactor.cc:1240
         # ?? ??:0
         if address_threshold:
-            for i in range(0, len(trace)):
-                if int(trace[i], 0) >= address_threshold:
-                    while int(trace[i], 0) >= address_threshold:
-                        i += 1
-                    trace = trace[i:]
-                    break
+            trace = list(dropwhile(lambda addr: int(addr, 0) >= address_threshold, trace))
         yield trace, stall_time_in_ms
 
 
