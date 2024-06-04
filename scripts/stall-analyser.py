@@ -367,7 +367,6 @@ def parse_stack_traces(input: TextIO, address_threshold: int) -> Generator[tuple
 def main():
     args = get_command_line_parser().parse_args()
     input = open(args.file) if args.file else sys.stdin
-    count = 0
     address_threshold = int(args.address_threshold, 0)
     # map from stall time in ms to the count of the stall time
     tally = {}
@@ -377,7 +376,6 @@ def main():
                                                concise=not args.full_function_names)
     graph = Graph(resolver)
     for trace, t in parse_stack_traces(input, address_threshold):
-        count += 1
         tally[t] = tally.pop(t, 0) + 1
         tmin = args.minimum or 0
         if t >= tmin:
