@@ -47,6 +47,8 @@ def get_command_line_parser():
     parser.add_argument('-b', '--branch-threshold', type=float, default=0.03,
                         help='Drop branches responsible for less than this threshold relative to the previous level, not global. (default 3%%)')
     parser.add_argument('file', nargs='?',
+                        type=argparse.FileType('r'),
+                        default=sys.stdin,
                         help='File containing reactor stall backtraces. Read from stdin if missing.')
     return parser
 
@@ -362,7 +364,6 @@ def parse_stack_traces(input: TextIO, address_threshold: int) -> Generator[tuple
 
 def main():
     args = get_command_line_parser().parse_args()
-    input = open(args.file) if args.file else sys.stdin
     address_threshold = int(args.address_threshold, 0)
     # map from stall time in ms to the count of the stall time
     tally = {}
@@ -371,7 +372,7 @@ def main():
         resolver = addr2line.BacktraceResolver(executable=args.executable,
                                                concise=not args.full_function_names)
     graph = Graph(resolver)
-    for trace, t in parse_stack_traces(input, address_threshold):
+    for trace, t in parse_stack_traces(args.file, address_threshold):
         tally[t] = tally.pop(t, 0) + 1
         tmin = args.minimum or 0
         if t >= tmin:
