@@ -5,8 +5,8 @@ import sys
 import re
 
 import addr2line
-from typing import Self
-
+from typing import Self, TextIO
+from collections.abc import Generator
 
 def get_command_line_parser():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -326,20 +326,10 @@ def print_command_line_options(args):
     print(f"Command line options:{clopts}\n")
 
 
-def main():
-    args = get_command_line_parser().parse_args()
-    input = open(args.file) if args.file else sys.stdin
-    count = 0
+def parse_stack_traces(input: TextIO, address_threshold: int) -> Generator[tuple[list[str], int]]:
     comment = re.compile(r'^\s*#')
     pattern = re.compile(r"Reactor stalled for (?P<stall>\d+) ms on shard (?P<shard>\d+).*Backtrace:")
-    address_threshold = int(args.address_threshold, 0)
-    # map from stall time in ms to the count of the stall time
-    tally = {}
-    resolver = None
-    if args.executable:
-        resolver = addr2line.BacktraceResolver(executable=args.executable,
-                                               concise=not args.full_function_names)
-    graph = Graph(resolver)
+
     for s in input:
         if comment.search(s):
             continue
@@ -348,12 +338,10 @@ def main():
         m = pattern.search(s)
         if not m:
             continue
-        count += 1
         # extract the time in ms
-        trace = s[m.span()[1]:].split()
-        t = int(m.group("stall"))
+        stall_time_in_ms = int(m.group("stall"))
         # and the addresses after "Backtrace:"
-        tally[t] = tally.pop(t, 0) + 1
+        trace = s[m.span()[1]:].split()
         # The address_threshold typically indicates a library call
         # and the backtrace up-to and including it are usually of
         # no interest as they all contain the stall backtrace geneneration code, e.g.:
@@ -373,6 +361,24 @@ def main():
                         i += 1
                     trace = trace[i:]
                     break
+        yield trace, stall_time_in_ms
+
+
+def main():
+    args = get_command_line_parser().parse_args()
+    input = open(args.file) if args.file else sys.stdin
+    count = 0
+    address_threshold = int(args.address_threshold, 0)
+    # map from stall time in ms to the count of the stall time
+    tally = {}
+    resolver = None
+    if args.executable:
+        resolver = addr2line.BacktraceResolver(executable=args.executable,
+                                               concise=not args.full_function_names)
+    graph = Graph(resolver)
+    for trace, t in parse_stack_traces(input, address_threshold):
+        count += 1
+        tally[t] = tally.pop(t, 0) + 1
         tmin = args.minimum or 0
         if t >= tmin:
             graph.process_trace(trace, t)
