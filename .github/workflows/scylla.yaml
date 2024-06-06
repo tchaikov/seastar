@@ -4,6 +4,10 @@ on:
   schedule:
     # 5AM everyday
     - cron: '0 5 * * *'
+  push:
+    branches:
+      - 'master'
+      - 'scylla'
 
 permissions: {}
 
