@@ -45,6 +45,27 @@ namespace httpd {
 
 SEASTAR_MODULE_EXPORT_BEGIN
 
+// instead of using https://github.com/OAI/OpenAPI-Specification/blob/main/versions/1.2.md#431-primitives
+// only support the types specified by https://swagger.io/docs/specification/data-models/data-types/,
+// to be future-proof and simpler this way
+enum class parameter_type {
+  string,
+  float_,
+  double_,
+  int32,
+  int64,
+  boolean,
+  array,
+  object,
+  unknown,
+};
+
+struct parameter {
+  sstring name;
+  parameter_type type;
+  bool verify(const sstring& s) const;
+};
+
 class parameters {
     // Note: the path matcher adds parameters with the '/' prefix into the params map (eg. "/param1"), and some getters
     // remove this '/' to return just the path parameter value

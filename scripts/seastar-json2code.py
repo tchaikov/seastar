@@ -197,6 +197,64 @@ class Parameter:
     def enum(self):
         return self.definition.get('enum')
 
+    @property
+    def type(self):
+        return self.definition.get('type')
+
+
+    @property
+    def format(self):
+        return self.definition.get('format')
+
+    def to_primitive_type(self):
+        """return the primitive type"""
+        t = ''
+        if self.type == 'string':
+            # TODO: validate different "format"s
+            t = 'string'
+        elif self.type == 'number':
+            if self.format == 'double':
+                t = 'double_'
+            elif self.format == 'float':
+                t = 'float_'
+            else:
+                raise ValueError('"type" is required for "number" type to avoid the ambiguity')
+        elif self.type == 'integer':
+            if self.format == 'int64':
+                t = 'int64'
+            elif self.format == 'int32':
+                t = 'int32'
+            else:
+                t = 'int64'
+        elif self.type == 'boolean':
+            t = 'boolean'
+        elif self.type == 'array':
+            t = 'array'
+        elif self.type == 'object':
+            t = 'object'
+        if t:
+            return f'parameter_type::{t}'
+
+        # check the non-standard names also
+        if self.type == 'float':
+            t = 'float_'
+        elif self.type == 'double':
+            t = 'double_'
+        elif self.type == 'long':
+            t = 'int64'
+        else:
+            # could be a model's id
+            t = 'unknown'
+        return f'parameter_type::{t}'
+
+    def to_cxx_parameter(self):
+        maybe_primitive_type = self.to_primitive_type()
+        if maybe_primitive_type:
+            return f'{{self.name, {maybe_primitive_type}}}'
+        if self.type == 'array':
+            return 'parameter_type::array'
+        return 'parameter_type::unknown'
+
 
 def add_path(f, path, details):
     if "summary" in details:
@@ -226,7 +284,7 @@ def add_path(f, path, details):
         for param_definition in details["parameters"]:
             param = Parameter(param_definition)
             if param.is_required:
-                fprintln(f, spacing, '  ->pushmandatory_param("', param.name, '")')
+                fprintln(f, f'{spacing}  ->push_mandatory_param({{"{param.name}", {param.type}}})')
     fprintln(f, spacing, ";")
 
 

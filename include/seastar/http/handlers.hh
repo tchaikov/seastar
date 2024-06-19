@@ -40,7 +40,7 @@ typedef const http::request& const_req;
  *
  */
 class handler_base {
-    std::vector<sstring> _mandatory_param;
+    std::vector<parameter> _mandatory_param;
 protected:
     handler_base() = default;
     handler_base(const handler_base&) = default;
@@ -62,7 +62,7 @@ public:
      * @param param a parameter name
      * @return a reference to the handler
      */
-    handler_base& mandatory(const sstring& param) {
+    handler_base& mandatory(const parameter& param) {
         _mandatory_param.push_back(param);
         return *this;
     }
@@ -74,8 +74,12 @@ public:
      */
     void verify_mandatory_params(const http::request& req) const {
         for (auto& param : _mandatory_param) {
-            if (req.get_query_param(param) == "") {
-                throw missing_param_exception(param);
+            const auto p = req.get_query_param(param.name);
+            if (p.empty()) {
+                throw missing_param_exception(param.name);
+            }
+            if (!param.verify(p)) {
+                throw bad_request_exception(param.name);
             }
         }
     }

@@ -79,7 +79,7 @@ path_description::path_description(const sstring& path, operation_type method,
         : path(path), operations(method, nickname) {
 
     for (auto man : mandatory_params) {
-        pushmandatory_param(man);
+        push_mandatory_param(parameter{man, parameter_type::unknown});
     }
     for (auto& [param, all_path] : path_parameters) {
         pushparam(param, all_path);
@@ -93,7 +93,7 @@ path_description::path_description(const sstring& path, operation_type method,
         : path(path), operations(method, nickname) {
 
     for (auto man : mandatory_params) {
-        pushmandatory_param(man);
+        push_mandatory_param(parameter{man, parameter_type::unknown});
     }
     for (auto param : path_parameters) {
         params.push_back(param);

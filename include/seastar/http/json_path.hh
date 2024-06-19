@@ -92,6 +92,7 @@ struct path_description {
     struct path_part {
         sstring name;
         url_component_type type = url_component_type::PARAM;
+        parameter_type param_type = parameter_type::unknown;
     };
 
     /**
@@ -168,7 +169,19 @@ struct path_description {
      * @param param the parameter to head
      * @return a pointer to the current path description
      */
+    [[deprecated("Use push_mandatory_param() instead")]]
     path_description* pushmandatory_param(const sstring& param) {
+        mandatory_queryparams.push_back(parameter{param, parameter_type::unknown});
+        return this;
+    }
+
+    /**
+     * adds a mandatory query parameter to the path
+     * this parameter will be checked before calling a handler
+     * @param param the parameter to parse
+     * @return a pointer to the current path description
+     */
+    path_description* push_mandatory_param(const parameter& param) {
         mandatory_queryparams.push_back(param);
         return this;
     }
@@ -178,7 +191,7 @@ struct path_description {
     json_operation operations;
     mutable routes::rule_cookie _cookie;
 
-    std::vector<sstring> mandatory_queryparams;
+    std::vector<parameter> mandatory_queryparams;
 
     void set(routes& _routes, handler_base* handler) const;
 
