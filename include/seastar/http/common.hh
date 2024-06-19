@@ -28,6 +28,7 @@
 #include <seastar/core/sstring.hh>
 #include <seastar/core/iostream.hh>
 #include <seastar/http/url.hh>
+#include <seastar/util/bool_class.hh>
 
 namespace seastar {
 
@@ -44,6 +45,29 @@ output_stream<char> make_http_content_length_output_stream(output_stream<char>& 
 namespace httpd {
 
 SEASTAR_MODULE_EXPORT_BEGIN
+
+// instead of using https://github.com/OAI/OpenAPI-Specification/blob/main/versions/1.2.md#431-primitives
+// only support the types specified by https://swagger.io/docs/specification/data-models/data-types/,
+// to be future-proof and simpler this way
+enum class parameter_type {
+  string,
+  float_,
+  double_,
+  int32,
+  int64,
+  boolean,
+  array,
+  object,
+  unknown,
+};
+
+struct parameter {
+  using is_required = bool_class<struct is_required_tag>;
+  sstring name;
+  parameter_type type;
+  is_required required = is_required::no;
+  bool verify(const sstring& s) const;
+};
 
 class parameters {
     // Note: the path matcher adds parameters with the '/' prefix into the params map (eg. "/param1"), and some getters

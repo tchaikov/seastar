@@ -49,6 +49,15 @@
               ]
             },
             {
+              "name": "query_integer",
+              "description": "My lucky number",
+              "required": false,
+              "allowMultiple": false,
+              "type": "integer",
+              "format": "int64",
+              "paramType": "query"
+            },
+            {
               "name": "use_streaming",
               "description": "Whether to return the response as a stream_object",
               "required": true,

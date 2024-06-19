@@ -184,24 +184,74 @@ class Parameter:
         return self.definition['name']
 
     @property
+    def location(self):
+        if param_type := self.definition.get("paramType"):
+            return param_type
+        if where := self.definition.get("in"):
+            return where
+        assert False, f"location not specified for {self.name}"
+
+    @property
     def is_required(self):
-        # check if a parameter is query required.
-        # It will return true if the required flag is set
-        # and if it is a query parameter, both swagger 1.2 'paramType' and
-        # swagger 2.0 'in' attributes are supported
-        if "required" not in self.definition:
-            return False
-        if not self.definition["required"]:
-            return False
-        if self.definition.get("paramType") == "query":
-            return True
-        if self.definition.get("in") == "query":
-            return True
-        return False
+        """check if a parameter is required.
+
+        both swagger 1.2 'paramType' and swagger 2.0 'in' attributes are
+        supported
+        """
+        if self.location == "path":
+            assert self.definition["required"]
+        return self.definition.get("required", False)
 
     @property
     def enum(self):
         return self.definition.get('enum')
+
+    @property
+    def type(self):
+        return self.definition.get('type')
+
+    @property
+    def format(self):
+        return self.definition.get('format')
+
+    def type_to_cxx(self):
+        """return the primitive type"""
+        if self.type == 'string':
+            # TODO: validate different "format"s
+            return 'string'
+        if self.type == 'number':
+            if self.format == 'double':
+                return 'double_'
+            if self.format == 'float':
+                return 'float_'
+            raise ValueError('"format" is required for "number" type to avoid the ambiguity')
+        if self.type == 'integer':
+            if self.format == 'int64':
+                return 'int64'
+            if self.format == 'int32':
+                return 'int32'
+            return 'int64'
+        if self.type == 'boolean':
+            return 'boolean'
+        if self.type == 'array':
+            return 'array'
+        if self.type == 'object':
+            return 'object'
+
+        # check the non-standard names also
+        if self.type == 'float':
+            return 'float_'
+        if self.type == 'double':
+            return 'double_'
+        if self.type == 'long':
+            return 'int64'
+        # could be a model's id
+        return 'unknown'
+
+    def to_cxx(self):
+        cxx_type = f'parameter_type::{self.type_to_cxx()}'
+        cxx_required = 'parameter::is_required::{}'.format('yes' if self.is_required else 'no')
+        return f'{{"{self.name}", {cxx_type}, {cxx_required}}}'
 
 
 def add_path(f, path, details):
@@ -232,7 +282,7 @@ def add_path(f, path, details):
         for param_definition in details["parameters"]:
             param = Parameter(param_definition)
             if param.is_required:
-                fprintln(f, spacing, '  ->pushmandatory_param("', param.name, '")')
+                fprintln(f, f'{spacing}  ->push_query_param({param.to_cxx})')
     fprintln(f, spacing, ";")
 
 
@@ -337,8 +387,7 @@ def add_operation(hfile, ccfile, path, oper):
         else:
             component_type = 'PARAM'
         fprint(ccfile, f'{{"{path_param}", path_description::url_component_type::{component_type}}}')
-    fprint(ccfile, '}')
-    fprint(ccfile, ',{')
+    fprintln(ccfile, '},')
     enum_definitions = ""
     if "enum" in oper:
         enum_wrapper = create_enum_wrapper(nickname, "return_type", oper["enum"])
@@ -348,18 +397,20 @@ $enum_wrapper
 }
 ''').substitute(nickname=nickname, enum_wrapper=enum_wrapper.rstrip())
     funcs = ""
-    required_query_params = []
-    for param in oper.get("parameters", []):
-        query_param = Parameter(param)
-        if query_param.is_required:
-            required_query_params.append(query_param)
-        if query_param.enum is not None:
+    query_params = []
+    for p in oper.get("parameters", []):
+        param = Parameter(p)
+        if param.location != "query":
+            continue
+        query_params.append(param)
+        if param.enum is not None:
             enum_decl, parse_func = generate_code_from_enum(nickname,
-                                                            query_param.name,
-                                                            query_param.enum)
+                                                            param.name,
+                                                            param.enum)
             enum_definitions += enum_decl
             funcs += parse_func
-    fprint(ccfile, '\n,'.join(f'"{param.name}"' for param in required_query_params))
+    fprint(ccfile, "{")
+    fprintln(ccfile, ',\n '.join(f'{param.to_cxx()}' for param in query_params))
     fprintln(ccfile, '});')
     fprintln(hfile, enum_definitions)
     open_namespace(ccfile, f'ns_{nickname}')

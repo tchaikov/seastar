@@ -80,6 +80,25 @@ class TestJson2Code(unittest.TestCase):
         self.assertEqual(response['message'], 'Not found')
         self.assertEqual(response['code'], HTTPStatus.NOT_FOUND)
 
+    def test_malformatted_query_param(self):
+        var1 = 'bon'
+        var2 = 'jour'
+        query_enum = 'VAL2'
+        query_integer = 'i-am-not-a-number'
+        use_streaming = True
+        params = urllib.parse.urlencode({'query_enum': query_enum,
+                                         'query_integer': query_integer,
+                                         'use_streaming': str(use_streaming).lower()})
+        url = f'http://localhost:{self.port}/hello/world/{var1}/{var2}?{params}'
+        with self.assertRaises(urllib.error.HTTPError) as e:
+            with urllib.request.urlopen(url):
+                pass
+        ex = e.exception
+        self.assertEqual(ex.code, HTTPStatus.BAD_REQUEST)
+        response = json.loads(ex.read().decode('utf-8'))
+        self.assertEqual(response['message'], 'query_integer')
+        self.assertEqual(response['code'], HTTPStatus.BAD_REQUEST)
+
     def test_arrays(self):
         response = self._do_query('x', 'x', 'VAL2')
         expected = [1, 2, 3]

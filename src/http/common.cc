@@ -23,6 +23,7 @@
 module;
 #endif
 
+#include <charconv>
 #include <cstdlib>
 #include <memory>
 #include <utility>
@@ -37,6 +38,46 @@ module seastar;
 namespace seastar {
 
 namespace httpd {
+
+bool parameter::verify(const sstring& s) const {
+    using enum httpd::parameter_type;
+    switch (type) {
+        case string:
+            // TODO: support the "format" field
+            return true;
+        case float_:  {
+            float value;
+            auto [ptr, ec] = std::from_chars(s.begin(), s.end(), value);
+            return ptr == s.end();
+        }
+        case double_: {
+            double value;
+            auto [ptr, ec] = std::from_chars(s.begin(), s.end(), value);
+            return ptr == s.end();
+        }
+        case int32: {
+            int32_t value;
+            auto [ptr, ec] = std::from_chars(s.begin(), s.end(), value);
+            return ptr == s.end();
+        }
+        case int64: {
+            int64_t value;
+            auto [ptr, ec] = std::from_chars(s.begin(), s.end(), value);
+            return ptr == s.end();
+        }
+        case boolean:
+            return s == "true" || s == "false";
+        case array:
+            // TODO: validate with element's schema
+            return true;
+        case object:
+            // TODO: validate with model's schema
+            return true;
+        case unknown:
+            return true;
+    }
+    return true;
+}
 
 operation_type str2type(const sstring& type) {
     if (type == "DELETE") {

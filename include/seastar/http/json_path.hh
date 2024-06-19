@@ -92,6 +92,7 @@ struct path_description {
     struct path_part {
         sstring name;
         url_component_type type = url_component_type::PARAM;
+        parameter_type param_type = parameter_type::unknown;
     };
 
     /**
@@ -112,6 +113,20 @@ struct path_description {
             const sstring& nickname,
             const std::vector<std::pair<sstring, bool>>& path_parameters,
             const std::vector<sstring>& mandatory_params);
+
+    /**
+     * constructor for path with parameters
+     *
+     * @param path the url path
+     * @param method the http method
+     * @param nickname the method nickname
+     * @param path_parameters path parameters and url parts of the path
+     * @param query_parameters query parameters
+     */
+    path_description(const sstring& path, operation_type method,
+            const sstring& nickname,
+            const std::initializer_list<path_part>& path_parameters,
+            const std::initializer_list<parameter>& query_parameters);
 
     /**
      * constructor for path with parameters
@@ -145,7 +160,7 @@ struct path_description {
      */
     path_description* pushparam(const sstring& param,
     bool all_path = false) {
-        params.push_back( { param, (all_path) ? url_component_type::PARAM_UNTIL_END_OF_PATH : url_component_type::PARAM});
+        path_params.push_back( { param, (all_path) ? url_component_type::PARAM_UNTIL_END_OF_PATH : url_component_type::PARAM});
         return this;
     }
 
@@ -159,7 +174,7 @@ struct path_description {
      * p.pushparam("param1)->pushurl("morepath")->pushparam("param2");
      */
     path_description* push_static_path_part(const sstring& url) {
-        params.push_back( { url, url_component_type::FIXED_STRING});
+        path_params.push_back( { url, url_component_type::FIXED_STRING});
         return this;
     }
     /**
@@ -168,17 +183,29 @@ struct path_description {
      * @param param the parameter to head
      * @return a pointer to the current path description
      */
+    [[deprecated("Use push_query_param() instead")]]
     path_description* pushmandatory_param(const sstring& param) {
-        mandatory_queryparams.push_back(param);
+        query_params.push_back(parameter{param, parameter_type::unknown, parameter::is_required::yes});
         return this;
     }
 
-    std::vector<path_part> params;
+    /**
+     * adds a query parameter to the path
+     * this parameter will be checked before calling a handler
+     * @param param the parameter to parse
+     * @return a pointer to the current path description
+     */
+    path_description* push_query_param(const parameter& param) {
+        query_params.push_back(param);
+        return this;
+    }
+
     sstring path;
     json_operation operations;
     mutable routes::rule_cookie _cookie;
 
-    std::vector<sstring> mandatory_queryparams;
+    std::vector<path_part> path_params;
+    std::vector<parameter> query_params;
 
     void set(routes& _routes, handler_base* handler) const;
 

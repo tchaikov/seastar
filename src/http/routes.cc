@@ -91,7 +91,7 @@ future<std::unique_ptr<http::reply> > routes::handle(const sstring& path, std::u
             normalize_url(path), req->param);
     if (handler != nullptr) {
         try {
-            handler->verify_mandatory_params(*req);
+            handler->verify_params(*req);
             auto r =  handler->handle(path, std::move(req), std::move(rep));
             return r.handle_exception(_general_handler);
         } catch (...) {
@@ -178,7 +178,7 @@ void routes::add_alias(const path_description& old_path, const path_description&
     httpd::parameters p;
     stringstream path;
     path << old_path.path;
-    for (const auto& p : old_path.params) {
+    for (const auto& p : old_path.path_params) {
         // the path_description path does not contains the path parameters
         // so just add a fake parameter to the path for each of the parameters,
         // and add the string for each fixed string part.

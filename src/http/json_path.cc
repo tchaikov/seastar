@@ -34,16 +34,16 @@ namespace httpd {
 using namespace std;
 
 void path_description::set(routes& _routes, handler_base* handler) const {
-    for (auto& i : mandatory_queryparams) {
+    for (auto& i : query_params) {
         handler->mandatory(i);
     }
 
-    if (params.size() == 0)
+    if (path_params.size() == 0)
         _routes.put(operations.method, path, handler);
     else {
         match_rule* rule = new match_rule(handler);
         rule->add_str(path);
-        for (auto&& i : params) {
+        for (auto&& i : path_params) {
             if (i.type == url_component_type::FIXED_STRING) {
                 rule->add_str(i.name);
             } else {
@@ -64,7 +64,7 @@ void path_description::set(routes& _routes, const future_json_function& f) const
 }
 
 void path_description::unset(routes& _routes) const {
-    if (params.size() == 0) {
+    if (path_params.size() == 0) {
         _routes.drop(operations.method, path);
     } else {
         auto rule = _routes.del_cookie(_cookie, operations.method);
@@ -79,7 +79,7 @@ path_description::path_description(const sstring& path, operation_type method,
         : path(path), operations(method, nickname) {
 
     for (auto man : mandatory_params) {
-        pushmandatory_param(man);
+        push_query_param(parameter{man, parameter_type::unknown, parameter::is_required::yes});
     }
     for (auto& [param, all_path] : path_parameters) {
         pushparam(param, all_path);
@@ -89,14 +89,24 @@ path_description::path_description(const sstring& path, operation_type method,
 path_description::path_description(const sstring& path, operation_type method,
         const sstring& nickname,
         const std::initializer_list<path_part>& path_parameters,
+        const std::initializer_list<parameter>& query_parameters)
+        : path(path)
+        , operations(method, nickname)
+        , path_params(path_parameters.begin(), path_parameters.end())
+        , query_params(query_parameters.begin(), query_parameters.end())
+{}
+
+path_description::path_description(const sstring& path, operation_type method,
+        const sstring& nickname,
+        const std::initializer_list<path_part>& path_parameters,
         const std::vector<sstring>& mandatory_params)
         : path(path), operations(method, nickname) {
 
     for (auto man : mandatory_params) {
-        pushmandatory_param(man);
+        push_query_param(parameter{man, parameter_type::unknown, parameter::is_required::yes});
     }
     for (auto param : path_parameters) {
-        params.push_back(param);
+        path_params.push_back(param);
     }
 }
 
