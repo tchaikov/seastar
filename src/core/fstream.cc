@@ -275,6 +275,25 @@ public:
         update_history_unused(dropped);
         return make_ready_future<temporary_buffer<char>>();
     }
+    virtual future<> seek(uint64_t pos) override {
+        _done.emplace();
+        if (!_reads_in_progress) {
+            _done->set_value();
+        }
+        _intent.cancel();
+        co_await _done->get_future();
+        uint64_t dropped = 0;
+        for (auto&& c : _read_buffers) {
+            _reactor._io_stats.fstream_read_aheads_discarded += 1;
+            _reactor._io_stats.fstream_read_ahead_discarded_bytes += c._size;
+            dropped += c._size;
+            ignore_read_future(std::move(c._ready));
+        }
+        update_history_unused(dropped);
+        co_await std::move(_dropped_reads);
+        co_await _file.seek(pos, SEEK_SET);
+        _pos = pos;
+    }
     virtual future<> close() override {
         _done.emplace();
         if (!_reads_in_progress) {

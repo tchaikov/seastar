@@ -230,6 +230,11 @@ public:
         throw_system_error_on(r == -1, "fstat");
         return buf.st_size;
     }
+    off_t seek(off_t offset, int whence) {
+        off_t r = ::lseek(_fd, offset, whence);
+        throw_system_error_on(r == static_cast<off_t>(-1), "lseek");
+        return r;
+    }
     std::optional<size_t> read(void* buffer, size_t len) {
         auto r = ::read(_fd, buffer, len);
         if (r == -1 && errno == EAGAIN) {

@@ -62,6 +62,7 @@ public:
     virtual ~data_source_impl() {}
     virtual future<temporary_buffer<char>> get() = 0;
     virtual future<temporary_buffer<char>> skip(uint64_t n);
+    virtual future<temporary_buffer<char>> seek(uint64_t pos);
     virtual future<> close() { return make_ready_future<>(); }
 };
 
@@ -91,6 +92,15 @@ public:
             return current_exception_as_future<tmp_buf>();
         }
     }
+
+    future<> seek(uint64_t pos) noexcept {
+        try {
+            return _dsi->seek(pos);
+        } catch (...) {
+            return current_exception_as_future<>();
+        }
+    }
+
     future<> close() noexcept {
         try {
             return _dsi->close();

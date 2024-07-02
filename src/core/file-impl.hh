@@ -92,6 +92,7 @@ public:
     future<struct stat> stat() noexcept override;
     future<> truncate(uint64_t length) noexcept override;
     future<> discard(uint64_t offset, uint64_t length) noexcept override;
+    future<uint64_t> seek(off_t offset, int whence) noexcept override;
     future<int> ioctl(uint64_t cmd, void* argp) noexcept override;
     future<int> ioctl_short(uint64_t cmd, void* argp) noexcept override;
     future<int> fcntl(int op, uintptr_t arg) noexcept override;

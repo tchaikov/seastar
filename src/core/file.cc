@@ -279,6 +279,16 @@ posix_file_impl::discard(uint64_t offset, uint64_t length) noexcept {
     });
 }
 
+future<uint64_t>
+posix_file_impl::seek(off_t offset, int whence) noexcept {
+    return engine()._thread_pool->submit<syscall_result<off_t>>([this, offset, whence] () mutable {
+        return wrap_syscall<off_t>(::lseek(_fd, offset, whence));
+    }).then([] (syscall_result<off_t> sr) {
+        sr.throw_if_error();
+        return make_ready_future<uint64_t>(sr.result);
+    });
+}
+
 future<>
 posix_file_impl::allocate(uint64_t position, uint64_t length) noexcept {
 #ifdef FALLOC_FL_ZERO_RANGE
@@ -1154,6 +1164,15 @@ future<> file::close() noexcept {
     return f->close().handle_exception([f = std::move(f)] (std::exception_ptr ex) { // NOLINT(bugprone-use-after-move)
         report_exception("Closing the file failed unexpectedly", std::move(ex));
     });
+}
+
+future<uint64_t> file::seek(off_t offset, int whence) {
+  try {
+    return _file_impl->seek(offset, whence);
+  } catch (...) {
+    return current_exception_as_future<uint64_t>();
+  }
+
 }
 
 subscription<directory_entry>

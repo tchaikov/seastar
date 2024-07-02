@@ -163,6 +163,7 @@ public:
     virtual future<struct stat> stat() = 0;
     virtual future<> truncate(uint64_t length) = 0;
     virtual future<> discard(uint64_t offset, uint64_t length) = 0;
+    virtual future<uint64_t> seek(off_t offset, int whence) = 0;
     virtual future<int> ioctl(uint64_t cmd, void* argp) noexcept;
     virtual future<int> ioctl_short(uint64_t cmd, void* argp) noexcept;
     virtual future<int> fcntl(int op, uintptr_t arg) noexcept;
@@ -684,6 +685,11 @@ public:
     /// To ensure file data reaches stable storage, you must call \ref flush()
     /// before calling \c close().
     future<> close() noexcept;
+
+    /// Set the current position of file descriptor \c fd to position pos, from
+    /// \c whence, and return the new position in bytes relative to the start of
+    /// the file.
+    future<uint64_t> seek(off_t offset, int whence);
 
     /// Returns a directory listing, given that this file object is a directory.
     subscription<directory_entry> list_directory(std::function<future<> (directory_entry de)> next);
