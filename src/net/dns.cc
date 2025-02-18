@@ -189,9 +189,11 @@ private:
 
     ares_socket_t do_socket(int af, int type, int protocol);
     int do_close(ares_socket_t fd);
+    int do_setsockopt(ares_socket_t fd, ares_socket_opt_t opt, const void* val, ares_socklen_t val_size);
     socket_address sock_addr(const sockaddr * addr, socklen_t len);
     int do_connect(ares_socket_t fd, const sockaddr * addr, socklen_t len);
     ssize_t do_recvfrom(ares_socket_t fd, void * dst, size_t len, int flags, struct sockaddr * from, socklen_t * from_len);
+    ssize_t do_sendto(ares_socket_t fd, const void* buffer, size_t len, int flags, const sockaddr* to, socklen_t to_len);
     ssize_t do_sendv(ares_socket_t fd, const iovec * vec, int len);
 
     // Note: cannot use to much here, because fd_sets only handle
@@ -345,6 +347,29 @@ dns_resolver::impl::impl(network_stack& stack, const options& opts)
     check_ares_error(ares_init_options(&_channel, &a_opts, flags));
 
     static auto get_impl = [](void * p) { return reinterpret_cast<impl *>(p); };
+#if ARES_VERSION >= 0x012200
+    static const ares_socket_functions_ex callbacks = {
+        .version = 1,
+        .flags = ARES_SOCKFUNC_FLAG_NONBLOCKING,
+        .asocket = [](int af, int type, int protocol, void * p) {
+            return get_impl(p)->do_socket(af, type, protocol);
+        },
+        .aclose = [](ares_socket_t s, void * p) {
+            return get_impl(p)->do_close(s); },
+        .asetsockopt = [](ares_socket_t s, ares_socket_opt_t opt, const void* val, ares_socklen_t val_size, void* p) {
+            return get_impl(p)->do_setsockopt(s, opt, val, val_size);
+        },
+        .aconnect = [](ares_socket_t s, const sockaddr* addr, ares_socklen_t len, unsigned flags, void* p) {
+            return get_impl(p)->do_connect(s, addr, len); },
+        .arecvfrom = [](ares_socket_t s, void * dst, size_t len, int flags, sockaddr* addr, socklen_t* alen, void* p) {
+            return get_impl(p)->do_recvfrom(s, dst, len, flags, addr, alen);
+        },
+        .asendto = [](ares_socket_t s, const void* buffer, size_t len, int flags, const struct sockaddr *addr, ares_socklen_t addr_len, void* p) {
+            return get_impl(p)->do_sendto(s, buffer, len, flags, addr, addr_len);
+        },
+    };
+    ares_set_socket_functions_ex(_channel, &callbacks, this);
+#else
     static const ares_socket_functions callbacks = {
         [](int af, int type, int protocol, void * p) { return get_impl(p)->do_socket(af, type, protocol); },
         [](ares_socket_t s, void * p) { return get_impl(p)->do_close(s); },
@@ -356,8 +381,8 @@ dns_resolver::impl::impl(network_stack& stack, const options& opts)
             return get_impl(p)->do_sendv(s, vec, len);
         },
     };
-
     ares_set_socket_functions(_channel, &callbacks, this);
+#endif
 
     // just in case you need printf-debug.
     // dns_log.set_level(log_level::trace);
@@ -805,6 +830,46 @@ dns_resolver::impl::do_close(ares_socket_t fd) {
     return 0;
 }
 
+int
+dns_resolver::impl::do_setsockopt(ares_socket_t fd, ares_socket_opt_t opt, const void* val, ares_socklen_t val_size) {
+    if (_closed) {
+        return -1;
+    }
+    auto& e = get_socket_entry(fd);
+    dns_log.trace("Setsockopt {}({})", fd, int(e.typ));
+    if (e.typ != type::tcp) {
+        // datagram_channel does not expose the underlying fd to us,
+        // so we cannot delegate setsockopt() to it
+        errno = ENOSYS;
+        return -1;
+    }
+    auto& tcp = e.tcp;
+    if (!tcp.socket) {
+        errno = ENOTCONN;
+        return -1;
+    }
+    try {
+        switch (opt) {
+        case ARES_SOCKET_OPT_SENDBUF_SIZE:
+            tcp.socket.set_sockopt(SOL_SOCKET, SO_SNDBUF, val, val_size);
+            break;
+        case ARES_SOCKET_OPT_RECVBUF_SIZE:
+            tcp.socket.set_sockopt(SOL_SOCKET, SO_RCVBUF, val, val_size);
+            break;
+        case ARES_SOCKET_OPT_BIND_DEVICE:
+            tcp.socket.set_sockopt(SOL_SOCKET, SO_BINDTODEVICE, val, val_size);
+            break;
+        case ARES_SOCKET_OPT_TCP_FASTOPEN:
+            tcp.socket.set_sockopt(IPPROTO_TCP, TCP_FASTOPEN_CONNECT, val, val_size);
+            break;
+        }
+    } catch (const std::system_error& e) {
+        errno = e.code().value();
+        return -1;
+    }
+    return 0;
+}
+
 socket_address
 dns_resolver::impl::sock_addr(const sockaddr * addr, socklen_t len) {
     if (addr->sa_family != AF_INET) {
@@ -1002,6 +1067,80 @@ dns_resolver::impl::do_recvfrom(ares_socket_t fd, void * dst, size_t len, int fl
     } catch (...) {
     }
     return -1;
+}
+
+ssize_t
+dns_resolver::impl::do_sendto(ares_socket_t fd, const void* buffer, size_t len, int flags, const sockaddr* to, socklen_t to_len) {
+    if (_closed) {
+        return -1;
+    }
+
+    auto& e = _sockets.at(fd);
+    dns_log.trace("Sendto {}({})", fd, int(e.typ));
+
+    // check if we're already writing.
+    if (e.typ == type::tcp && !(e.avail & POLLOUT)) {
+        dns_log.trace("Send already pending {}", fd);
+        errno = EWOULDBLOCK;
+        return -1;
+    }
+    if (!e.tcp.socket) {
+        errno = ENOTCONN;
+        return -1;
+    }
+
+    packet p{static_cast<const char*>(buffer), len};
+    auto f = make_ready_future();
+
+    use(fd);
+
+    switch (e.typ) {
+    case type::tcp:
+        if (!e.tcp.out) {
+            e.tcp.out = e.tcp.socket.output(0);
+        }
+        f = e.tcp.out->write(std::move(p));
+        break;
+    case type::udp:
+        // always chain UDP sends
+        f = e.udp.f.finally([&e, addr = sock_addr(to, to_len), p = std::move(p)]() mutable {
+            return e.udp.channel.send(addr, std::move(p));
+        });
+        break;
+    default:
+        return -1;
+    }
+
+    if (!f.available()) {
+        dns_log.trace("Send {} unavailable.", fd);
+        e.avail &= ~POLLOUT;
+        // FIXME: future is discarded
+        (void)f.then_wrapped([me = shared_from_this(), &e, len, fd](future<> f) {
+            try {
+                f.get();
+                dns_log.trace("Send {}. {} bytes sent.", fd, len);
+            } catch (...) {
+                dns_log.debug("Send {} failed: {}", fd, std::current_exception());
+            }
+            e.avail |= POLLOUT;
+            me->poll_sockets();
+            me->release(fd);
+        });
+
+        return -1;
+    }
+
+    release(fd);
+
+    if (f.failed()) {
+        try {
+            f.get();
+        } catch (std::system_error& e) {
+            errno = e.code().value();
+        }
+        return -1;
+    }
+    return len;
 }
 
 ssize_t
