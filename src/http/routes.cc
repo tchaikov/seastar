@@ -91,8 +91,8 @@ future<std::unique_ptr<http::reply> > routes::handle(const sstring& path, std::u
             normalize_url(path), req->param);
     if (handler != nullptr) {
         try {
-            handler->verify_mandatory_params(*req);
-            auto r =  handler->handle(path, std::move(req), std::move(rep));
+            handler->verify_params(*req);
+            auto r = handler->handle(path, std::move(req), std::move(rep));
             return r.handle_exception(_general_handler);
         } catch (...) {
             rep = exception_reply(std::current_exception());

@@ -36,6 +36,14 @@
               "paramType": "path"
             },
             {
+              "name": "query_integer",
+              "description": "A random integer",
+              "required": false,
+              "allowMultiple": false,
+              "type": "integer",
+              "paramType": "query"
+            },
+            {
               "name": "query_enum",
               "description": "The operation to perform",
               "required": true,

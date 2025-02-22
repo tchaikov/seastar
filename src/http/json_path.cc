@@ -34,8 +34,8 @@ namespace httpd {
 using namespace std;
 
 void path_description::set(routes& _routes, handler_base* handler) const {
-    for (auto& i : mandatory_queryparams) {
-        handler->mandatory(i);
+    for (auto& i : queryparams) {
+        handler->query_param(i);
     }
 
     if (params.size() == 0)
@@ -79,7 +79,7 @@ path_description::path_description(const sstring& path, operation_type method,
         : path(path), operations(method, nickname) {
 
     for (auto man : mandatory_params) {
-        push_mandatory_param(parameter{man, parameter_type::unknown});
+        push_query_param(parameter{man, parameter_type::unknown, parameter::is_required::yes});
     }
     for (auto& [param, all_path] : path_parameters) {
         pushparam(param, all_path);
@@ -93,12 +93,21 @@ path_description::path_description(const sstring& path, operation_type method,
         : path(path), operations(method, nickname) {
 
     for (auto man : mandatory_params) {
-        push_mandatory_param(parameter{man, parameter_type::unknown});
+        push_query_param(parameter{man, parameter_type::unknown, parameter::is_required::yes});
     }
     for (auto param : path_parameters) {
         params.push_back(param);
     }
 }
+
+path_description::path_description(const sstring& path, operation_type method,
+        const sstring& nickname,
+        const std::initializer_list<path_part>& path_parameters,
+        const std::initializer_list<parameter>& query_parameters)
+        : params(path_parameters)
+        , path(path)
+        , operations(method, nickname)
+        , queryparams(query_parameters) {}
 
 }
 

@@ -129,6 +129,20 @@ struct path_description {
             const std::vector<sstring>& mandatory_params);
 
     /**
+     * constructor for path with parameters
+     * The constructor is used by
+     * @param path the url path
+     * @param method the http method
+     * @param nickname the method nickname
+     * @param path_parameters path parameters and url parts of the path
+     * @param mandatory_params the names of the mandatory query parameters
+     */
+    path_description(const sstring& path, operation_type method,
+            const sstring& nickname,
+            const std::initializer_list<path_part>& path_parameters,
+            const std::initializer_list<parameter>& query_parameters);
+
+    /**
      * Add a parameter to the path definition
      * for example, if the url should match /file/{path}
      * The constructor would be followed by a call to
@@ -169,20 +183,20 @@ struct path_description {
      * @param param the parameter to head
      * @return a pointer to the current path description
      */
-    [[deprecated("Use push_mandatory_param() instead")]]
+    [[deprecated("Use push_query_param() instead")]]
     path_description* pushmandatory_param(const sstring& param) {
-        mandatory_queryparams.push_back(parameter{param, parameter_type::unknown});
+        queryparams.push_back(parameter{param, parameter_type::unknown, parameter::is_required::yes});
         return this;
     }
 
     /**
-     * adds a mandatory query parameter to the path
+     * adds a  query parameter to the path
      * this parameter will be checked before calling a handler
      * @param param the parameter to parse
      * @return a pointer to the current path description
      */
-    path_description* push_mandatory_param(const parameter& param) {
-        mandatory_queryparams.push_back(param);
+    path_description* push_query_param(const parameter& param) {
+        queryparams.push_back(param);
         return this;
     }
 
@@ -191,7 +205,7 @@ struct path_description {
     json_operation operations;
     mutable routes::rule_cookie _cookie;
 
-    std::vector<parameter> mandatory_queryparams;
+    std::vector<parameter> queryparams;
 
     void set(routes& _routes, handler_base* handler) const;
 

@@ -183,11 +183,11 @@ class Parameter:
         # It will return true if the required flag is set
         # and if it is a query parameter, both swagger 1.2 'paramType' and
         # swagger 2.0 'in' attributes are supported
-        if "required" not in self.definition:
-            return False
-        if not self.definition["required"]:
-            return False
-        if self.definition.get("paramType") == "query":
+        return self.definition.get("required", False)
+
+    @property
+    def in_query(self):
+        if self.definition.get('paramType') == "query":
             return True
         if self.definition.get("in") == "query":
             return True
@@ -206,54 +206,45 @@ class Parameter:
     def format(self):
         return self.definition.get('format')
 
-    def to_primitive_type(self):
+    @property
+    def normalized_type(self):
         """return the primitive type"""
-        t = ''
         if self.type == 'string':
             # TODO: validate different "format"s
-            t = 'string'
-        elif self.type == 'number':
+            return 'string'
+        if self.type == 'number':
             if self.format == 'double':
-                t = 'double_'
-            elif self.format == 'float':
-                t = 'float_'
-            else:
-                raise ValueError('"type" is required for "number" type to avoid the ambiguity')
-        elif self.type == 'integer':
+                return 'double_'
+            if self.format == 'float':
+                return 'float_'
+            raise ValueError('"format" is required for "number" type to avoid the ambiguity')
+        if self.type == 'integer':
             if self.format == 'int64':
-                t = 'int64'
-            elif self.format == 'int32':
-                t = 'int32'
-            else:
-                t = 'int64'
-        elif self.type == 'boolean':
-            t = 'boolean'
-        elif self.type == 'array':
-            t = 'array'
-        elif self.type == 'object':
-            t = 'object'
-        if t:
-            return f'parameter_type::{t}'
-
+                return 'int64'
+            if self.format == 'int32':
+                return 'int32'
+            return 'int64'
+        if self.type == 'boolean':
+            return 'boolean'
+        if self.type == 'array':
+            return 'array'
+        if self.type == 'object':
+            return 'object'
+        if self.type == 'array':
+            return 'array'
         # check the non-standard names also
         if self.type == 'float':
-            t = 'float_'
-        elif self.type == 'double':
-            t = 'double_'
-        elif self.type == 'long':
-            t = 'int64'
-        else:
-            # could be a model's id
-            t = 'unknown'
-        return f'parameter_type::{t}'
+            return 'float_'
+        if self.type == 'double':
+            return 'double_'
+        if self.type == 'long':
+            return 'int64'
+        # could be a model's id
+        return 'unknown'
 
-    def to_cxx_parameter(self):
-        maybe_primitive_type = self.to_primitive_type()
-        if maybe_primitive_type:
-            return f'{{self.name, {maybe_primitive_type}}}'
-        if self.type == 'array':
-            return 'parameter_type::array'
-        return 'parameter_type::unknown'
+    def to_cxx(self):
+        required = "yes" if self.is_required else "no"
+        return f'{{"{self.name}", parameter_type::{self.normalized_type}, parameter::is_required::{required}}}'
 
 
 def add_path(f, path, details):
@@ -283,8 +274,7 @@ def add_path(f, path, details):
     if "parameters" in details:
         for param_definition in details["parameters"]:
             param = Parameter(param_definition)
-            if param.is_required:
-                fprintln(f, f'{spacing}  ->push_mandatory_param({{"{param.name}", {param.type}}})')
+            fprintln(f, f'{spacing}  ->push_query_param({param.to_cxx()})')
     fprintln(f, spacing, ";")
 
 
@@ -389,8 +379,7 @@ def add_operation(hfile, ccfile, path, oper):
         else:
             component_type = 'PARAM'
         fprint(ccfile, f'{{"{path_param}", path_description::url_component_type::{component_type}}}')
-    fprint(ccfile, '}')
-    fprint(ccfile, ',{')
+    fprintln(ccfile, '},')
     enum_definitions = ""
     if "enum" in oper:
         enum_wrapper = create_enum_wrapper(nickname, "return_type", oper["enum"])
@@ -400,19 +389,20 @@ $enum_wrapper
 }
 ''').substitute(nickname=nickname, enum_wrapper=enum_wrapper.rstrip())
     funcs = ""
-    required_query_params = []
+    query_params = []
     for param in oper.get("parameters", []):
         query_param = Parameter(param)
-        if query_param.is_required:
-            required_query_params.append(query_param)
+        if query_param.in_query:
+            query_params.append(query_param)
         if query_param.enum is not None:
             enum_decl, parse_func = generate_code_from_enum(nickname,
                                                             query_param.name,
                                                             query_param.enum)
             enum_definitions += enum_decl
             funcs += parse_func
-    fprint(ccfile, '\n,'.join(f'"{param.name}"' for param in required_query_params))
-    fprintln(ccfile, '});')
+    fprintln(ccfile, '{')
+    fprint(ccfile, ',\n'.join(param.to_cxx() for param in query_params))
+    fprintln(ccfile, '\n});')
     fprintln(hfile, enum_definitions)
     open_namespace(ccfile, f'ns_{nickname}')
     fprintln(ccfile, funcs)

@@ -25,6 +25,7 @@
 #include <unordered_map>
 #endif
 
+#include <seastar/util/bool_class.hh>
 #include <seastar/core/sstring.hh>
 #include <seastar/core/iostream.hh>
 #include <seastar/http/url.hh>
@@ -61,8 +62,11 @@ enum class parameter_type {
 };
 
 struct parameter {
+  using is_required = bool_class<struct is_required_tag>;
+
   sstring name;
   parameter_type type;
+  is_required required = is_required::no;
   bool verify(const sstring& s) const;
 };
 

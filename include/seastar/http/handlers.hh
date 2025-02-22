@@ -40,7 +40,7 @@ typedef const http::request& const_req;
  *
  */
 class handler_base {
-    std::vector<parameter> _mandatory_param;
+    std::vector<parameter> _params;
 protected:
     handler_base() = default;
     handler_base(const handler_base&) = default;
@@ -63,23 +63,59 @@ public:
      * @return a reference to the handler
      */
     handler_base& mandatory(const parameter& param) {
-        _mandatory_param.push_back(param);
+        _params.push_back(param);
         return *this;
     }
 
+
+    /**
+/    * Add a query parameter
+     * @param param a parameter name
+     * @return a reference to the handler
+     */
+    handler_base& query_param(const parameter& param) {
+        _params.push_back(param);
+        return *this;
+    }
     /**
      * Check if all mandatory parameters exist in the request. if any param
      * does not exist, the function would throw a @c missing_param_exception
      * @param params req the http request
      */
     void verify_mandatory_params(const http::request& req) const {
-        for (auto& param : _mandatory_param) {
+        for (auto& param : _params) {
+            if (!param.required) {
+                continue;
+            }
             const auto p = req.get_query_param(param.name);
             if (p.empty()) {
                 throw missing_param_exception(param.name);
             }
             if (!param.verify(p)) {
                 throw bad_request_exception(param.name);
+            }
+        }
+    }
+
+    /**
+     * Validates that all mandatory parameters are present in the request and correctly formatted
+     * according to their expected types. Throws @c missing_param_exception if a required parameter
+     * is missing, or @c bad_request_exception if a parameter is malformed.
+     * @param params req the http request
+     * @throws missing_param_exception If a required parameter is absent
+     * @throws bad_request_exception If a parameter is incorrectly formatted
+     */
+    void verify_params(const http::request& req) const {
+        for (auto& param : _params) {
+            const auto p = req.get_query_param(param.name);
+            if (p.empty()) {
+                if (param.required) {
+                    throw missing_param_exception(param.name);
+                }
+            } else {
+                if (!param.verify(p)) {
+                    throw bad_request_exception(param.name);
+                }
             }
         }
     }

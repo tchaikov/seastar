@@ -136,7 +136,7 @@ private:
      *
      * @return temporary buffer with read data or zero-sized temporary buffer if
      *         pos is at or beyond EOF.
-     * @throw appropriate exception in case of I/O error.
+     * @throws appropriate exception in case of I/O error.
      */
     future<temporary_buffer<uint8_t>> read_maybe_eof(uint64_t pos, size_t len, internal::maybe_priority_class_ref pc, io_intent* intent);
 
