@@ -621,7 +621,11 @@ static bool blockdev_nowait_works(dev_t device_id) {
 
 blockdev_file_impl::blockdev_file_impl(int fd, open_flags f, file_open_options options, dev_t device_id, size_t block_size)
         : posix_file_impl(fd, f, options, device_id, blockdev_nowait_works(device_id)) {
-    // FIXME -- configure file_impl::_..._dma_alignment's from block_size
+    // Configure DMA alignment requirements based on block device sector size
+    _memory_dma_alignment = block_size;
+    _disk_read_dma_alignment = block_size;
+    _disk_write_dma_alignment = block_size;
+    _disk_overwrite_dma_alignment = block_size;
 }
 
 future<>
@@ -1033,13 +1037,19 @@ xfs_concurrency_from_kernel_version() {
 future<shared_ptr<file_impl>>
 make_file_impl(int fd, file_open_options options, int flags, struct stat st) noexcept {
     if (S_ISBLK(st.st_mode)) {
-        size_t block_size;
-        auto ret = ::ioctl(fd, BLKBSZGET, &block_size);
+        // For block devices, we need the physical sector size for DMA alignment,
+        // not the logical block size. Use BLKSSZGET instead of BLKBSZGET.
+        // BLKBSZGET returns the logical block size (often 4096 bytes), which is
+        // too large and causes sanitize_iovecs() to trim small writes.
+        // BLKSSZGET returns the physical sector size (typically 512 bytes), which
+        // is the minimum alignment required by O_DIRECT on block devices.
+        int sector_size;
+        auto ret = ::ioctl(fd, BLKSSZGET, &sector_size);
         if (ret == -1) {
             return make_exception_future<shared_ptr<file_impl>>(
-                    std::system_error(errno, std::system_category(), "ioctl(BLKBSZGET) failed"));
+                    std::system_error(errno, std::system_category(), "ioctl(BLKSSZGET) failed"));
         }
-        return make_ready_future<shared_ptr<file_impl>>(make_shared<blockdev_file_impl>(fd, open_flags(flags), options, st.st_rdev, block_size));
+        return make_ready_future<shared_ptr<file_impl>>(make_shared<blockdev_file_impl>(fd, open_flags(flags), options, st.st_rdev, sector_size));
     }
 
     if (S_ISDIR(st.st_mode)) {
