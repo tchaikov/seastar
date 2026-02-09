@@ -1141,7 +1141,11 @@ if (Seastar_OPENSSL)
     PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 endif ()
 
-set_option_if_package_is_found (Seastar_IO_URING LibUring)
+if (TARGET URING::uring)
+  message(STATUS "Using imported liburing for seastar")
+else()
+  set_option_if_package_is_found (Seastar_IO_URING LibUring)
+endif()
 if (Seastar_IO_URING)
   target_compile_definitions (seastar
     PUBLIC SEASTAR_HAVE_URING)
