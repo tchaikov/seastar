@@ -807,10 +807,6 @@ future<std::optional<sstring>> tls::get_selected_alpn_protocol(connected_socket&
     return get_tls_socket(socket)->get_selected_alpn_protocol();
 }
 
-future<sstring> tls::get_cipher_suite(connected_socket& socket) {
-    return get_tls_socket(socket)->get_cipher_suite();
-}
-
 future<sstring> tls::get_protocol_version(connected_socket& socket) {
     return get_tls_socket(socket)->get_protocol_version();
 }

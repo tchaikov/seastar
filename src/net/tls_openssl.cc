@@ -1558,14 +1558,6 @@ public:
         return futurize_invoke(f, std::forward<Args>(args)...);
     }
 
-    future<sstring> get_cipher_suite() override {
-        return state_checked_access([this] {
-            const SSL_CIPHER* cipher = SSL_get_current_cipher(_ssl.get());
-            const char* iana_name = SSL_CIPHER_standard_name(cipher);
-            return sstring{iana_name ? iana_name : SSL_CIPHER_get_name(cipher)};
-        });
-    }
-
     future<sstring> get_protocol_version() override {
         return state_checked_access([this] {
             int ver = SSL_version(_ssl.get());

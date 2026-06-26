@@ -1298,12 +1298,6 @@ public:
         });
     }
 
-    future<sstring> get_cipher_suite() override {
-        return state_checked_access([this] {
-            return sstring(gnutls_ciphersuite_get(*this));
-        });
-    }
-
     future<sstring> get_protocol_version() override {
         return state_checked_access([this]() {
             return sstring(gnutls_protocol_get_name(gnutls_protocol_get_version(*this)));

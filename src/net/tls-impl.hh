@@ -184,7 +184,6 @@ public:
     virtual future<session_data> get_session_resume_data() = 0;
     virtual future<std::vector<certificate_data>> get_peer_certificate_chain() = 0;
     virtual future<std::optional<sstring>> get_selected_alpn_protocol() = 0;
-    virtual future<sstring> get_cipher_suite() = 0;
     virtual future<sstring> get_protocol_version() = 0;
     virtual future<> force_rehandshake() = 0;
 };
@@ -281,9 +280,6 @@ public:
     }
     future<std::optional<sstring>> get_selected_alpn_protocol() {
         return _session->get_selected_alpn_protocol();
-    }
-    future<sstring> get_cipher_suite() const {
-        return _session->get_cipher_suite();
     }
     future<sstring> get_protocol_version() const {
         return _session->get_protocol_version();
