@@ -26,6 +26,9 @@
 #include <vector>
 
 #include <seastar/core/shared_ptr.hh>
+#include <seastar/core/sstring.hh>
+
+struct ssl_ctx_st;
 
 namespace seastar::net { class connected_socket_impl; }
 namespace seastar::tls {
@@ -66,5 +69,27 @@ std::unique_ptr<dh_params_impl> make_dh_params(const blob&, x509_crt_format);
 
 /// Initialize TLS error codes with OpenSSL values.
 void init_error_codes();
+
+/// Owning handle to an OpenSSL SSL_CTX (calls SSL_CTX_free).
+struct ssl_ctx_deleter {
+    void operator()(ssl_ctx_st*) const noexcept;
+};
+using ssl_ctx_handle = std::unique_ptr<ssl_ctx_st, ssl_ctx_deleter>;
+
+/// Create an SSL context configured from the given credentials, for the
+/// QUIC crypto integration, which drives handshake-level TLS directly
+/// (SSL objects created from this context) instead of going through the
+/// stream-oriented session_impl.
+///
+/// For client contexts \p alpn_protocols supplies the ALPN list; for
+/// server contexts the list configured on the credentials is used. Any
+/// lazily-requested system trust store is loaded into the context before
+/// returning. The context refers to state owned by the credentials, so it
+/// must not outlive them.
+///
+/// Throws if the credentials do not belong to the OpenSSL backend.
+ssl_ctx_handle make_quic_ssl_context(const certificate_credentials& creds,
+                                     session_type type,
+                                     const std::vector<sstring>& alpn_protocols);
 
 } // namespace seastar::tls::openssl

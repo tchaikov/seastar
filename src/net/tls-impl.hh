@@ -164,6 +164,16 @@ public:
     bool _load_system_trust = false;
 };
 
+/// Grants backend code access to the private backend-specific
+/// implementation of a certificate_credentials (mirroring net::get_impl
+/// for sockets). Used by the QUIC crypto integration, which needs the
+/// backend-native credential handles for handshake-level TLS.
+struct credentials_accessor {
+    static shared_ptr<credentials_impl> get(const certificate_credentials& c) {
+        return c._impl;
+    }
+};
+
 /// Abstract interface for a TLS session.
 ///
 /// This is the primary abstraction that TLS backends (GnuTLS, OpenSSL)

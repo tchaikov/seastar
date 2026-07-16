@@ -1198,8 +1198,22 @@ if (Seastar_EXPERIMENTAL_QUIC)
     PRIVATE
       include/seastar/net/quic/error.hh
       include/seastar/net/quic/types.hh
-      src/net/quic/error.cc)
+      src/net/quic/cid.hh
+      src/net/quic/error.cc
+      src/net/quic/tls_session.hh
+      src/net/quic/tls_session.cc
+      src/net/quic/udp_channel.hh
+      src/net/quic/udp_channel.cc)
 
+  if (Seastar_QUIC_CRYPTO_PROVIDER_RESOLVED STREQUAL "gnutls")
+    target_sources (seastar
+      PRIVATE src/net/quic/tls_session_gnutls.cc)
+    list (APPEND Seastar_PRIVATE_COMPILE_DEFINITIONS SEASTAR_QUIC_GNUTLS)
+  else ()
+    target_sources (seastar
+      PRIVATE src/net/quic/tls_session_ossl.cc)
+    list (APPEND Seastar_PRIVATE_COMPILE_DEFINITIONS SEASTAR_QUIC_OSSL)
+  endif ()
   # The crypto helper archive comes first so its unresolved ngtcp2 symbols are
   # satisfied by the ngtcp2 archive that follows (single-pass static linking);
   # its TLS symbols resolve against the GnuTLS/OpenSSL that Seastar links.

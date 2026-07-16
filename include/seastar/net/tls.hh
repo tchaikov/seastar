@@ -283,6 +283,7 @@ namespace tls {
         friend class server_session;
         friend class server_credentials;
         friend class credentials_builder;
+        friend struct credentials_accessor;
         template<typename Base>
         friend class reloadable_credentials;
         shared_ptr<credentials_impl> _impl;

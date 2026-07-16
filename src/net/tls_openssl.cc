@@ -220,6 +220,27 @@ std::vector<unsigned char> make_openssl_alpn_proto_data(const std::vector<sstrin
     return alpn_data;
 }
 
+int select_alpn_protocol(SSL *ssl, const unsigned char **out,
+                    unsigned char *outlen, const unsigned char *client_protos,
+                    unsigned int client_proto_len, void* configured_protocols) {
+    const std::vector<unsigned char>& server_protos = *reinterpret_cast<std::vector<unsigned char>*>(configured_protocols);
+
+    auto result =  SSL_select_next_proto(const_cast<unsigned char **>(out),
+        outlen, server_protos.data(), server_protos.size(),
+        client_protos, client_proto_len);
+    if(result == OPENSSL_NPN_NEGOTIATED) {
+        return SSL_TLSEXT_ERR_OK;
+    } else if(result == OPENSSL_NPN_NO_OVERLAP) {
+        *outlen = 0;
+        *out = nullptr;
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    } else {
+        *outlen = 0;
+        *out = nullptr;
+        return SSL_TLSEXT_ERR_NOACK;
+    }
+}
+
 template<typename T, auto fn>
 struct ssl_deleter {
     void operator()(T* ptr) { fn(ptr); }
@@ -328,8 +349,6 @@ private:
 
 // sufficiently large enough to avoid collision with OpenSSL BIO controls
 #define BIO_C_SET_POINTER 1000
-// Index into ex data for SSL structure to fetch a pointer to session
-#define SSL_EX_DATA_SESSION 0
 
 BIO_METHOD* get_method();
 
@@ -686,11 +705,6 @@ public:
 
     void set_priority_string(const sstring&) override {} // GnuTLS-specific, no-op for OpenSSL
 
-private:
-    friend class certificate_credentials;
-    friend class credentials_builder;
-    friend class tls::openssl_session;
-
     void set_load_system_trust(bool trust) {
         _load_system_trust = trust;
     }
@@ -698,6 +712,27 @@ private:
     bool need_load_system_trust() const {
         return _load_system_trust;
     }
+
+    // Creates an SSL context configured from these credentials. For client
+    // sessions the ALPN protocol list comes from the session-level options;
+    // for servers it comes from the credentials themselves (and the encoded
+    // list is stored in _encoded_alpn, which the returned context refers to,
+    // so the context must not outlive these credentials). The context also
+    // carries a pointer back to these credentials in its ex data (slot
+    // ssl_ctx_creds_idx), which session_ticket_cb uses to locate the
+    // session ticket keys.
+    ssl_ctx_ptr make_ssl_context(session_type type, const std::vector<sstring>& client_alpn_protocols);
+
+    // Index into SSL_CTX ex data holding a pointer to the
+    // openssl_provider_certificate_credentials_impl that created the
+    // context. (The per-SSL ex data cannot be used for this: QUIC sessions
+    // store the ngtcp2 conn reference in the SSL app data slot.)
+    static const int ssl_ctx_creds_idx = 0;
+
+private:
+    friend class certificate_credentials;
+    friend class credentials_builder;
+    friend class tls::openssl_session;
 
     certkey_pair _cert_and_key;
     session_ticket_keys _session_ticket_keys;
@@ -716,6 +751,10 @@ private:
     bool _crl_check_flag_set = false;
     bool _enable_certificate_verification = true;
     std::vector<sstring> _alpn_protocols;
+    // Server-side ALPN protocol list in the length-prefixed wire format;
+    // referenced by the alpn_select callback of contexts created by
+    // make_ssl_context, so it must live as long as those contexts.
+    std::vector<unsigned char> _encoded_alpn;
 };
 
 int session_ticket_cb(SSL * s, unsigned char key_name[16],
@@ -737,27 +776,6 @@ class openssl_session : public enable_shared_from_this<openssl_session>, public 
 public:
     using buf_type = temporary_buffer<char>;
     using frag_iter = net::fragment*;
-
-    static int select_alpn_protocol(SSL *ssl, const unsigned char **out,
-                        unsigned char *outlen, const unsigned char *client_protos,
-                        unsigned int client_proto_len, void* configured_protocols) {
-        const std::vector<unsigned char>& server_protos = *reinterpret_cast<std::vector<unsigned char>*>(configured_protocols);
-
-        auto result =  SSL_select_next_proto(const_cast<unsigned char **>(out),
-            outlen, server_protos.data(), server_protos.size(),
-            client_protos, client_proto_len);
-        if(result == OPENSSL_NPN_NEGOTIATED) {
-            return SSL_TLSEXT_ERR_OK;
-        } else if(result == OPENSSL_NPN_NO_OVERLAP) {
-            *outlen = 0;
-            *out = nullptr;
-            return SSL_TLSEXT_ERR_ALERT_FATAL;
-        } else {
-            *outlen = 0;
-            *out = nullptr;
-            return SSL_TLSEXT_ERR_NOACK;
-        }
-    }
 
     openssl_session(session_type t, shared_ptr<tls::certificate_credentials> creds,
             std::unique_ptr<net::connected_socket_impl> sock, tls_options options = {})
@@ -783,7 +801,7 @@ public:
       , _out_sem(1)
       , _options(std::move(options))
       , _output_pending(make_ready_future<>())
-      , _ctx(make_ssl_context(t))
+      , _ctx(_creds->make_ssl_context(t, _options.alpn_protocols))
       , _ssl([this]() {
           auto ssl = SSL_new(_ctx.get());
           if (!ssl) {
@@ -792,9 +810,6 @@ public:
           return ssl;
       }())
       , _type(t) {
-        if (1 != SSL_set_ex_data(_ssl.get(), SSL_EX_DATA_SESSION, this)) {
-            throw make_openssl_error("Failed to set EX data for SSL session");
-        }
         bio_ptr in_bio(BIO_new(get_method()));
         bio_ptr out_bio(BIO_new(get_method()));
         if (!in_bio || !out_bio) {
@@ -1838,191 +1853,6 @@ private:
           .subject = std::move(*subject), .issuer = std::move(*issuer)};
     }
 
-    ssl_ctx_ptr make_ssl_context(session_type type) {
-        auto ssl_ctx = ssl_ctx_ptr(SSL_CTX_new(TLS_method()));
-        if (!ssl_ctx) {
-            throw make_openssl_error(
-              "Failed to initialize SSL context");
-        }
-        // SSL_CTX_new can return a valid context while leaving errors on the
-        // error queue from partially-failed system config parsing (e.g. an
-        // invalid Ciphersuites value in the system openssl.cnf).
-        // See https://github.com/openssl/openssl/issues/30760
-        clear_stale_ssl_errors("SSL_CTX_new");
-
-        // Certificate compression allocates 350k, not worth it (#3364)
-#ifdef SSL_OP_NO_TX_CERTIFICATE_COMPRESSION
-        SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_TX_CERTIFICATE_COMPRESSION);
-#endif
-#ifdef SSL_OP_NO_RX_CERTIFICATE_COMPRESSION
-        SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_RX_CERTIFICATE_COMPRESSION);
-#endif
-
-        const auto& ck_pair = _creds->get_certkey_pair();
-        if (type == session_type::SERVER) {
-            if (!ck_pair) {
-                throw make_openssl_error(
-                  "Cannot start session without cert/key pair for server");
-            }
-            switch (_creds->get_client_auth()) {
-            case client_auth::NONE:
-            default:
-                SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_NONE, nullptr);
-                break;
-            case client_auth::REQUEST:
-                SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_PEER, nullptr);
-                break;
-            case client_auth::REQUIRE:
-                SSL_CTX_set_verify(
-                  ssl_ctx.get(),
-                  SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                  nullptr);
-                break;
-            }
-
-            auto options = SSL_OP_ALL;
-            if (_creds->is_server_precedence_enabled()) {
-                options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
-            }
-
-            if (_creds->is_tls_renegotiation_enabled()) {
-                options |= SSL_OP_ALLOW_CLIENT_RENEGOTIATION;
-            }
-
-            SSL_CTX_set_options(ssl_ctx.get(), options);
-
-            switch(_creds->get_session_resume_mode()) {
-                case session_resume_mode::NONE:
-                    SSL_CTX_set_session_cache_mode(ssl_ctx.get(), SSL_SESS_CACHE_OFF);
-                    break;
-                case session_resume_mode::TLS13_SESSION_TICKET:
-                    // By default, SSL contexts have server size cache enabled
-                    if (1 != SSL_CTX_set_tlsext_ticket_key_evp_cb(ssl_ctx.get(), &session_ticket_cb)) {
-                        throw make_openssl_error("Failed to set session ticket callback function");
-                    }
-                    break;
-            }
-        } else {
-            // Enable peer verification on the client side so that OpenSSL
-            // rejects untrusted server certificates during the handshake,
-            // before the client Finished message is sent. Without this,
-            // the default SSL_VERIFY_NONE allows the handshake to complete
-            // at the protocol level, and verification only happens post-hoc
-            // in verify(), by which time the Finished message has already
-            // been sent via the BIO and the server may observe a completed
-            // handshake followed by an abrupt close.
-            if (_creds->_enable_certificate_verification) {
-                SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_PEER, nullptr);
-            }
-            if (_creds->is_server_precedence_enabled()) {
-                SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_CIPHER_SERVER_PREFERENCE);
-            }
-        }
-
-        auto& min_tls_version = _creds->minimum_tls_version();
-        auto& max_tls_version = _creds->maximum_tls_version();
-
-        if (min_tls_version.has_value()) {
-            if (!SSL_CTX_set_min_proto_version(ssl_ctx.get(),
-                tls_version_to_openssl(*min_tls_version))) {
-                throw make_openssl_error(
-                    fmt::format("Failed to set minimum TLS version to {}",
-                        *min_tls_version));
-            }
-        }
-
-        if (max_tls_version.has_value()) {
-            if (!SSL_CTX_set_max_proto_version(ssl_ctx.get(),
-                tls_version_to_openssl(*max_tls_version))) {
-                    throw make_openssl_error(
-                        fmt::format("Failed to set maximum TLS version to {}",
-                            *max_tls_version));
-            }
-        }
-
-        auto get_security_level = [&ssl_ctx]() {
-            // If 3.0.0 <= OpenSSL Version < 3.1.0 then:
-            // TLS1.0 is disabled at level 3 and TLS1.1 is disabled at level4
-            // If 3.1.0 <= OpenSSL Version, then TLS1.0 and 1.2 are disabled at level 1
-            #if OPENSSL_VERSION_NUMBER >= 0x30000000 && OPENSSL_VERSION_NUMBER < 0x30100000
-            // To get around the unused capture error
-            (void)ssl_ctx;
-            // Going above level 1 prevents the use of 1k RSA keys.
-            // To maintain key compatability between OpenSSL versions,
-            // only return 1 when using OpenSSL version 3.0
-            return 1;
-            #elif OPENSSL_VERSION_NUMBER >= 0x30100000
-            auto min_version = SSL_CTX_get_min_proto_version(ssl_ctx.get());
-            switch(min_version) {
-                case SSL3_VERSION:
-                case TLS1_VERSION:
-                case TLS1_1_VERSION:
-                case DTLS1_VERSION:
-                    return 0;
-                default:
-                    return 1;
-            }
-            #else
-            #error "Unsupported OpenSSL Version"
-            #endif
-        };
-
-        SSL_CTX_set_security_level(ssl_ctx.get(), get_security_level());
-
-        // Servers must supply both certificate and key, clients may
-        // optionally use these
-        if (ck_pair) {
-            if (!SSL_CTX_use_cert_and_key(
-                  ssl_ctx.get(),
-                  ck_pair.cert.get(),
-                  ck_pair.key.get(),
-                  nullptr,
-                  1)) {
-                throw make_openssl_error(
-                  "Failed to load cert/key pair");
-            }
-        }
-        // Increments the reference count of *_creds, now should have a
-        // total ref count of two, will be deallocated when both OpenSSL and
-        // the certificate_manager call X509_STORE_free
-        SSL_CTX_set1_cert_store(ssl_ctx.get(), *_creds);
-
-        if (!_creds->get_cipher_string().empty()) {
-            if (SSL_CTX_set_cipher_list(ssl_ctx.get(),
-                    _creds->get_cipher_string().c_str()) != 1) {
-                throw make_openssl_error(
-                    fmt::format(
-                        "Failed to set cipher string '{}'", _creds->get_cipher_string()));
-            }
-        }
-
-        if (!_creds->get_ciphersuites().empty()) {
-            if (SSL_CTX_set_ciphersuites(ssl_ctx.get(), _creds->get_ciphersuites().c_str()) != 1) {
-                throw make_openssl_error(
-                    fmt::format(
-                        "Failed to set ciphersuites '{}'", _creds->get_ciphersuites()));
-            }
-        }
-        const auto& alpn_protocols = type == session_type::CLIENT ? _options.alpn_protocols : _creds->_alpn_protocols;
-        // ALPN setup
-        if(!alpn_protocols.empty()) {
-            // Build the ALPN protocol data in the format expected by OpenSSL
-            // The format is a sequence of length-prefixed strings
-            _alpn_protocols = make_openssl_alpn_proto_data(alpn_protocols);
-            if(type == session_type::CLIENT) {
-                auto err = SSL_CTX_set_alpn_protos(ssl_ctx.get(),
-                    _alpn_protocols.data(), _alpn_protocols.size());
-                if (err != 0) {
-                    throw make_openssl_error(fmt::format("Failed to set ALPN protocols - error: {}", err));
-                }
-            } else {
-                SSL_CTX_set_alpn_select_cb(ssl_ctx.get(), select_alpn_protocol, &_alpn_protocols);
-            }
-        }
-
-
-        return ssl_ctx;
-    }
 
     static std::optional<sstring> get_dn_string(X509_NAME* name) {
         auto out = bio_ptr(BIO_new(BIO_s_mem()));
@@ -2089,11 +1919,6 @@ private:
     // (the socket is gone), so _output_pending is never reset.
     shared_future<> _output_pending;
     buf_type _input;
-    // ALPN protocols in OPENSSL format
-    // This is a sequence of length-prefixed strings, where the first byte is the length
-    // of the first string, followed by the string data, then the length of the second string,
-    // followed by the second string data, and so on.
-    std::vector<unsigned char> _alpn_protocols;
     ssl_ctx_ptr _ctx;
     ssl_ptr _ssl;
     session_type _type;
@@ -2103,27 +1928,223 @@ private:
     friend int bio_write_ex(BIO* b, const char * data, size_t dlen, size_t * written);
     friend int bio_read_ex(BIO* b, char * data, size_t dlen, size_t *readbytes);
     friend long bio_ctrl(BIO * b, int ctrl, long num, void * data);
-    friend int session_ticket_cb(SSL*, unsigned char[16], unsigned char[EVP_MAX_IV_LENGTH],
-                                 EVP_CIPHER_CTX*, EVP_MAC_CTX*, int);
 };
+
+ssl_ctx_ptr openssl_provider_certificate_credentials_impl::make_ssl_context(session_type type, const std::vector<sstring>& client_alpn_protocols) {
+    auto ssl_ctx = ssl_ctx_ptr(SSL_CTX_new(TLS_method()));
+    if (!ssl_ctx) {
+        throw make_openssl_error(
+          "Failed to initialize SSL context");
+    }
+    // SSL_CTX_new can return a valid context while leaving errors on the
+    // error queue from partially-failed system config parsing (e.g. an
+    // invalid Ciphersuites value in the system openssl.cnf).
+    // See https://github.com/openssl/openssl/issues/30760
+    if (ERR_peek_error() != 0) [[unlikely]] {
+        auto errors = get_all_openssl_errors();
+        tls_log.debug("make_ssl_context SSL_CTX_new: ignoring stale errors on queue: {}", errors);
+    }
+
+    // Let callbacks that only receive an SSL* (e.g. session_ticket_cb) find
+    // these credentials via the context.
+    if (1 != SSL_CTX_set_ex_data(ssl_ctx.get(), ssl_ctx_creds_idx, this)) {
+        throw make_openssl_error("Failed to set EX data for SSL context");
+    }
+
+    // Certificate compression allocates 350k, not worth it (#3364)
+#ifdef SSL_OP_NO_TX_CERTIFICATE_COMPRESSION
+    SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_TX_CERTIFICATE_COMPRESSION);
+#endif
+#ifdef SSL_OP_NO_RX_CERTIFICATE_COMPRESSION
+    SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_RX_CERTIFICATE_COMPRESSION);
+#endif
+
+    const auto& ck_pair = get_certkey_pair();
+    if (type == session_type::SERVER) {
+        if (!ck_pair) {
+            throw make_openssl_error(
+              "Cannot start session without cert/key pair for server");
+        }
+        switch (get_client_auth()) {
+        case client_auth::NONE:
+        default:
+            SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_NONE, nullptr);
+            break;
+        case client_auth::REQUEST:
+            SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_PEER, nullptr);
+            break;
+        case client_auth::REQUIRE:
+            SSL_CTX_set_verify(
+              ssl_ctx.get(),
+              SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+              nullptr);
+            break;
+        }
+
+        auto options = SSL_OP_ALL;
+        if (is_server_precedence_enabled()) {
+            options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
+        }
+
+        if (is_tls_renegotiation_enabled()) {
+            options |= SSL_OP_ALLOW_CLIENT_RENEGOTIATION;
+        }
+
+        SSL_CTX_set_options(ssl_ctx.get(), options);
+
+        switch(get_session_resume_mode()) {
+            case session_resume_mode::NONE:
+                SSL_CTX_set_session_cache_mode(ssl_ctx.get(), SSL_SESS_CACHE_OFF);
+                break;
+            case session_resume_mode::TLS13_SESSION_TICKET:
+                // By default, SSL contexts have server size cache enabled
+                if (1 != SSL_CTX_set_tlsext_ticket_key_evp_cb(ssl_ctx.get(), &session_ticket_cb)) {
+                    throw make_openssl_error("Failed to set session ticket callback function");
+                }
+                break;
+        }
+    } else {
+        // Enable peer verification on the client side so that OpenSSL
+        // rejects untrusted server certificates during the handshake,
+        // before the client Finished message is sent. Without this,
+        // the default SSL_VERIFY_NONE allows the handshake to complete
+        // at the protocol level, and verification only happens post-hoc
+        // in verify(), by which time the Finished message has already
+        // been sent via the BIO and the server may observe a completed
+        // handshake followed by an abrupt close.
+        if (_enable_certificate_verification) {
+            SSL_CTX_set_verify(ssl_ctx.get(), SSL_VERIFY_PEER, nullptr);
+        }
+        if (is_server_precedence_enabled()) {
+            SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_CIPHER_SERVER_PREFERENCE);
+        }
+    }
+
+    auto& min_tls_version = minimum_tls_version();
+    auto& max_tls_version = maximum_tls_version();
+
+    if (min_tls_version.has_value()) {
+        if (!SSL_CTX_set_min_proto_version(ssl_ctx.get(),
+            tls_version_to_openssl(*min_tls_version))) {
+            throw make_openssl_error(
+                fmt::format("Failed to set minimum TLS version to {}",
+                    *min_tls_version));
+        }
+    }
+
+    if (max_tls_version.has_value()) {
+        if (!SSL_CTX_set_max_proto_version(ssl_ctx.get(),
+            tls_version_to_openssl(*max_tls_version))) {
+                throw make_openssl_error(
+                    fmt::format("Failed to set maximum TLS version to {}",
+                        *max_tls_version));
+        }
+    }
+
+    auto get_security_level = [&ssl_ctx]() {
+        // If 3.0.0 <= OpenSSL Version < 3.1.0 then:
+        // TLS1.0 is disabled at level 3 and TLS1.1 is disabled at level4
+        // If 3.1.0 <= OpenSSL Version, then TLS1.0 and 1.2 are disabled at level 1
+        #if OPENSSL_VERSION_NUMBER >= 0x30000000 && OPENSSL_VERSION_NUMBER < 0x30100000
+        // To get around the unused capture error
+        (void)ssl_ctx;
+        // Going above level 1 prevents the use of 1k RSA keys.
+        // To maintain key compatability between OpenSSL versions,
+        // only return 1 when using OpenSSL version 3.0
+        return 1;
+        #elif OPENSSL_VERSION_NUMBER >= 0x30100000
+        auto min_version = SSL_CTX_get_min_proto_version(ssl_ctx.get());
+        switch(min_version) {
+            case SSL3_VERSION:
+            case TLS1_VERSION:
+            case TLS1_1_VERSION:
+            case DTLS1_VERSION:
+                return 0;
+            default:
+                return 1;
+        }
+        #else
+        #error "Unsupported OpenSSL Version"
+        #endif
+    };
+
+    SSL_CTX_set_security_level(ssl_ctx.get(), get_security_level());
+
+    // Servers must supply both certificate and key, clients may
+    // optionally use these
+    if (ck_pair) {
+        if (!SSL_CTX_use_cert_and_key(
+              ssl_ctx.get(),
+              ck_pair.cert.get(),
+              ck_pair.key.get(),
+              nullptr,
+              1)) {
+            throw make_openssl_error(
+              "Failed to load cert/key pair");
+        }
+    }
+    // Increments the reference count of *_creds, now should have a
+    // total ref count of two, will be deallocated when both OpenSSL and
+    // the certificate_manager call X509_STORE_free
+    SSL_CTX_set1_cert_store(ssl_ctx.get(), *this);
+
+    if (!get_cipher_string().empty()) {
+        if (SSL_CTX_set_cipher_list(ssl_ctx.get(),
+                get_cipher_string().c_str()) != 1) {
+            throw make_openssl_error(
+                fmt::format(
+                    "Failed to set cipher string '{}'", get_cipher_string()));
+        }
+    }
+
+    if (!get_ciphersuites().empty()) {
+        if (SSL_CTX_set_ciphersuites(ssl_ctx.get(), get_ciphersuites().c_str()) != 1) {
+            throw make_openssl_error(
+                fmt::format(
+                    "Failed to set ciphersuites '{}'", get_ciphersuites()));
+        }
+    }
+    const auto& alpn_protocols = type == session_type::CLIENT ? client_alpn_protocols : _alpn_protocols;
+    // ALPN setup
+    if(!alpn_protocols.empty()) {
+        // Build the ALPN protocol data in the format expected by OpenSSL
+        // The format is a sequence of length-prefixed strings
+        auto encoded = make_openssl_alpn_proto_data(alpn_protocols);
+        if(type == session_type::CLIENT) {
+            auto err = SSL_CTX_set_alpn_protos(ssl_ctx.get(),
+                encoded.data(), encoded.size());
+            if (err != 0) {
+                throw make_openssl_error(fmt::format("Failed to set ALPN protocols - error: {}", err));
+            }
+        } else {
+            _encoded_alpn = std::move(encoded);
+            SSL_CTX_set_alpn_select_cb(ssl_ctx.get(), select_alpn_protocol, &_encoded_alpn);
+        }
+    }
+
+
+    return ssl_ctx;
+}
 
 // The following callback function is used whenever session tickets are generated or received by
 // the TLS server.  If TLS session resumption is enabled, then an AES and HMAC key are
-// generated and stored within the certificate_credentials (which is stored within the TLS session).
-// The call back uses these keys to initialize the encryption and MAC operations for both encryption (enc = 1)
-// and decryption (enc = 0).  Because the key lives with the certificate_credentials which is passed
-// to every instance of an SSL session, the same key can be used over and over again to encrypt/decrypt
-// session tickets across multiple instances of server sessions.  For more information see:
+// generated and stored within the certificate_credentials (reachable from the SSL context's
+// ex data). The call back uses these keys to initialize the encryption and MAC operations for
+// both encryption (enc = 1) and decryption (enc = 0).  Because the key lives with the
+// certificate_credentials, which every SSL context created from it points back to,
+// the same key can be used over and over again to encrypt/decrypt session tickets across
+// multiple instances of server sessions.  For more information see:
 // https://docs.openssl.org/3.0/man3/SSL_CTX_set_tlsext_ticket_key_cb/
 int session_ticket_cb(SSL * s, unsigned char key_name[16],
                       unsigned char iv[EVP_MAX_IV_LENGTH],
                       EVP_CIPHER_CTX * ctx, EVP_MAC_CTX *hctx, int enc) {
-    auto * sess = static_cast<const openssl_session *>(SSL_get_ex_data(s, SSL_EX_DATA_SESSION));
+    auto * creds = static_cast<const openssl_provider_certificate_credentials_impl *>(
+        SSL_CTX_get_ex_data(SSL_get_SSL_CTX(s), openssl_provider_certificate_credentials_impl::ssl_ctx_creds_idx));
     std::span<unsigned char, 16> key_name_span(key_name, 16);
-    const auto & gen_key_name = sess->_creds->get_session_ticket_keys().key_name;
-    const auto & aes_key = sess->_creds->get_session_ticket_keys().aes_key;
-    auto hmac_key_ptr = sess->_creds->get_session_ticket_keys().hmac_key.data();
-    auto hmac_key_size = sess->_creds->get_session_ticket_keys().hmac_key.size();
+    const auto & gen_key_name = creds->get_session_ticket_keys().key_name;
+    const auto & aes_key = creds->get_session_ticket_keys().aes_key;
+    auto hmac_key_ptr = creds->get_session_ticket_keys().hmac_key.data();
+    auto hmac_key_size = creds->get_session_ticket_keys().hmac_key.size();
     OSSL_PARAM params[3];
     params[0] = OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_KEY,
                                                   const_cast<unsigned char *>(hmac_key_ptr),
@@ -2368,6 +2389,28 @@ std::vector<uint8_t> tls::openssl::generate_session_ticket_key() {
 
 shared_ptr<tls::credentials_impl> tls::openssl::make_credentials_impl() {
     return make_shared<openssl_provider_certificate_credentials_impl>();
+}
+
+void tls::openssl::ssl_ctx_deleter::operator()(ssl_ctx_st* ctx) const noexcept {
+    SSL_CTX_free(ctx);
+}
+
+tls::openssl::ssl_ctx_handle tls::openssl::make_quic_ssl_context(const tls::certificate_credentials& creds,
+                                                                 tls::session_type type,
+                                                                 const std::vector<sstring>& alpn_protocols) {
+    auto impl = tls::credentials_accessor::get(creds);
+    auto ocreds = dynamic_pointer_cast<openssl_provider_certificate_credentials_impl>(impl);
+    if (!ocreds) {
+        throw std::invalid_argument("credentials do not belong to the OpenSSL backend");
+    }
+    auto ctx = ocreds->make_ssl_context(type, alpn_protocols);
+    if (ocreds->need_load_system_trust()) {
+        if (!SSL_CTX_set_default_verify_paths(ctx.get())) {
+            throw make_openssl_error("Could not load system trust");
+        }
+        ocreds->set_load_system_trust(false);
+    }
+    return ssl_ctx_handle(ctx.release());
 }
 
 std::unique_ptr<tls::dh_params_impl> tls::openssl::make_dh_params(tls::dh_params::level lvl) {

@@ -45,6 +45,7 @@
 #include <fmt/core.h>
 #include <fmt/ostream.h>
 
+#include <seastar/core/coroutine.hh>
 #include <seastar/core/loop.hh>
 #include <seastar/core/reactor.hh>
 #include <seastar/core/seastar.hh>
@@ -430,9 +431,13 @@ public:
         _alpn_protocols = protocols;
     }
 
-private:
-    friend class credentials_builder;
-    friend class session;
+    const std::vector<sstring>& get_alpn_protocols() const {
+        return _alpn_protocols;
+    }
+
+    bool get_enable_certificate_verification() const {
+        return _enable_certificate_verification;
+    }
 
     bool need_load_system_trust() const {
         return _load_system_trust;
@@ -445,6 +450,10 @@ private:
             return set_system_trust();
         });
     }
+
+private:
+    friend class credentials_builder;
+    friend class session;
 
     gnutls_certificate_credentials_t _creds;
     std::unique_ptr<gnutls_provider_dh_params_impl> _dh_params;
@@ -1400,6 +1409,25 @@ std::vector<uint8_t> tls::gnutls::generate_session_ticket_key() {
 
 shared_ptr<tls::credentials_impl> tls::gnutls::make_credentials_impl() {
     return make_shared<gnutls_provider_certificate_credentials_impl>();
+}
+
+future<tls::gnutls::quic_credentials_view> tls::gnutls::get_quic_credentials_view(const tls::certificate_credentials& creds) {
+    auto impl = tls::credentials_accessor::get(creds);
+    auto gcreds = dynamic_pointer_cast<gnutls_provider_certificate_credentials_impl>(impl);
+    if (!gcreds) {
+        throw std::invalid_argument("credentials do not belong to the GnuTLS backend");
+    }
+    co_await gcreds->maybe_load_system_trust();
+    auto* key = gcreds->get_session_resume_key();
+    co_return quic_credentials_view{
+        .keepalive = gcreds,
+        .xcred = *gcreds,
+        .cauth = gcreds->get_client_auth(),
+        .resume_mode = gcreds->get_session_resume_mode(),
+        .session_resume_key = {key->data, key->size},
+        .alpn_protocols = gcreds->get_alpn_protocols(),
+        .enable_certificate_verification = gcreds->get_enable_certificate_verification(),
+    };
 }
 
 std::unique_ptr<tls::dh_params_impl> tls::gnutls::make_dh_params(tls::dh_params::level lvl) {

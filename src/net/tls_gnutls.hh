@@ -22,10 +22,15 @@
 
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <system_error>
 #include <vector>
 
+#include <seastar/core/future.hh>
 #include <seastar/core/shared_ptr.hh>
+#include <seastar/core/sstring.hh>
+
+struct gnutls_certificate_credentials_st;
 
 namespace seastar::net { class connected_socket_impl; }
 namespace seastar::tls {
@@ -36,6 +41,8 @@ namespace seastar::tls {
     class certificate_credentials;
     enum class session_type;
     enum class x509_crt_format;
+    enum class client_auth;
+    enum class session_resume_mode;
     struct tls_options;
     typedef std::basic_string_view<char> blob;
 }
@@ -66,5 +73,32 @@ std::unique_ptr<dh_params_impl> make_dh_params(const blob&, x509_crt_format);
 
 /// Initialize TLS error codes with GnuTLS values.
 void init_error_codes();
+
+/// A view of the GnuTLS-native state of a certificate_credentials, for the
+/// QUIC crypto integration, which configures gnutls sessions directly
+/// (handshake-level TLS) instead of going through the stream-oriented
+/// session_impl.
+///
+/// The raw pointers and spans remain valid for as long as \c keepalive is
+/// held.
+struct quic_credentials_view {
+    /// Keeps the backing credentials implementation (and thus \c xcred) alive.
+    shared_ptr<credentials_impl> keepalive;
+    /// The GnuTLS certificate credentials handle (gnutls_certificate_credentials_t).
+    gnutls_certificate_credentials_st* xcred;
+    client_auth cauth;
+    session_resume_mode resume_mode;
+    /// Server session ticket key material; empty unless resume_mode enables tickets.
+    std::span<const uint8_t> session_resume_key;
+    std::vector<sstring> alpn_protocols;
+    bool enable_certificate_verification;
+};
+
+/// Extract the GnuTLS-native credential state needed to configure a QUIC
+/// TLS session. Resolves once any lazily-requested system trust store has
+/// been loaded into the credentials.
+///
+/// Throws if the credentials do not belong to the GnuTLS backend.
+future<quic_credentials_view> get_quic_credentials_view(const certificate_credentials&);
 
 } // namespace seastar::tls::gnutls
