@@ -1197,9 +1197,17 @@ if (Seastar_EXPERIMENTAL_QUIC)
   target_sources (seastar
     PRIVATE
       include/seastar/net/quic/error.hh
+      include/seastar/net/quic/quic.hh
       include/seastar/net/quic/types.hh
       src/net/quic/cid.hh
+      src/net/quic/connection.hh
+      src/net/quic/connection.cc
       src/net/quic/error.cc
+      src/net/quic/quic.cc
+      src/net/quic/server.hh
+      src/net/quic/server.cc
+      src/net/quic/stream.hh
+      src/net/quic/stream.cc
       src/net/quic/tls_session.hh
       src/net/quic/tls_session.cc
       src/net/quic/udp_channel.hh

@@ -53,8 +53,19 @@ file_desc create_socket(socket_address local) {
         fd.setsockopt(SOL_IPV6, IPV6_RECVPKTINFO, true);
         fd.setsockopt(SOL_IPV6, IPV6_RECVTCLASS, true);
     }
-    if (engine().posix_reuseport_available()) {
+    // Set SO_REUSEPORT directly rather than consulting
+    // engine().posix_reuseport_available(): that knob is disabled
+    // reactor-wide because of TCP load imbalance (kernel hashing pins each
+    // 4-tuple to one listener with no rebalancing), but the QUIC server
+    // does not rely on the kernel for connection-to-shard affinity — it
+    // embeds the owning shard in server-generated connection IDs and
+    // forwards stray datagrams, so imbalance is corrected above the
+    // socket. Every shard must be able to bind the same address for the
+    // per-shard listen() contract to work at all. Best-effort: kernels
+    // older than 3.9 lack SO_REUSEPORT, leaving single-shard operation.
+    try {
         fd.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1);
+    } catch (...) {
     }
     // Enlarge the socket buffers. QUIC does its own loss recovery and
     // congestion control, but a receive buffer overrun still shows up as
@@ -94,11 +105,24 @@ quic_udp_channel::quic_udp_channel(const socket_address& local, bool enable_gso,
 }
 
 void quic_udp_channel::close() noexcept {
+    if (_closed) {
+        return;
+    }
     _closed = true;
-    _fd = {};
+    // Unblock any pending receive() so the receiver's coroutine completes
+    // with an error and breaks its loop. The fd itself is released only
+    // when this channel is destroyed, by which point no receive is in
+    // flight (destroying it here, while a woken continuation still holds
+    // the fd state, would be a use-after-free).
+    if (_fd) {
+        _fd.shutdown(SHUT_RDWR, pollable_fd::shutdown_kernel_only::no);
+    }
 }
 
 future<quic_udp_channel::rx_datagram> quic_udp_channel::receive() {
+    if (_closed) {
+        throw std::system_error(std::make_error_code(std::errc::operation_canceled), "QUIC UDP channel closed");
+    }
     auto buf = temporary_buffer<char>(recv_buffer_size);
     socket_address src{};
     // Room for pktinfo, TOS/TCLASS and GRO control messages.
@@ -115,6 +139,8 @@ future<quic_udp_channel::rx_datagram> quic_udp_channel::receive() {
     auto size = co_await _fd.recvmsg(&hdr);
 
     rx_datagram result;
+    // recvmsg updates msg_namelen to the real source address length.
+    src.addr_length = hdr.msg_namelen;
     result.src = src;
     result.dst = _address;
     for (auto* cmsg = CMSG_FIRSTHDR(&hdr); cmsg != nullptr; cmsg = CMSG_NXTHDR(&hdr, cmsg)) {
@@ -147,8 +173,15 @@ future<quic_udp_channel::rx_datagram> quic_udp_channel::receive() {
         }
 #endif
     }
-    buf.trim(size);
-    result.data = std::move(buf);
+    // The receive buffer is sized for a maximal GRO batch; trim() keeps its
+    // capacity, and downstream shares of the buffer would pin all of it.
+    // Right-size ordinary (small) datagrams with one cheap copy.
+    if (static_cast<size_t>(size) <= recv_buffer_size / 8) {
+        result.data = temporary_buffer<char>(buf.get(), size);
+    } else {
+        buf.trim(size);
+        result.data = std::move(buf);
+    }
     co_return result;
 }
 

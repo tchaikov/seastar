@@ -27,12 +27,22 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <span>
 #include <stdexcept>
+#include <system_error>
 
 namespace seastar::net::quic::internal {
+
+/// The transport's time base: steady-clock nanoseconds, as expected by
+/// ngtcp2 (ngtcp2_tstamp) and nghttp3 (nghttp3_tstamp). Every timestamp
+/// handed to either library must come from here.
+inline ngtcp2_tstamp quic_now() noexcept {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+}
 
 /// Length of server-generated connection IDs:
 /// two shard-id bytes (masked) followed by 16 random bytes.

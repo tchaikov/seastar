@@ -865,6 +865,22 @@ if (Seastar_OPENSSL AND Seastar_GNUTLS)
   add_dependencies (test_unit_tls_openssl_run test_unit_tls tls_files testcrt othercrt mtls_certs https_server)
 endif ()
 
+if (Seastar_EXPERIMENTAL_QUIC)
+  # The QUIC crypto provider is fixed at build time
+  # (Seastar_QUIC_CRYPTO_PROVIDER) and the runtime provider must match it,
+  # so run the test with the matching --crypto-provider.
+  seastar_add_test (quic
+    DEPENDS testcrt
+    SOURCES quic_test.cc
+    # ngtcp2 is linked PRIVATE to the seastar target, so its include
+    # directory isn't propagated transitively; this test needs it directly
+    # to reach quic_connection_impl's definition (src/net/quic/connection.hh)
+    # for an internal test-only hook.
+    LIBRARIES Boost::filesystem $<BUILD_INTERFACE:ngtcp2::ngtcp2_static>
+    RUN_ARGS --crypto-provider ${Seastar_QUIC_CRYPTO_PROVIDER_RESOLVED}
+    WORKING_DIRECTORY ${Seastar_BINARY_DIR})
+endif ()
+
 seastar_add_test (tuple_utils
   KIND BOOST
   SOURCES tuple_utils_test.cc)

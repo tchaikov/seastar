@@ -44,7 +44,8 @@ namespace seastar::net::quic {
 namespace internal {
 class quic_stream_impl;
 class quic_connection_impl;
-class server_impl;
+class server_dispatcher;
+struct api_access;
 }
 
 /// \brief Transport parameters shared by client and server connections.
@@ -62,10 +63,29 @@ struct connection_config {
     uint64_t max_streams_bidi = 100;
     /// Maximum number of concurrent peer-initiated unidirectional streams.
     uint64_t max_streams_uni = 100;
-    /// Connection-level flow control window.
+    /// Connection-level flow control window (initial advertised value).
     uint64_t initial_max_data = 1 << 20;
-    /// Per-stream flow control window.
+    /// Per-stream flow control window (initial advertised value).
     uint64_t initial_max_stream_data = 256 << 10;
+    /// Ceiling for connection-level flow-control auto-tuning: the window
+    /// grows towards this as the bandwidth-delay product warrants, keeping
+    /// a bulk transfer from stalling on flow control. Must be >=
+    /// initial_max_data.
+    uint64_t max_data_window = 24 << 20;
+    /// Ceiling for per-stream flow-control auto-tuning. Must be >=
+    /// initial_max_stream_data.
+    uint64_t max_stream_data_window = 16 << 20;
+    /// Upper bound on how long a received packet may go unacknowledged
+    /// (QUIC max_ack_delay). ngtcp2 still acks promptly once enough
+    /// ack-eliciting packets arrive; this only bounds the delay for sparse
+    /// traffic. Lower than the 25ms spec default to favour low-RTT paths.
+    std::chrono::microseconds max_ack_delay{3'000};
+    /// Number of connection IDs the peer may keep active for this
+    /// connection (QUIC active_connection_id_limit). Each spare CID lets a
+    /// client migrate (or the connection rotate its CID) without a
+    /// round-trip; the spec minimum is 2, but a low value blocks rapid
+    /// migration with NGTCP2_ERR_CONN_ID_BLOCKED.
+    uint64_t active_connection_id_limit = 8;
     /// Enable DATAGRAM frame support (RFC 9221).
     bool enable_datagrams = false;
     /// Disable UDP generic segmentation offload for this connection's
@@ -79,6 +99,7 @@ struct connection_config {
 
 /// \brief Options for \ref quic::connect().
 struct connect_options {
+    /// Transport parameters for the connection.
     connection_config config{};
     /// TLS SNI and certificate-verification host name; defaults to the
     /// textual form of the remote address when empty.
@@ -96,13 +117,11 @@ struct connect_options {
 
 /// \brief Options for \ref quic::listen().
 struct listen_options {
+    /// Transport parameters applied to every accepted connection.
     connection_config config{};
     /// Force address validation: reply to the first Initial of every new
     /// connection with a Retry packet (QUIC Interop Runner "retry" case).
     bool require_retry = false;
-    /// When set, write qlog (JSON-SEQ) traces for every connection into
-    /// this directory, named after the original destination CID.
-    std::optional<sstring> qlog_dir{};
     /// Depth of the queue of handshake-completed connections awaiting
     /// \ref server::accept().
     unsigned accept_queue_depth = 64;
@@ -117,6 +136,7 @@ struct listen_options {
 /// streams plug into any stream-oriented consumer.
 class stream {
     friend class internal::quic_connection_impl;
+    friend struct internal::api_access;
     lw_shared_ptr<internal::quic_stream_impl> _impl;
     explicit stream(lw_shared_ptr<internal::quic_stream_impl> impl) noexcept;
 public:
@@ -156,6 +176,23 @@ public:
     /// The peer is expected to reset its sending side with \p code; data
     /// already received can still be read.
     std::expected<void, std::error_code> stop_sending(application_error_code code) noexcept;
+
+    /// \brief Converts this bidirectional stream into a \ref connected_socket.
+    ///
+    /// A QUIC stream is an ordered, reliable, flow-controlled byte channel,
+    /// so the returned socket lets any connected_socket-based protocol code
+    /// run unchanged over QUIC. Consumes the stream handle; throws for
+    /// unidirectional streams (a connected_socket is inherently two-way).
+    ///
+    /// Semantics differences from TCP:
+    ///  - shutdown_output() aborts the sending side (RESET_STREAM); to end
+    ///    it gracefully with a FIN, close the socket's output stream
+    ///  - shutdown_input() sends STOP_SENDING
+    ///  - nodelay/keepalive options are inert: QUIC never delays stream
+    ///    data, and keep-alive is a connection-level property
+    ///    (\ref connection_config::keep_alive_interval)
+    ///  - local/remote addresses are the owning connection's
+    connected_socket to_connected_socket() &&;
 };
 
 /// \brief Statistics of a \ref connection, from the transport layer.
@@ -164,8 +201,9 @@ struct connection_stats {
     std::chrono::nanoseconds smoothed_rtt;
     /// Congestion window, in bytes.
     uint64_t cwnd;
-    /// Total bytes sent/received on the connection, including headers.
+    /// Total bytes sent on the connection, including framing.
     uint64_t bytes_sent;
+    /// Total bytes received on the connection, including framing.
     uint64_t bytes_received;
     /// Datagrams that reached this connection via cross-shard forwarding.
     uint64_t forwarded_datagrams;
@@ -180,7 +218,9 @@ struct connection_stats {
 /// streams, plus optional unreliable datagrams (RFC 9221).
 class connection {
     friend class internal::quic_connection_impl;
-    friend class internal::server_impl;
+    friend class internal::server_dispatcher;
+    friend struct internal::api_access;
+    friend future<connection> connect(socket_address, shared_ptr<tls::certificate_credentials>, connect_options);
     lw_shared_ptr<internal::quic_connection_impl> _impl;
     explicit connection(lw_shared_ptr<internal::quic_connection_impl> impl) noexcept;
 public:
@@ -225,7 +265,10 @@ public:
     /// \brief The ALPN protocol negotiated during the handshake.
     std::optional<sstring> alpn() const;
 
+    /// \brief The connection's current local address (changes after a
+    /// successful \ref migrate()).
     socket_address local_address() const;
+    /// \brief The peer's address.
     socket_address remote_address() const;
 
     /// \brief Migrates a client connection to a new local address
@@ -245,7 +288,7 @@ public:
 
     /// \brief Takes the address-validation token received in a NEW_TOKEN
     /// frame, if any (for \ref connect_options::token). Client side.
-    std::expected<address_token, std::error_code> take_address_token() noexcept;
+    std::optional<address_token> take_address_token() noexcept;
 
     /// \brief Transport-level statistics.
     connection_stats get_stats() const noexcept;
@@ -260,8 +303,8 @@ public:
 /// connection IDs.
 class server {
     friend server listen(socket_address, shared_ptr<tls::server_credentials>, listen_options);
-    lw_shared_ptr<internal::server_impl> _impl;
-    explicit server(lw_shared_ptr<internal::server_impl> impl) noexcept;
+    lw_shared_ptr<internal::server_dispatcher> _impl;
+    explicit server(lw_shared_ptr<internal::server_dispatcher> impl) noexcept;
 public:
     server() noexcept;
     ~server();
@@ -276,6 +319,7 @@ public:
     /// \brief Makes pending and future accept() calls fail.
     void abort_accept();
 
+    /// \brief The address this server is bound to.
     socket_address local_address() const;
 
     /// \brief Stops the server: closes all connections with \p code and
@@ -302,5 +346,20 @@ future<connection> connect(socket_address remote, shared_ptr<tls::certificate_cr
                            connect_options options);
 
 /// @}
+
+namespace internal {
+
+/// Grants the HTTP/3 layer (and other in-tree consumers) access to the
+/// backing implementations behind the public pimpl handles.
+struct api_access {
+    static const lw_shared_ptr<quic_stream_impl>& impl(const stream& s) noexcept {
+        return s._impl;
+    }
+    static const lw_shared_ptr<quic_connection_impl>& impl(const connection& c) noexcept {
+        return c._impl;
+    }
+};
+
+} // namespace internal
 
 } // namespace seastar::net::quic
