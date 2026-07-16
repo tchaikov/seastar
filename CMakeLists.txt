@@ -308,6 +308,17 @@ option (Seastar_IO_URING
   "Enable io_uring support."
   ON)
 
+option (Seastar_EXPERIMENTAL_QUIC
+  "Enable experimental QUIC/HTTP3 support (requires ngtcp2 >= 1.23.0 / nghttp3 >= 1.12.0; cook them with --cook ngtcp2 --cook nghttp3 if the system packages are too old)."
+  OFF)
+
+set (Seastar_QUIC_CRYPTO_PROVIDER
+  "auto"
+  CACHE
+  STRING
+  "Crypto provider backing the QUIC TLS handshake: auto, gnutls or openssl. Only one can be linked (the ngtcp2 crypto helpers cannot coexist); at runtime, --crypto-provider must match.")
+set_property (CACHE Seastar_QUIC_CRYPTO_PROVIDER PROPERTY STRINGS auto gnutls openssl)
+
 set (Seastar_JENKINS
   ""
   CACHE
@@ -1141,6 +1152,69 @@ if (Seastar_OPENSSL)
   list (APPEND Seastar_PRIVATE_COMPILE_DEFINITIONS SEASTAR_HAVE_OPENSSL)
   target_link_libraries (seastar
     PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+endif ()
+
+if (Seastar_EXPERIMENTAL_QUIC)
+  # Only one ngtcp2 crypto helper can be linked (the backends define the same
+  # internal symbols), so the provider is fixed at build time. "auto" prefers
+  # gnutls; at runtime, --crypto-provider must match.
+  if (Seastar_QUIC_CRYPTO_PROVIDER STREQUAL "auto")
+    if (Seastar_GNUTLS)
+      set (Seastar_QUIC_CRYPTO_PROVIDER_RESOLVED "gnutls")
+    else ()
+      set (Seastar_QUIC_CRYPTO_PROVIDER_RESOLVED "openssl")
+    endif ()
+  else ()
+    set (Seastar_QUIC_CRYPTO_PROVIDER_RESOLVED ${Seastar_QUIC_CRYPTO_PROVIDER})
+  endif ()
+  if (Seastar_QUIC_CRYPTO_PROVIDER_RESOLVED STREQUAL "gnutls" AND NOT Seastar_GNUTLS)
+    message (FATAL_ERROR "Seastar_QUIC_CRYPTO_PROVIDER=gnutls requires Seastar_GNUTLS.")
+  endif ()
+  if (Seastar_QUIC_CRYPTO_PROVIDER_RESOLVED STREQUAL "openssl" AND NOT Seastar_OPENSSL)
+    message (FATAL_ERROR "Seastar_QUIC_CRYPTO_PROVIDER=openssl requires Seastar_OPENSSL.")
+  endif ()
+  message (STATUS "QUIC crypto provider: ${Seastar_QUIC_CRYPTO_PROVIDER_RESOLVED}")
+
+  # ngtcp2 (QUIC transport) and nghttp3 (HTTP/3) ship CMake config packages;
+  # find_package enforces the minimum versions (older distro packages, e.g.
+  # Debian trixie's ngtcp2 1.11 / nghttp3 1.8, are rejected here because both
+  # config packages are SameMajorVersion + version >= requested). Supply a
+  # source build with `--cook ngtcp2 --cook nghttp3` when the system packages
+  # are too old or absent.
+  find_package (ngtcp2 1.23.0 REQUIRED)
+  find_package (nghttp3 1.12.0 REQUIRED)
+
+  # The ngtcp2 crypto helper (one library per TLS backend) is distributed only
+  # as a pkg-config module, not in the CMake config export. Select the one
+  # matching the resolved provider.
+  find_package (PkgConfig REQUIRED)
+  if (Seastar_QUIC_CRYPTO_PROVIDER_RESOLVED STREQUAL "gnutls")
+    pkg_check_modules (ngtcp2_crypto REQUIRED IMPORTED_TARGET libngtcp2_crypto_gnutls>=1.23.0)
+  else ()
+    pkg_check_modules (ngtcp2_crypto REQUIRED IMPORTED_TARGET libngtcp2_crypto_ossl>=1.23.0)
+  endif ()
+
+  target_sources (seastar
+    PRIVATE
+      include/seastar/net/quic/error.hh
+      include/seastar/net/quic/types.hh
+      src/net/quic/error.cc)
+
+  # The crypto helper archive comes first so its unresolved ngtcp2 symbols are
+  # satisfied by the ngtcp2 archive that follows (single-pass static linking);
+  # its TLS symbols resolve against the GnuTLS/OpenSSL that Seastar links.
+  target_link_libraries (seastar
+    PRIVATE
+      $<BUILD_INTERFACE:PkgConfig::ngtcp2_crypto>
+      $<BUILD_INTERFACE:ngtcp2::ngtcp2_static>
+      $<BUILD_INTERFACE:nghttp3::nghttp3_static>)
+
+  # Public: the installed QUIC/HTTP3 headers are gated on this define, like
+  # SEASTAR_HAVE_URING. Note that an installed static libseastar does not
+  # carry the ngtcp2/nghttp3 archives in its export set; in-tree consumers
+  # (tests, apps, add_subdirectory embedders) link them transitively.
+  target_compile_definitions (seastar
+    PUBLIC SEASTAR_HAVE_QUIC)
 endif ()
 
 set_option_if_package_is_found (Seastar_IO_URING LibUring)

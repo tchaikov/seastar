@@ -219,6 +219,11 @@ add_tristate(
     name='lttng',
     dest='lttng',
     help='LTTng-UST tracepoint support for IO tracing')
+add_tristate(
+    arg_parser,
+    name='experimental-quic',
+    dest='quic',
+    help='experimental QUIC/HTTP3 support (requires ngtcp2 >= 1.23.0 / nghttp3 >= 1.12.0; add --cook ngtcp2 --cook nghttp3 if the system packages are too old)')
 arg_parser.add_argument('--allocator-page-size', dest='alloc_page_size', type=int, help='override allocator page size')
 arg_parser.add_argument('--without-tests', dest='exclude_tests', action='store_true', help='Do not build tests by default')
 arg_parser.add_argument('--without-apps', dest='exclude_apps', action='store_true', help='Do not build applications by default')
@@ -313,6 +318,7 @@ def configure_mode(mode):
         tr(args.deferred_action_require_noexcept, 'DEFERRED_ACTION_REQUIRE_NOEXCEPT'),
         tr(args.unused_result_error, 'UNUSED_RESULT_ERROR'),
         tr(args.debug_shared_ptr, 'DEBUG_SHARED_PTR', value_when_none='default'),
+        tr(args.quic, 'EXPERIMENTAL_QUIC'),
     ]
 
     if not which('ninja-build') and which('ninja'):

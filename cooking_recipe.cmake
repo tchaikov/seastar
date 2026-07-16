@@ -350,3 +350,46 @@ cooking_ingredient (lz4
     CONFIGURE_COMMAND <DISABLE>
     BUILD_COMMAND <DISABLE>
     INSTALL_COMMAND ${make_command} PREFIX=<INSTALL_DIR> install)
+
+##
+## Experimental QUIC/HTTP3 dependencies (Seastar_EXPERIMENTAL_QUIC).
+##
+
+# ngtcp2 is the QUIC (RFC 9000) transport. It is consumed through its CMake
+# config package (ngtcp2::ngtcp2_static) plus a pkg-config-only crypto helper
+# per TLS backend (libngtcp2_crypto_{gnutls,ossl}); both helpers are built so
+# a single cooked tree serves either runtime --crypto-provider. Building the
+# OpenSSL helper needs OpenSSL >= 3.5 (the native QUIC TLS API). REQUIRES
+# GnuTLS only takes effect when GnuTLS is itself being cooked; otherwise the
+# system GnuTLS/OpenSSL are used.
+cooking_ingredient (ngtcp2
+  REQUIRES GnuTLS
+  EXTERNAL_PROJECT_ARGS
+    URL https://github.com/ngtcp2/ngtcp2/releases/download/v1.24.0/ngtcp2-1.24.0.tar.xz
+    URL_MD5 2918b166269dfb6136e68d7f803f37b1
+  CMAKE_ARGS
+    -DCMAKE_INSTALL_LIBDIR=lib
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    -DENABLE_LIB_ONLY=ON
+    -DENABLE_STATIC_LIB=ON
+    -DENABLE_SHARED_LIB=OFF
+    -DENABLE_GNUTLS=ON
+    -DENABLE_OPENSSL=ON
+    -DENABLE_BORINGSSL=OFF
+    -DENABLE_PICOTLS=OFF
+    -DENABLE_WOLFSSL=OFF
+    -DBUILD_TESTING=OFF)
+
+# nghttp3 is the HTTP/3 (RFC 9114) framing / QPACK layer over ngtcp2. It is
+# consumed through its CMake config package (nghttp3::nghttp3_static).
+cooking_ingredient (nghttp3
+  EXTERNAL_PROJECT_ARGS
+    URL https://github.com/ngtcp2/nghttp3/releases/download/v1.17.0/nghttp3-1.17.0.tar.xz
+    URL_MD5 01cf5811cd567c483a8fd4d3ec4c58c5
+  CMAKE_ARGS
+    -DCMAKE_INSTALL_LIBDIR=lib
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    -DENABLE_LIB_ONLY=ON
+    -DENABLE_STATIC_LIB=ON
+    -DENABLE_SHARED_LIB=OFF
+    -DBUILD_TESTING=OFF)
