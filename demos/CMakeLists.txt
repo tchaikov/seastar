@@ -139,3 +139,8 @@ if (Seastar_MODULE)
       CXX_STANDARD ${CMAKE_CXX_STANDARD}
       CXX_EXTENSIONS ON)
 endif ()
+
+if (Seastar_EXPERIMENTAL_QUIC)
+  seastar_add_demo (http3_server
+    SOURCES http3_server_demo.cc)
+endif ()
