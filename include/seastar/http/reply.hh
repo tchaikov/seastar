@@ -306,6 +306,22 @@ struct reply {
     future<> write_reply(output_stream<char>& out);
     future<> write_reply_headers(output_stream<char>& out);
 
+    /**
+     * Whether this reply carries a streaming body writer (as opposed to
+     * inline _content). Used by protocol implementations that serialize
+     * the body themselves (e.g. HTTP/3).
+     */
+    bool has_body_writer() const noexcept {
+        return static_cast<bool>(_body_writer);
+    }
+
+    /**
+     * Moves out the streaming body writer, leaving the reply without one.
+     */
+    http::body_writer_type release_body_writer() noexcept {
+        return std::move(_body_writer);
+    }
+
 private:
     http::body_writer_type _body_writer;
     friend class httpd::routes;

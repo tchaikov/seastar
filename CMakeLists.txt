@@ -1211,7 +1211,16 @@ if (Seastar_EXPERIMENTAL_QUIC)
       src/net/quic/tls_session.hh
       src/net/quic/tls_session.cc
       src/net/quic/udp_channel.hh
-      src/net/quic/udp_channel.cc)
+      src/net/quic/udp_channel.cc
+      include/seastar/http3/error.hh
+      include/seastar/http3/server.hh
+      include/seastar/http3/client.hh
+      src/http3/error.cc
+      src/http3/h3_common.hh
+      src/http3/h3_connection.hh
+      src/http3/h3_connection.cc
+      src/http3/server.cc
+      src/http3/client.cc)
 
   if (Seastar_QUIC_CRYPTO_PROVIDER_RESOLVED STREQUAL "gnutls")
     target_sources (seastar

@@ -879,6 +879,13 @@ if (Seastar_EXPERIMENTAL_QUIC)
     LIBRARIES Boost::filesystem $<BUILD_INTERFACE:ngtcp2::ngtcp2_static>
     RUN_ARGS --crypto-provider ${Seastar_QUIC_CRYPTO_PROVIDER_RESOLVED}
     WORKING_DIRECTORY ${Seastar_BINARY_DIR})
+
+  seastar_add_test (http3
+    DEPENDS testcrt
+    SOURCES http3_test.cc
+    LIBRARIES Boost::filesystem
+    RUN_ARGS --crypto-provider ${Seastar_QUIC_CRYPTO_PROVIDER_RESOLVED}
+    WORKING_DIRECTORY ${Seastar_BINARY_DIR})
 endif ()
 
 seastar_add_test (tuple_utils
